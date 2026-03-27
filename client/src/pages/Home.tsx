@@ -39,7 +39,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { caseStudies as defaultCaseStudies, portfolioItems } from "@/lib/data";
 import { useImages, useSection } from "@/hooks/useContent";
 
-const easeApple = "easeOut";
+const easeApple = [0.25, 0.46, 0.45, 0.94];
 const defaultViewport = { once: true, margin: "-100px" };
 
 function addRipple(e: React.MouseEvent<HTMLElement>) {
