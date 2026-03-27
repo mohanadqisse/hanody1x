@@ -1,4 +1,3 @@
-/// <reference types="vite/client" />
 import { useEffect, useState, useRef } from "react";
 import { motion, useInView, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { ParticleField } from "@/components/ParticleField";
@@ -39,7 +38,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { caseStudies as defaultCaseStudies, portfolioItems } from "@/lib/data";
 import { useImages, useSection } from "@/hooks/useContent";
 
-const easeApple = [0.25, 0.46, 0.45, 0.94];
+const easeApple = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
 const defaultViewport = { once: true, margin: "-100px" };
 
 function addRipple(e: React.MouseEvent<HTMLElement>) {
