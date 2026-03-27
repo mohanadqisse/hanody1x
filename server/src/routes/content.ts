@@ -29,17 +29,26 @@ router.get("/all", requireAuth, async (_req, res) => {
   }
 });
 
-router.get("/images", (_req, res) => {
+import { v2 as cloudinary } from "cloudinary";
+
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+router.get("/images", async (_req, res) => {
   try {
-    if (!fs.existsSync(uploadsDir)) {
-      res.json([]);
-      return;
-    }
-    const files = fs.readdirSync(uploadsDir)
-      .filter((f) => /\.(jpg|jpeg|png|gif|webp)$/i.test(f))
-      .map((f) => `/uploads/${f}`);
+    const result = await cloudinary.api.resources({
+      type: "upload",
+      prefix: "portfolio",
+      max_results: 100,
+    });
+    const files = result.resources.map((file: any) => file.secure_url || file.url);
     res.json(files);
-  } catch {
+  } catch (err) {
+    console.error("Cloudinary fetch error:", err);
     res.json([]);
   }
 });
