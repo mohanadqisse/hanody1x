@@ -5,8 +5,25 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useAdmin } from "@/contexts/AdminContext";
 import { useToast } from "@/hooks/use-toast";
-import { LogOut, Save, Upload, Trash2, Settings } from "lucide-react";
+import { LogOut, Save, Upload, Trash2, Settings, Mail, MailOpen, ChevronDown, ChevronUp, Package, User, AtSign, Clock, Inbox } from "lucide-react";
 import { caseStudies as defaultCaseStudies } from "@/lib/data";
+
+interface ContactMessage {
+  id: number;
+  name: string;
+  email: string;
+  service: string | null;
+  message: string;
+  read: boolean;
+  created_at: string;
+}
+
+const packageLabels: Record<string, string> = {
+  basic: "الباقة الأساسية",
+  pro: "الباقة الاحترافية",
+  elite: "باقة النخبة",
+  custom: "احتياج مخصص",
+};
 
 export default function AdminDashboard() {
   const [, navigate] = useLocation();
@@ -15,6 +32,9 @@ export default function AdminDashboard() {
   const [sections, setSections] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState<string[]>([]);
+  const [messages, setMessages] = useState<ContactMessage[]>([]);
+  const [expandedMsg, setExpandedMsg] = useState<number | null>(null);
+  const [messagesLoading, setMessagesLoading] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -23,6 +43,7 @@ export default function AdminDashboard() {
     }
     fetchSections();
     fetchImages();
+    fetchMessages();
   }, [isAuthenticated]);
 
   async function fetchSections() {
@@ -40,6 +61,50 @@ export default function AdminDashboard() {
     if (res.ok) {
       const data = await res.json();
       setImages(data);
+    }
+  }
+
+  async function fetchMessages() {
+    setMessagesLoading(true);
+    try {
+      const res = await fetch("/api/messages", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setMessages(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch messages", err);
+    } finally {
+      setMessagesLoading(false);
+    }
+  }
+
+  async function markAsRead(id: number) {
+    try {
+      await fetch(`/api/messages/${id}/read`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setMessages(prev => prev.map(m => m.id === id ? { ...m, read: true } : m));
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async function deleteMessage(id: number) {
+    try {
+      const res = await fetch(`/api/messages/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        setMessages(prev => prev.filter(m => m.id !== id));
+        toast({ title: "تم حذف الرسالة" });
+      }
+    } catch (err) {
+      toast({ title: "خطأ في الحذف", variant: "destructive" });
     }
   }
 
@@ -72,14 +137,21 @@ export default function AdminDashboard() {
     if (!file) return;
     const fd = new FormData();
     fd.append("image", file);
-    const res = await fetch("/api/upload", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      body: fd,
-    });
-    if (res.ok) {
-      await fetchImages();
-      toast({ title: "تم رفع الصورة" });
+    try {
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
+      });
+      if (res.ok) {
+        await fetchImages();
+        toast({ title: "تم رفع الصورة" });
+      } else {
+        const errorData = await res.json().catch(() => ({ message: "خطأ غير معروف" }));
+        toast({ title: "خطأ في رفع الصورة", description: errorData.message, variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "خطأ في رفع الصورة", description: "تعذر الاتصال بالخادم", variant: "destructive" });
     }
   }
 
@@ -136,12 +208,12 @@ export default function AdminDashboard() {
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-secondary flex items-center justify-center">
               <Settings className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-2xl font-black text-white">لوحة التحكم</h1>
+            <h1 className="text-2xl font-black text-foreground">لوحة التحكم</h1>
           </div>
           <Button
             variant="outline"
             onClick={() => { logout(); navigate("/"); }}
-            className="border-white/10 text-muted-foreground hover:text-white"
+            className="border-border text-muted-foreground hover:text-foreground"
           >
             <LogOut className="w-4 h-4 ml-2" />
             تسجيل الخروج
@@ -149,8 +221,159 @@ export default function AdminDashboard() {
         </div>
 
         <div className="space-y-8">
+          {/* ===== MESSAGES INBOX ===== */}
           <div className="glass-panel rounded-3xl p-8">
-            <h2 className="text-xl font-bold text-white mb-6">صورتي المرفوعة</h2>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <Inbox className="w-6 h-6 text-primary" />
+                  {messages.filter(m => !m.read).length > 0 && (
+                    <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.6)]">
+                      {messages.filter(m => !m.read).length}
+                    </span>
+                  )}
+                </div>
+                <h2 className="text-xl font-bold text-foreground">الرسائل الواردة</h2>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fetchMessages}
+                disabled={messagesLoading}
+                className="border-border text-muted-foreground hover:text-foreground text-xs"
+              >
+                {messagesLoading ? "جارٍ التحديث..." : "تحديث"}
+              </Button>
+            </div>
+
+            {messages.length === 0 ? (
+              <div className="text-center py-16">
+                <Mail className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+                <p className="text-muted-foreground text-sm">لا توجد رسائل حتى الآن</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {messages.slice().reverse().map((msg) => {
+                  const isExpanded = expandedMsg === msg.id;
+                  const date = new Date(typeof msg.created_at === 'number' ? msg.created_at * 1000 : msg.created_at);
+                  const formattedDate = date.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                  return (
+                    <div
+                      key={msg.id}
+                      className={`rounded-2xl border transition-all duration-300 overflow-hidden ${
+                        msg.read
+                          ? 'bg-card/30 border-border/50'
+                          : 'bg-primary/5 border-primary/30 shadow-[0_0_20px_rgba(59,130,246,0.08)]'
+                      }`}
+                    >
+                      {/* Header row - clickable */}
+                      <button
+                        onClick={() => {
+                          setExpandedMsg(isExpanded ? null : msg.id);
+                          if (!msg.read) markAsRead(msg.id);
+                        }}
+                        className="w-full flex items-center gap-4 p-4 text-right hover:bg-white/5 transition-colors"
+                      >
+                        <div className="flex-shrink-0">
+                          {msg.read ? (
+                            <MailOpen className="w-5 h-5 text-muted-foreground/50" />
+                          ) : (
+                            <Mail className="w-5 h-5 text-primary" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0 text-right">
+                          <div className="flex items-center gap-2 justify-end mb-1">
+                            {!msg.read && (
+                              <span className="px-2 py-0.5 rounded-full bg-primary/20 text-primary text-[10px] font-bold">
+                                جديد
+                              </span>
+                            )}
+                            {msg.service && (
+                              <span className="px-2 py-0.5 rounded-full bg-secondary/20 text-secondary-foreground text-[10px] font-bold">
+                                {packageLabels[msg.service] || msg.service}
+                              </span>
+                            )}
+                            <span className={`font-bold text-sm truncate ${msg.read ? 'text-muted-foreground' : 'text-foreground'}`}>
+                              {msg.name}
+                            </span>
+                          </div>
+                          <p className={`text-xs truncate ${msg.read ? 'text-muted-foreground/60' : 'text-muted-foreground'}`}>
+                            {msg.message}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className="text-[11px] text-muted-foreground/50 hidden sm:block">{formattedDate}</span>
+                          {isExpanded ? (
+                            <ChevronUp className="w-4 h-4 text-muted-foreground/50" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4 text-muted-foreground/50" />
+                          )}
+                        </div>
+                      </button>
+
+                      {/* Expanded content */}
+                      {isExpanded && (
+                        <div className="px-4 pb-4 border-t border-border/30 pt-4 space-y-4 animate-in slide-in-from-top-2 duration-200">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="flex items-center gap-2 text-right bg-card/40 rounded-xl p-3">
+                              <User className="w-4 h-4 text-primary flex-shrink-0" />
+                              <div>
+                                <p className="text-[10px] text-muted-foreground/60 font-medium">الاسم</p>
+                                <p className="text-sm text-foreground font-semibold">{msg.name}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 text-right bg-card/40 rounded-xl p-3">
+                              <AtSign className="w-4 h-4 text-primary flex-shrink-0" />
+                              <div>
+                                <p className="text-[10px] text-muted-foreground/60 font-medium">البريد الإلكتروني</p>
+                                <p className="text-sm text-foreground font-semibold" dir="ltr">{msg.email}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 text-right bg-card/40 rounded-xl p-3">
+                              <Package className="w-4 h-4 text-primary flex-shrink-0" />
+                              <div>
+                                <p className="text-[10px] text-muted-foreground/60 font-medium">الباقة المختارة</p>
+                                <p className="text-sm text-foreground font-semibold">{msg.service ? (packageLabels[msg.service] || msg.service) : 'لم يحدد'}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 text-right bg-card/40 rounded-xl p-3">
+                              <Clock className="w-4 h-4 text-primary flex-shrink-0" />
+                              <div>
+                                <p className="text-[10px] text-muted-foreground/60 font-medium">تاريخ الإرسال</p>
+                                <p className="text-sm text-foreground font-semibold">{formattedDate}</p>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="bg-card/40 rounded-xl p-4">
+                            <p className="text-[10px] text-muted-foreground/60 font-medium mb-2">تفاصيل الطلب</p>
+                            <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap" dir="rtl">{msg.message}</p>
+                          </div>
+                          <div className="flex items-center gap-2 justify-end pt-2">
+                            <a
+                              href={`mailto:${msg.email}?subject=رد على طلبك - Hanody1x`}
+                              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/20 text-primary text-xs font-bold hover:bg-primary/30 transition border border-primary/30"
+                            >
+                              <Mail className="w-3.5 h-3.5" />
+                              رد بالبريد
+                            </a>
+                            <button
+                              onClick={() => deleteMessage(msg.id)}
+                              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-destructive/20 text-red-400 text-xs font-bold hover:bg-destructive/30 transition border border-destructive/30"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              حذف
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          <div className="glass-panel rounded-3xl p-8">
+            <h2 className="text-xl font-bold text-foreground mb-6">صورتي المرفوعة</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               {images.map((url) => (
                 <div key={url} className="relative group cursor-pointer" onClick={() => { navigator.clipboard?.writeText(url); toast({ title: "تم نسخ الرابط" }); }}>
@@ -175,7 +398,7 @@ export default function AdminDashboard() {
           </div>
 
           <div className="glass-panel rounded-3xl p-8">
-            <h2 className="text-xl font-bold text-white mb-6">محتوى القسم الرئيسي</h2>
+            <h2 className="text-xl font-bold text-foreground mb-6">محتوى القسم الرئيسي</h2>
             {editableSection("hero", "badge", "الشارة")}
             {editableSection("hero", "headline", "العنوان الرئيسي")}
             {editableSection("hero", "subheadline", "العنوان الفرعي", true)}
@@ -190,7 +413,7 @@ export default function AdminDashboard() {
           </div>
 
           <div className="glass-panel rounded-3xl p-8">
-            <h2 className="text-xl font-bold text-white mb-6">هوية العلامة التجارية</h2>
+            <h2 className="text-xl font-bold text-foreground mb-6">هوية العلامة التجارية</h2>
             {editableSection("brand", "name", "اسم العلامة")}
             {editableSection("brand", "logoLetter", "حرف الشعار")}
             <div className="mb-6">
@@ -208,6 +431,9 @@ export default function AdminDashboard() {
                       const data = await res.json();
                       setSections((prev) => ({ ...prev, brand: { ...prev.brand, logoImage: data.url } }));
                       toast({ title: "تم رفع الصورة بنجاح!" });
+                    } else {
+                      const errorData = await res.json().catch(() => ({ message: "خطأ غير معروف" }));
+                      toast({ title: "خطأ في رفع الصورة", description: errorData.message, variant: "destructive" });
                     }
                   }} />
                 </label>
@@ -231,7 +457,7 @@ export default function AdminDashboard() {
           </div>
 
           <div className="glass-panel rounded-3xl p-8">
-            <h2 className="text-xl font-bold text-white mb-6">أسعار الباقات</h2>
+            <h2 className="text-xl font-bold text-foreground mb-6">أسعار الباقات</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               {editableSection("pricing", "basicPrice", "سعر الباقة الأساسية")}
               {editableSection("pricing", "basicFeatures", "ميزات الباقة الأساسية (كل ميزة في سطر جديد)", true)}
@@ -251,7 +477,7 @@ export default function AdminDashboard() {
           </div>
 
           <div className="glass-panel rounded-3xl p-8">
-            <h2 className="text-xl font-bold text-white mb-6">صور معرض الأعمال (Portfolio)</h2>
+            <h2 className="text-xl font-bold text-foreground mb-6">صور معرض الأعمال (Portfolio)</h2>
             <p className="text-sm text-gray-400 mb-4">انسخ الروابط من الأعلى وألصقها هنا مسافة أو فاصلة بين كل رابط.</p>
             {editableSection("portfolio", "images", "روابط الصور", true)}
             <Button onClick={() => saveSection("portfolio")} disabled={loading} className="bg-primary hover:bg-primary/90 text-white rounded-xl">
@@ -261,7 +487,7 @@ export default function AdminDashboard() {
           </div>
 
           <div className="glass-panel rounded-3xl p-8">
-            <h2 className="text-xl font-bold text-white mb-6">قصص نجاح يوتيوبرز</h2>
+            <h2 className="text-xl font-bold text-foreground mb-6">قصص نجاح يوتيوبرز</h2>
             {((Array.isArray(sections.caseStudies) && sections.caseStudies.length > 0) ? sections.caseStudies : defaultCaseStudies).map((study: any, idx: number) => (
               <div key={study.id || idx} className="mb-8 border border-white/10 rounded-2xl p-6 bg-black/20 text-right">
                 <h3 className="text-lg font-bold text-primary mb-4">قصة حالة {idx + 1}</h3>
@@ -291,6 +517,9 @@ export default function AdminDashboard() {
                           const data = await res.json();
                           updateCaseStudy(idx, 'avatarImage', data.url);
                           toast({ title: "تم رفع وتعيين الصورة بنجاح!" });
+                        } else {
+                          const errorData = await res.json().catch(() => ({ message: "خطأ غير معروف" }));
+                          toast({ title: "خطأ في رفع الصورة", description: errorData.message, variant: "destructive" });
                         }
                       }} />
                     </label>

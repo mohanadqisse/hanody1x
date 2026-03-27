@@ -38,12 +38,26 @@ const upload = multer({
 
 const router = Router();
 
-router.post("/", requireAuth, upload.single("image"), (req, res) => {
-  if (!req.file) {
-    res.status(400).json({ message: "لم يتم تحميل أي ملف" });
-    return;
-  }
-  res.json({ url: `/uploads/${req.file.filename}` });
+router.post("/", requireAuth, (req, res, next) => {
+  upload.single("image")(req, res, (err: any) => {
+    if (err) {
+      if (err instanceof multer.MulterError) {
+        if (err.code === "LIMIT_FILE_SIZE") {
+          res.status(400).json({ message: "حجم الملف كبير جداً. الحد الأقصى 10 ميجابايت" });
+          return;
+        }
+        res.status(400).json({ message: `خطأ في رفع الملف: ${err.message}` });
+        return;
+      }
+      res.status(400).json({ message: err.message || "خطأ في رفع الملف" });
+      return;
+    }
+    if (!req.file) {
+      res.status(400).json({ message: "لم يتم تحميل أي ملف" });
+      return;
+    }
+    res.json({ url: `/uploads/${req.file.filename}` });
+  });
 });
 
 router.delete("/:filename", requireAuth, (req, res) => {

@@ -53,10 +53,10 @@ export function Navbar() {
 
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled ? "py-4" : "py-6"}`}>
-      <div className="absolute inset-0 bg-background/50 backdrop-blur-xl border-b border-white/5 pointer-events-none" />
+      <div className="absolute inset-0 bg-background/50 backdrop-blur-xl border-b border-border pointer-events-none" />
       <div className="container mx-auto px-6 relative flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Link href="/" className="text-xl font-bold tracking-tighter text-white hover:text-primary transition-colors flex items-center gap-2">
+          <Link href="/" className="text-xl font-bold tracking-tighter text-foreground hover:text-primary transition-colors flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-primary to-secondary flex items-center justify-center overflow-hidden">
               {brand.logoImage ? (
                 <img src={brand.logoImage} alt={brand.name} className="w-full h-full object-cover" />
@@ -71,29 +71,29 @@ export function Navbar() {
         <div className="flex items-center gap-4 dir-ltr">
         <nav className="hidden md:flex items-center gap-8" dir="rtl">
           {navLinks.map((link) => (
-            <button key={link.name} onClick={() => scrollTo(link.id)} className="text-sm font-medium text-muted-foreground hover:text-white transition-colors">
+            <button key={link.name} onClick={() => scrollTo(link.id)} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               {link.name}
             </button>
           ))}
-          <Button onClick={() => scrollTo("order")} className="bg-white text-black hover:bg-white/90 rounded-full px-6 font-semibold">
+          <Button onClick={() => scrollTo("order")} className="bg-primary text-white hover:bg-primary/90 rounded-full px-6 font-semibold">
             اطلب الآن
           </Button>
         </nav>
 
-        <Link href="/admin" className="text-sm font-semibold text-white/70 hover:text-white-keep bg-white/5 hover:bg-white/10 px-4 py-2 rounded-xl transition-all border border-white/10 md:mr-4">
+        <Link href="/admin" className="text-sm font-semibold text-foreground/70 hover:text-foreground bg-foreground/5 hover:bg-foreground/10 px-4 py-2 rounded-xl transition-all border border-border md:mr-4">
           لوحة التحكم
         </Link>
         
         <button 
           onClick={toggleTheme}
-          className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center text-white-keep focus:outline-none transition-colors"
+          className="w-10 h-10 rounded-full bg-foreground/5 hover:bg-foreground/10 border border-border flex items-center justify-center text-foreground focus:outline-none transition-colors"
           aria-label="تبديل المظهر"
         >
           {isDark ? <Sun size={18} /> : <Moon size={18} />}
         </button>
 
         {/* Mobile menu toggle */}
-        <button className="md:hidden text-white mr-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+        <button className="md:hidden text-foreground mr-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
           {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
         </div>
@@ -105,14 +105,14 @@ export function Navbar() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="absolute top-full left-0 right-0 bg-card border-b border-white/10 p-6 flex flex-col gap-4 shadow-2xl md:hidden"
+            className="absolute top-full left-0 right-0 bg-card border-b border-border p-6 flex flex-col gap-4 shadow-2xl md:hidden"
           >
             {navLinks.map((link) => (
-              <button key={link.name} onClick={() => scrollTo(link.id)} className="text-right text-sm font-medium text-muted-foreground hover:text-white transition-colors">
+              <button key={link.name} onClick={() => scrollTo(link.id)} className="text-right text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                 {link.name}
               </button>
             ))}
-            <Button onClick={() => scrollTo("order")} className="bg-white text-black hover:bg-white/90 rounded-full font-semibold w-full">
+            <Button onClick={() => scrollTo("order")} className="bg-primary text-white hover:bg-primary/90 rounded-full font-semibold w-full">
               اطلب الآن
             </Button>
           </motion.div>

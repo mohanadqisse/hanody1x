@@ -53,15 +53,15 @@
   --background: 0 0% 100%;
   --foreground: 220 20% 10%;
   
-  --card: 0 0% 98%;
+  --card: 220 15% 96%;
   --card-foreground: 220 20% 10%;
-  --card-border: 220 15% 90%;
+  --card-border: 220 15% 85%;
   
   --popover: 0 0% 100%;
   --popover-foreground: 220 20% 10%;
-  --popover-border: 220 15% 90%;
+  --popover-border: 220 15% 85%;
   
-  --primary: 270 80% 60%;
+  --primary: 217 91% 55%;
   --primary-foreground: 0 0% 100%;
   
   --secondary: 200 90% 55%;
@@ -70,15 +70,15 @@
   --muted: 220 10% 90%;
   --muted-foreground: 220 15% 40%;
   
-  --accent: 270 80% 60%;
+  --accent: 217 91% 55%;
   --accent-foreground: 0 0% 100%;
   
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
   
-  --border: 220 15% 90%;
-  --input: 220 15% 90%;
-  --ring: 270 80% 60%;
+  --border: 220 15% 85%;
+  --input: 220 15% 85%;
+  --ring: 217 91% 55%;
 
   --radius: 1rem;
   
@@ -98,19 +98,19 @@
   --popover: 220 20% 6%;
   --popover-foreground: 220 15% 95%;
   --popover-border: 220 15% 15%;
-  --primary: 270 80% 60%;
+  --primary: 217 91% 55%;
   --primary-foreground: 0 0% 100%;
   --secondary: 200 90% 55%;
   --secondary-foreground: 0 0% 100%;
   --muted: 220 15% 15%;
   --muted-foreground: 220 10% 60%;
-  --accent: 270 80% 60%;
+  --accent: 217 91% 55%;
   --accent-foreground: 0 0% 100%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 100%;
   --border: 220 15% 15%;
   --input: 220 15% 15%;
-  --ring: 270 80% 60%;
+  --ring: 217 91% 55%;
 }
 
 @layer base {
@@ -139,12 +139,25 @@
   @apply bg-card/40 backdrop-blur-xl border border-white/5;
 }
 
+:root:not(.dark) .glass-panel {
+  @apply bg-card/80 border-gray-200;
+}
+
 .glass-card {
   @apply bg-card/50 backdrop-blur-md border border-white/10;
 }
 
+:root:not(.dark) .glass-card {
+  @apply bg-card/80 border-gray-200;
+}
+
 .text-white-keep {
   color: #ffffff !important;
+}
+
+/* Light mode: make hardcoded text-white readable */
+:root:not(.dark) .text-adaptive {
+  color: hsl(var(--foreground)) !important;
 }
 
 .bg-mesh {

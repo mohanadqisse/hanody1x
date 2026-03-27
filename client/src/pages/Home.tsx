@@ -139,10 +139,10 @@ function Hero() {
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card mb-8 shadow-[0_0_15px_rgba(34,197,94,0.1)] border-white/10">
               <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.8)]" />
-              <span className="text-sm font-semibold text-white/90">{h.badge}</span>
+              <span className="text-sm font-semibold text-foreground/90">{h.badge}</span>
             </div>
             
-            <h1 className="text-5xl md:text-7xl lg:text-[5rem] font-black text-white leading-[1.1] tracking-tighter mb-6 flex flex-wrap gap-x-4 gap-y-2 justify-end dir-rtl">
+            <h1 className="text-5xl md:text-7xl lg:text-[5rem] font-black text-foreground leading-[1.1] tracking-tighter mb-6 flex flex-wrap gap-x-4 gap-y-2 justify-end dir-rtl">
               {headline.map((word, i) => (
                 <motion.span
                   key={i}
@@ -174,7 +174,7 @@ function Hero() {
               <Button 
                 onClick={(e) => { addRipple(e); document.getElementById("order")?.scrollIntoView({ behavior: "smooth" }); }}
                 size="lg" 
-                className="h-14 px-8 rounded-2xl bg-white text-background text-lg font-bold border-0 shadow-[0_0_30px_rgba(255,255,255,0.2)] hover:shadow-[0_10px_40px_rgba(255,255,255,0.4)] hover:scale-105 hover:-translate-y-1 transition-all duration-300 btn-shimmer btn-glow-white ripple-host"
+                className="h-14 px-8 rounded-2xl bg-primary text-white text-lg font-bold border-0 shadow-[0_0_30px_rgba(59,130,246,0.3)] hover:shadow-[0_10px_40px_rgba(59,130,246,0.5)] hover:scale-105 hover:-translate-y-1 transition-all duration-300 btn-shimmer ripple-host"
               >
                 {h.ctaPrimary}
               </Button>
@@ -182,7 +182,7 @@ function Hero() {
                 onClick={(e) => { addRipple(e); document.getElementById("portfolio")?.scrollIntoView({ behavior: "smooth" }); }}
                 size="lg" 
                 variant="outline"
-                className="h-14 px-8 rounded-2xl border-white/10 bg-white/5 backdrop-blur-md text-white hover:bg-white/10 text-lg font-semibold hover:scale-105 hover:-translate-y-1 transition-all duration-300 btn-glow ripple-host"
+                className="h-14 px-8 rounded-2xl border-border bg-foreground/5 backdrop-blur-md text-foreground hover:bg-foreground/10 text-lg font-semibold hover:scale-105 hover:-translate-y-1 transition-all duration-300 ripple-host"
               >
                 {h.ctaSecondary}
               </Button>
@@ -242,10 +242,10 @@ function Stats() {
   const stats = useSection("stats", defaultStats);
 
   return (
-    <section className="py-16 border-y border-white/5 bg-white/[0.01] relative">
+    <section className="py-16 border-y border-border bg-foreground/[0.01] relative">
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
       <div className="container mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 divide-y md:divide-y-0 md:divide-x divide-white/5 relative">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 divide-y md:divide-y-0 md:divide-x divide-border relative">
           {stats.map((stat, idx) => (
             <motion.div 
               key={stat.label}
@@ -255,7 +255,7 @@ function Stats() {
               transition={{ duration: 0.7, delay: idx * 0.1, ease: easeApple }}
               className="flex flex-col items-center justify-center py-6 md:py-0 will-change-transform"
             >
-              <div className="text-5xl md:text-6xl font-black text-white mb-3 tracking-tighter drop-shadow-md">
+              <div className="text-5xl md:text-6xl font-black text-foreground mb-3 tracking-tighter drop-shadow-md">
                 <CountUp end={parseInt(stat.value) || 0} suffix={stat.suffix} />
               </div>
               <div className="text-sm md:text-base uppercase tracking-widest text-muted-foreground font-medium">{stat.label}</div>
@@ -373,7 +373,7 @@ function Pricing({ isDiscountActive }: { isDiscountActive?: boolean }) {
 
                   {/* Header */}
                   <div className="text-right mb-2">
-                    <h3 className={`text-2xl font-bold tracking-tight ${pkg.popular ? "text-white" : "text-white"}`}>{pkg.name}</h3>
+                    <h3 className={`text-2xl font-bold tracking-tight ${pkg.popular ? "text-foreground" : "text-foreground"}`}>{pkg.name}</h3>
                     {pkg.popular && <p className="text-xs text-primary/80 font-semibold mt-0.5">الخيار الأمثل للمحترفين</p>}
                   </div>
 
@@ -385,7 +385,7 @@ function Pricing({ isDiscountActive }: { isDiscountActive?: boolean }) {
                     )}
                     <div className="flex items-baseline gap-1 justify-end">
                       <span className="text-muted-foreground font-medium">/لكل صورة</span>
-                      <span className={`text-5xl font-black ${pkg.popular ? "text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary" : "text-white"}`}>
+                      <span className={`text-5xl font-black ${pkg.popular ? "text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary" : "text-foreground"}`}>
                         ${isDiscountActive ? (parseFloat(pkg.price) * 0.8).toFixed(0) : pkg.price}
                       </span>
                     </div>
@@ -394,7 +394,7 @@ function Pricing({ isDiscountActive }: { isDiscountActive?: boolean }) {
                   <ul className="space-y-4 mb-10 flex-grow">
                     {pkg.features.map((feat: string) => (
                       <li key={feat} className="flex items-center gap-3 text-sm justify-end">
-                        <span className={`font-medium ${pkg.popular ? "text-white" : "text-gray-300"}`}>{feat}</span>
+                        <span className={`font-medium ${pkg.popular ? "text-foreground" : "text-foreground/80"}`}>{feat}</span>
                         <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
                           pkg.popular
                             ? "bg-primary/20 shadow-[0_0_8px_rgba(139,92,246,0.4)]"
@@ -410,8 +410,8 @@ function Pricing({ isDiscountActive }: { isDiscountActive?: boolean }) {
                     onClick={(e) => { addRipple(e); document.getElementById("order")?.scrollIntoView({ behavior: "smooth" }); }}
                     className={`w-full rounded-2xl py-7 text-lg font-bold transition-all ripple-host ${
                       pkg.popular
-                        ? "bg-gradient-to-r from-primary to-secondary text-white shadow-[0_4px_30px_rgba(139,92,246,0.5)] hover:shadow-[0_4px_40px_rgba(139,92,246,0.7)] hover:scale-[1.02]"
-                        : "bg-white/5 text-white hover:bg-white/10 border border-white/10 btn-glow"
+                        ? "bg-gradient-to-r from-primary to-secondary text-white shadow-[0_4px_30px_rgba(59,130,246,0.5)] hover:shadow-[0_4px_40px_rgba(59,130,246,0.7)] hover:scale-[1.02]"
+                        : "bg-primary/10 text-primary hover:bg-primary/20 border border-primary/30"
                     }`}
                   >
                     {pkg.popular && <Sparkles size={16} className="ml-2 inline" />}
@@ -446,7 +446,7 @@ function CTRSection() {
   ];
 
   return (
-    <section className="py-32 bg-background relative overflow-hidden border-t border-white/5">
+    <section className="py-32 bg-background relative overflow-hidden border-t border-border">
       <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1/3 h-2/3 bg-primary/10 rounded-full blur-[150px] pointer-events-none" />
       
       <div className="container mx-auto px-6 relative z-10">
@@ -483,7 +483,7 @@ function CTRSection() {
                 <TrendingUp size={28} />
               </div>
               <div className="text-right z-10">
-                <p className="text-white font-bold text-lg mb-1">{ctr.highlight}</p>
+                <p className="text-foreground font-bold text-lg mb-1">{ctr.highlight}</p>
                 <p className="text-sm text-muted-foreground">{ctr.highlightDesc}</p>
               </div>
             </motion.div>
@@ -497,14 +497,14 @@ function CTRSection() {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={defaultViewport}
                 transition={{ duration: 0.7, delay: idx * 0.1, ease: easeApple }}
-                className="relative flex items-start gap-6 p-6 rounded-3xl bg-card/20 hover:bg-card/50 transition-all duration-300 group flex-row-reverse overflow-hidden border border-transparent hover:border-white/5"
+                className="relative flex items-start gap-6 p-6 rounded-3xl bg-card/20 hover:bg-card/50 transition-all duration-300 group flex-row-reverse overflow-hidden border border-transparent hover:border-border"
               >
                 <div className="absolute right-0 top-0 bottom-0 w-1 bg-primary transform translate-x-full group-hover:translate-x-0 transition-transform duration-300 shadow-[0_0_15px_rgba(139,92,246,0.8)]" />
-                <div className="w-14 h-14 rounded-2xl bg-card border border-white/5 flex items-center justify-center text-white group-hover:scale-110 group-hover:bg-primary/10 group-hover:text-primary transition-all duration-500 shrink-0 shadow-lg">
+                <div className="w-14 h-14 rounded-2xl bg-card border border-border flex items-center justify-center text-foreground group-hover:scale-110 group-hover:bg-primary/10 group-hover:text-primary transition-all duration-500 shrink-0 shadow-lg">
                   {item.icon}
                 </div>
                 <div className="text-right">
-                  <h4 className="text-xl font-bold text-white mb-2 tracking-tight">{item.title}</h4>
+                  <h4 className="text-xl font-bold text-foreground mb-2 tracking-tight">{item.title}</h4>
                   <p className="text-gray-400 leading-relaxed">{item.desc}</p>
                 </div>
               </motion.div>
@@ -546,7 +546,7 @@ function Urgency() {
   }, []);
 
   return (
-    <section className="py-16 glass-card border-y border-white/10 relative overflow-hidden">
+    <section className="py-16 glass-card border-y border-border relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-secondary/5 to-primary/5" />
       <div className="container mx-auto px-6 text-center relative z-10">
         <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16">
@@ -555,10 +555,10 @@ function Urgency() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-5 w-5 bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]"></span>
             </span>
-            <span className="text-xl font-bold text-white tracking-tight">{urgency.text}</span>
+            <span className="text-xl font-bold text-foreground tracking-tight">{urgency.text}</span>
           </div>
           
-          <div className="flex items-center gap-6 text-3xl md:text-4xl font-mono font-black text-white drop-shadow-md">
+          <div className="flex items-center gap-6 text-3xl md:text-4xl font-mono font-black text-foreground drop-shadow-md">
             <div className="flex flex-col items-center">
               <span>{String(timeLeft.d).padStart(2, '0')}</span>
               <span className="text-xs text-muted-foreground uppercase tracking-wider font-sans mt-1">يوم</span>
@@ -631,7 +631,7 @@ function ClientShowcase() {
                   )}
                 </div>
                 <div className="text-right">
-                  <h4 className="font-bold text-white text-xl tracking-tight">{client.name}</h4>
+                  <h4 className="font-bold text-foreground text-xl tracking-tight">{client.name}</h4>
                   <span className="text-xs text-primary bg-primary/10 px-3 py-1 rounded-full font-semibold mt-1 inline-block">{client.niche}</span>
                 </div>
               </div>
@@ -639,7 +639,7 @@ function ClientShowcase() {
               
               <Link 
                 href={`/case-study/${client.id}`}
-                className="inline-flex items-center gap-2 text-sm font-bold text-white group-hover:text-primary transition-colors"
+                className="inline-flex items-center gap-2 text-sm font-bold text-foreground group-hover:text-primary transition-colors"
               >
                 <ArrowLeft size={18} className="group-hover:-translate-x-2 transition-transform duration-300" />
                 عرض دراسة الحالة
@@ -786,12 +786,12 @@ function WhyChooseMe() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={defaultViewport}
                 transition={{ duration: 0.7, delay: idx * 0.1, ease: easeApple }}
-                className={`text-center p-8 glass-card rounded-3xl transition-all duration-300 card-glow relative ${isHovered ? 'scale-110 z-10 bg-card/60 shadow-[0_20px_50px_rgba(139,92,246,0.25)] -translate-y-2' : isOtherHovered ? 'blur-sm opacity-50 scale-95' : 'hover:bg-card/40'}`}
+                className={`text-center p-8 glass-card rounded-3xl transition-all duration-300 card-glow relative ${isHovered ? 'scale-110 z-10 bg-card/60 shadow-[0_20px_50px_rgba(59,130,246,0.25)] -translate-y-2' : isOtherHovered ? 'blur-sm opacity-50 scale-95' : 'hover:bg-card/40'}`}
               >
-                <div className={`w-20 h-20 mx-auto rounded-3xl bg-white/5 flex items-center justify-center mb-8 transition-all duration-500 ${isHovered ? 'text-primary bg-primary/20 scale-110 shadow-[0_0_30px_rgba(139,92,246,0.4)]' : 'text-primary/70'}`}>
+                <div className={`w-20 h-20 mx-auto rounded-3xl bg-foreground/5 flex items-center justify-center mb-8 transition-all duration-500 ${isHovered ? 'text-primary bg-primary/20 scale-110 shadow-[0_0_30px_rgba(59,130,246,0.4)]' : 'text-primary/70'}`}>
                   {feat.icon}
                 </div>
-                <h3 className="text-xl font-bold text-white mb-4 tracking-tight">{feat.title}</h3>
+                <h3 className="text-xl font-bold text-foreground mb-4 tracking-tight">{feat.title}</h3>
                 <p className="text-base text-gray-400 leading-relaxed">{feat.desc}</p>
               </motion.div>
             );
@@ -858,7 +858,7 @@ function HowItWorks() {
         >
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card mb-6 border-white/10">
             <Sparkles size={14} className="text-primary" />
-            <span className="text-sm font-semibold text-white/80">العملية بسيطة</span>
+            <span className="text-sm font-semibold text-foreground/80">العملية بسيطة</span>
           </div>
           <h2 className="text-4xl md:text-6xl font-black mb-6 tracking-tighter">{hiw.title}</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">{hiw.subtitle}</p>
@@ -880,18 +880,18 @@ function HowItWorks() {
                 style={{ boxShadow: `0 0 40px ${step.glow}0` }}
               >
                 <div className="absolute -top-5 left-1/2 -translate-x-1/2">
-                  <div className="text-xs font-black tracking-widest text-white/30 bg-background border border-white/10 px-3 py-1 rounded-full">
+                  <div className="text-xs font-black tracking-widest text-foreground/30 bg-background border border-border px-3 py-1 rounded-full">
                     {step.num}
                   </div>
                 </div>
                 
-                <div className="w-16 h-16 mx-auto rounded-2xl bg-white/5 flex items-center justify-center text-white mb-6 group-hover:scale-110 group-hover:bg-white/10 transition-all duration-500 border border-white/10"
+                <div className="w-16 h-16 mx-auto rounded-2xl bg-foreground/5 flex items-center justify-center text-foreground mb-6 group-hover:scale-110 group-hover:bg-foreground/10 transition-all duration-500 border border-border"
                   style={{ boxShadow: `0 0 20px ${step.glow}` }}
                 >
                   {step.icon}
                 </div>
                 
-                <h3 className="text-xl font-bold text-white mb-4 tracking-tight">{step.title}</h3>
+                <h3 className="text-xl font-bold text-foreground mb-4 tracking-tight">{step.title}</h3>
                 <p className="text-gray-400 leading-relaxed text-sm">{step.desc}</p>
               </div>
             </motion.div>
@@ -918,7 +918,7 @@ function About() {
   const skills = (about.skills || "").split(",").map((s: string) => s.trim()).filter(Boolean);
   
   return (
-    <section className="py-32 bg-card/20 relative overflow-hidden border-t border-white/5">
+    <section className="py-32 bg-card/20 relative overflow-hidden border-t border-border">
       <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1/3 h-2/3 bg-secondary/10 rounded-full blur-[150px] pointer-events-none" />
       <div className="container mx-auto px-6 relative z-10">
         <div className="grid lg:grid-cols-2 gap-20 items-center max-w-6xl mx-auto">
@@ -934,14 +934,14 @@ function About() {
               <div className="relative glass-card rounded-3xl overflow-hidden border border-white/10 p-1">
                 <div className="w-full aspect-square rounded-2xl bg-gradient-to-br from-primary/20 via-background to-secondary/20 flex items-center justify-center">
                   <div className="text-center">
-                    <div className="w-32 h-32 mx-auto rounded-full bg-gradient-to-tr from-primary to-secondary flex items-center justify-center text-white text-5xl font-black mb-4 shadow-[0_0_40px_rgba(139,92,246,0.5)] overflow-hidden">
+                    <div className="w-32 h-32 mx-auto rounded-full bg-gradient-to-tr from-primary to-secondary flex items-center justify-center text-white text-5xl font-black mb-4 shadow-[0_0_40px_rgba(59,130,246,0.5)] overflow-hidden">
                       {about.logoImage ? (
                         <img src={about.logoImage} alt="Brand" className="w-full h-full object-cover" />
                       ) : (
                         "H"
                       )}
                     </div>
-                    <p className="text-white font-black text-2xl tracking-tighter">Hanody1x</p>
+                    <p className="text-foreground font-black text-2xl tracking-tighter">Hanody1x</p>
                     <p className="text-primary text-sm font-semibold mt-1">مصمم صور مصغرة</p>
                   </div>
                 </div>
@@ -954,7 +954,7 @@ function About() {
               >
                 <div className="flex items-center gap-2">
                   <Award size={16} className="text-yellow-400" />
-                  <span className="text-white text-xs font-bold">{about.badge1}</span>
+                  <span className="text-foreground text-xs font-bold">{about.badge1}</span>
                 </div>
               </motion.div>
 
@@ -965,7 +965,7 @@ function About() {
               >
                 <div className="flex items-center gap-2">
                   <TrendingUp size={16} className="text-green-400" />
-                  <span className="text-white text-xs font-bold">{about.badge2}</span>
+                  <span className="text-foreground text-xs font-bold">{about.badge2}</span>
                 </div>
               </motion.div>
             </div>
@@ -980,7 +980,7 @@ function About() {
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card mb-6 border-white/10">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-sm font-semibold text-white/80">من أنا</span>
+              <span className="text-sm font-semibold text-foreground/80">من أنا</span>
             </div>
             <h2 className="text-4xl md:text-5xl font-black mb-6 tracking-tighter leading-[1.1]">
               {about.title}
@@ -996,7 +996,7 @@ function About() {
                   whileInView={{ opacity: 1, scale: 1 }}
                   viewport={defaultViewport}
                   transition={{ duration: 0.4, delay: idx * 0.05, ease: easeApple }}
-                  className="px-4 py-2 rounded-full glass-card text-sm font-semibold text-white/80 border border-white/10 hover:border-primary/40 hover:text-white transition-all"
+                  className="px-4 py-2 rounded-full glass-card text-sm font-semibold text-foreground/80 border border-border hover:border-primary/40 hover:text-foreground transition-all"
                 >
                   {skill}
                 </motion.span>
@@ -1077,7 +1077,7 @@ function SpecialOffer({
               عرض محدود الوقت
             </div>
             
-            <h2 className="text-4xl md:text-5xl font-black text-white mb-4 tracking-tighter">
+            <h2 className="text-4xl md:text-5xl font-black text-foreground mb-4 tracking-tighter">
               خصم <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">{offer.discount}</span> على أول طلب
             </h2>
             <p className="text-gray-400 text-lg mb-8 max-w-xl mx-auto">
@@ -1090,7 +1090,7 @@ function SpecialOffer({
               className={`inline-flex items-center justify-center gap-3 border rounded-2xl px-10 py-5 mb-8 transition-all font-black text-xl lg:text-2xl ${
                 isDiscountActive 
                   ? "bg-green-500/20 border-green-500/50 text-green-400 cursor-default"
-                  : "bg-primary/20 border-primary/50 text-white hover:bg-primary/40 hover:scale-105 shadow-[0_0_30px_rgba(139,92,246,0.5)]"
+                  : "bg-primary/20 border-primary/50 text-foreground hover:bg-primary/40 hover:scale-105 shadow-[0_0_30px_rgba(59,130,246,0.5)]"
               }`}
             >
               {isDiscountActive ? "تم تفعيل الخصم بنجاح ✓" : "تفعيل الخصم 20% الآن"}
@@ -1100,7 +1100,7 @@ function SpecialOffer({
               {[{ v: fmt(d), l: "يوم" }, { v: fmt(h), l: "ساعة" }, { v: fmt(m), l: "دقيقة" }, { v: fmt(s), l: "ثانية" }].map(({ v, l }, i) => (
                 <div key={l} className="flex items-center gap-4">
                   <div className="flex flex-col items-center">
-                    <div className="text-3xl font-mono font-black text-white glass-card px-4 py-2 rounded-xl border border-white/10 min-w-[3rem]">{v}</div>
+                    <div className="text-3xl font-mono font-black text-foreground glass-card px-4 py-2 rounded-xl border border-border min-w-[3rem]">{v}</div>
                     <span className="text-xs text-muted-foreground mt-2 font-medium">{l}</span>
                   </div>
                   {i < 3 && <span className="text-primary text-2xl font-black mb-5">:</span>}
@@ -1111,7 +1111,7 @@ function SpecialOffer({
             <Button
               onClick={() => document.getElementById("order")?.scrollIntoView({ behavior: "smooth" })}
               size="lg"
-              className="h-14 px-10 rounded-full bg-white text-black text-lg font-black hover:scale-105 hover:-translate-y-1 hover:shadow-[0_10px_40px_rgba(255,255,255,0.25)] transition-all duration-300"
+              className="h-14 px-10 rounded-full bg-primary text-white text-lg font-black hover:scale-105 hover:-translate-y-1 hover:shadow-[0_10px_40px_rgba(59,130,246,0.35)] transition-all duration-300"
             >
               <Sparkles className="ml-2" size={20} />
               استخدم العرض الآن
@@ -1229,7 +1229,7 @@ function Contact({ isDiscountActive }: { isDiscountActive?: boolean }) {
   const whatsappUrl = "https://wa.me/00962780691000?text=" + encodeURIComponent("مرحباً، أريد طلب صورة مصغرة لقناتي");
 
   return (
-    <section id="order" className="py-32 bg-background relative border-t border-white/5">
+    <section id="order" className="py-32 bg-background relative border-t border-border">
       <div className="container mx-auto px-6 max-w-5xl relative z-10">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
@@ -1256,7 +1256,7 @@ function Contact({ isDiscountActive }: { isDiscountActive?: boolean }) {
                       <FormItem>
                         <FormLabel className="text-gray-300 font-semibold">الاسم</FormLabel>
                         <FormControl>
-                          <Input placeholder="اسمك الكامل" className="h-14 bg-background/50 border-white/10 text-white text-right rounded-xl focus-visible:ring-primary focus-visible:border-primary transition-all" {...field} />
+                          <Input placeholder="اسمك الكامل" className="h-14 bg-background/50 border-border text-foreground text-right rounded-xl focus-visible:ring-primary focus-visible:border-primary transition-all" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -1269,7 +1269,7 @@ function Contact({ isDiscountActive }: { isDiscountActive?: boolean }) {
                       <FormItem>
                         <FormLabel className="text-gray-300 font-semibold">البريد الإلكتروني</FormLabel>
                         <FormControl>
-                          <Input placeholder="example@email.com" className="h-14 bg-background/50 border-white/10 text-white rounded-xl focus-visible:ring-primary focus-visible:border-primary transition-all" dir="ltr" {...field} />
+                          <Input placeholder="example@email.com" className="h-14 bg-background/50 border-border text-foreground rounded-xl focus-visible:ring-primary focus-visible:border-primary transition-all" dir="ltr" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -1285,11 +1285,11 @@ function Contact({ isDiscountActive }: { isDiscountActive?: boolean }) {
                       <FormLabel className="text-gray-300 font-semibold">الباقة المطلوبة</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <SelectTrigger className="h-14 bg-background/50 border-white/10 text-white rounded-xl focus-visible:ring-primary focus-visible:border-primary transition-all">
+                          <SelectTrigger className="h-14 bg-background/50 border-border text-foreground rounded-xl focus-visible:ring-primary focus-visible:border-primary transition-all">
                             <SelectValue placeholder="اختر باقة" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent className="bg-card border-white/10 rounded-xl">
+                        <SelectContent className="bg-card border-border rounded-xl">
                           <SelectItem value="basic">أساسي (${getPrice("أساسي", "29")})</SelectItem>
                           <SelectItem value="pro">احترافي (${getPrice("احترافي", "59")})</SelectItem>
                           <SelectItem value="elite">النخبة (${getPrice("النخبة", "99")})</SelectItem>
@@ -1310,7 +1310,7 @@ function Contact({ isDiscountActive }: { isDiscountActive?: boolean }) {
                       <FormControl>
                         <Textarea 
                           placeholder="أخبرني عن قناتك وموضوع الفيديو وأي أفكار لديك..." 
-                          className="bg-background/50 border-white/10 min-h-[150px] text-white resize-none text-right rounded-xl focus-visible:ring-primary focus-visible:border-primary transition-all p-4" 
+                          className="bg-background/50 border-border min-h-[150px] text-foreground resize-none text-right rounded-xl focus-visible:ring-primary focus-visible:border-primary transition-all p-4" 
                           {...field} 
                         />
                       </FormControl>
@@ -1322,7 +1322,7 @@ function Contact({ isDiscountActive }: { isDiscountActive?: boolean }) {
                 <Button 
                   type="submit" 
                   disabled={isSubmitting}
-                  className="w-full h-16 bg-white text-black hover:bg-white/90 rounded-2xl font-black text-xl hover:scale-[1.02] transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+                  className="w-full h-16 bg-primary text-white hover:bg-primary/90 rounded-2xl font-black text-xl hover:scale-[1.02] transition-all shadow-[0_0_20px_rgba(59,130,246,0.2)]"
                 >
                   {isSubmitting ? "جارٍ الإرسال..." : "إرسال الرسالة"}
                 </Button>
@@ -1332,14 +1332,14 @@ function Contact({ isDiscountActive }: { isDiscountActive?: boolean }) {
 
           <div className="md:col-span-2 flex flex-col justify-center gap-10 relative z-10 border-t md:border-t-0 md:border-l md:border-white/10 pt-10 md:pt-0 md:pl-10">
             <div className="text-center md:text-right">
-              <h4 className="text-2xl font-bold text-white mb-3">تفضل التواصل المباشر؟</h4>
+              <h4 className="text-2xl font-bold text-foreground mb-3">تفضل التواصل المباشر؟</h4>
               <p className="text-base text-gray-400 mb-8">أرسل لي رسالة مباشرة على إنستغرام للرد الأسرع.</p>
               <div className="flex flex-col gap-3">
                 <a 
                   href="https://instagram.com/hanody1x" 
                   target="_blank" 
                   rel="noreferrer"
-                  className="inline-flex items-center justify-center gap-3 w-full h-14 rounded-2xl border border-white/20 glass-card hover:bg-white/10 text-white font-bold transition-all hover:scale-105 group"
+                  className="inline-flex items-center justify-center gap-3 w-full h-14 rounded-2xl border border-border glass-card hover:bg-foreground/10 text-foreground font-bold transition-all hover:scale-105 group"
                 >
                   <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
                   اطلب عبر إنستغرام
@@ -1387,7 +1387,7 @@ function FinalCTA() {
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={defaultViewport}
           transition={{ duration: 1, ease: easeApple }}
-          className="text-6xl md:text-[6rem] font-black text-white mb-10 tracking-tighter leading-tight"
+          className="text-6xl md:text-[6rem] font-black text-foreground mb-10 tracking-tighter leading-tight"
         >
           {finalCta.headline}
         </motion.h2>
@@ -1402,7 +1402,7 @@ function FinalCTA() {
           <Button 
             onClick={() => document.getElementById("order")?.scrollIntoView({ behavior: "smooth" })}
             size="lg" 
-            className="relative h-20 px-12 rounded-full bg-white text-black text-2xl font-black hover:bg-white/90 hover:scale-[1.05] hover:-translate-y-1 transition-all duration-300 shadow-[0_0_20px_rgba(255,255,255,0.4)] hover:shadow-[0_15px_40px_rgba(255,255,255,0.7)]"
+            className="relative h-20 px-12 rounded-full bg-primary text-white text-2xl font-black hover:bg-primary/90 hover:scale-[1.05] hover:-translate-y-1 transition-all duration-300 shadow-[0_0_20px_rgba(59,130,246,0.4)] hover:shadow-[0_15px_40px_rgba(59,130,246,0.6)]"
           >
             {finalCta.cta}
           </Button>

@@ -32,7 +32,7 @@ export default function CaseStudy() {
           transition={{ duration: 0.8, ease: easeApple }}
         >
           <Link href="/#showcase">
-            <button className="flex items-center gap-2 text-muted-foreground hover:text-white transition-colors mb-8">
+            <button className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8">
               <ArrowRight className="w-4 h-4" />
               <span>العودة لقصص النجاح</span>
             </button>
@@ -44,12 +44,12 @@ export default function CaseStudy() {
                 {study.avatarInitials}
               </div>
               <div>
-                <h1 className="text-2xl font-black text-white">{study.name}</h1>
+                <h1 className="text-2xl font-black text-foreground">{study.name}</h1>
                 <p className="text-muted-foreground">{study.niche}</p>
               </div>
             </div>
 
-            <blockquote className="text-xl md:text-2xl font-medium text-white/90 leading-relaxed mb-8 border-r-2 border-primary pr-6">
+            <blockquote className="text-xl md:text-2xl font-medium text-foreground/90 leading-relaxed mb-8 border-r-2 border-primary pr-6">
               {study.shortBio}
             </blockquote>
 
@@ -63,7 +63,7 @@ export default function CaseStudy() {
             </div>
 
             <div className="prose prose-invert max-w-none">
-              <h2 className="text-xl font-bold text-white mb-4">القصة الكاملة</h2>
+              <h2 className="text-xl font-bold text-foreground mb-4">القصة الكاملة</h2>
               <p className="text-muted-foreground leading-relaxed text-lg">{study.story}</p>
             </div>
           </div>

@@ -78,7 +78,7 @@ export default function AdminLogin() {
               <div className="w-20 h-20 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-6">
                 <ShieldAlert className="w-10 h-10 text-destructive animate-pulse" />
               </div>
-              <h2 className="text-2xl font-black text-white mb-4">تحذير أمني</h2>
+              <h2 className="text-2xl font-black text-foreground mb-4">تحذير أمني</h2>
               <p className="text-muted-foreground mb-8 text-lg">
                 هذه الصفحة مخصصة لمالك الموقع فقط. محاولة الدخول غير المصرح بها مسجلة.
               </p>
@@ -92,7 +92,7 @@ export default function AdminLogin() {
                 <Button 
                   variant="ghost"
                   onClick={() => navigate("/")}
-                  className="w-full text-muted-foreground hover:text-white"
+                  className="w-full text-muted-foreground hover:text-foreground"
                 >
                   العودة للرئيسية
                 </Button>
@@ -104,7 +104,7 @@ export default function AdminLogin() {
 
       <Button  
         variant="ghost" 
-        className="absolute top-6 right-6 text-muted-foreground hover:text-white"
+        className="absolute top-6 right-6 text-muted-foreground hover:text-foreground"
         onClick={() => navigate("/")}
       >
         <ArrowRight className="w-4 h-4 ml-2" />
@@ -115,7 +115,7 @@ export default function AdminLogin() {
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-primary to-secondary flex items-center justify-center mx-auto mb-4">
             <Lock className="w-8 h-8 text-white-keep" />
           </div>
-          <h1 className="text-2xl font-black text-white">لوحة التحكم</h1>
+          <h1 className="text-2xl font-black text-foreground">لوحة التحكم</h1>
           <p className="text-muted-foreground mt-2">تسجيل الدخول للإدارة</p>
         </div>
 
@@ -153,7 +153,7 @@ export default function AdminLogin() {
                         <button 
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
-                          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white transition-colors"
+                          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                         >
                           {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                         </button>
