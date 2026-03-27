@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: portfolio-creator
+    runtime: node
+    plan: free
+    buildCommand: npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PORT
+        value: 3001
+    # Note: SQLite and Uploads are ephemeral on the free tier.
+    # To persist data across redeploys, uncomment the lines below (requires paid Starter plan).
+    # disks:
+    #   - name: portfolio-data
+    #     mountPath: /opt/render/project/src/server/uploads
+    #     sizeGB: 1
