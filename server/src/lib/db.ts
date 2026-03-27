@@ -1,13 +1,16 @@
 import { drizzle } from "drizzle-orm/libsql";
 import { createClient } from "@libsql/client";
 import * as schema from "../schema/index.js";
-import path from "path";
-import { fileURLToPath } from "url";
+import dotenv from "dotenv";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dbPath = process.env.DATABASE_URL || "file:" + path.join(process.cwd(), "sqlite.db");
+dotenv.config();
+
+const url = process.env.DATABASE_URL || "file:sqlite.db";
+const authToken = process.env.DATABASE_AUTH_TOKEN;
+
 const client = createClient({
-  url: dbPath
+  url,
+  authToken,
 });
 
 export const db = drizzle(client, { schema });

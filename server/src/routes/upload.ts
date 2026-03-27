@@ -1,37 +1,35 @@
 import { Router } from "express";
 import multer from "multer";
-import path from "path";
-import fs from "fs";
+import { v2 as cloudinary } from "cloudinary";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
 import { requireAuth } from "../lib/auth.js";
+import dotenv from "dotenv";
 
-const uploadsDir = path.join(process.cwd(), "uploads");
+dotenv.config();
 
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadsDir),
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`);
+// Configure Multer Storage for Cloudinary
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: async (_req: any, file: any) => {
+    const extension = file.originalname.split(".").pop();
+    return {
+      folder: "portfolio",
+      format: extension, // supports 'jpg', 'png', etc.
+      public_id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    };
   },
 });
 
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => {
-    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
-    const extName = path.extname(file.originalname).toLowerCase();
-    const allowedExts = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
-
-    if (allowedTypes.includes(file.mimetype) && allowedExts.includes(extName)) {
-      cb(null, true);
-    } else {
-      cb(new Error("نوع الملف أو الامتداد غير مدعوم"));
-    }
-  },
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
 });
 
 const router = Router();
@@ -39,6 +37,7 @@ const router = Router();
 router.post("/", requireAuth, (req, res, next) => {
   upload.single("image")(req, res, (err: any) => {
     if (err) {
+      console.error("Cloudinary Upload Error:", err);
       if (err instanceof multer.MulterError) {
         if (err.code === "LIMIT_FILE_SIZE") {
           res.status(400).json({ message: "حجم الملف كبير جداً. الحد الأقصى 10 ميجابايت" });
@@ -54,18 +53,20 @@ router.post("/", requireAuth, (req, res, next) => {
       res.status(400).json({ message: "لم يتم تحميل أي ملف" });
       return;
     }
-    res.json({ url: `/uploads/${req.file.filename}` });
+    
+    // Cloudinary returns the full URL in req.file.path
+    res.json({ url: (req.file as any).path });
   });
 });
 
-router.delete("/:filename", requireAuth, (req, res) => {
-  const filePath = path.join(uploadsDir, req.params.filename as string);
-  if (fs.existsSync(filePath)) {
-    fs.unlinkSync(filePath);
-    res.json({ success: true });
-  } else {
-    res.status(404).json({ message: "الملف غير موجود" });
-  }
-});
+// Optional: Delete from Cloudinary (using public_id)
+// router.delete("/:publicId", requireAuth, async (req, res) => {
+//   try {
+//     await cloudinary.uploader.destroy(`portfolio/${req.params.publicId}`);
+//     res.json({ success: true });
+//   } catch (error) {
+//     res.status(500).json({ message: "خطأ في حذف الملف" });
+//   }
+// });
 
 export default router;
