@@ -290,3 +290,129 @@ html {
   opacity: 0;
   transition: .4s;
 }
+
+/* Pricing Wave Cards (Uiverse Fast Octopus 78) */
+.pricing-wave-card {
+  background: rgba(10, 10, 20, 0.95);
+  position: relative;
+  min-height: 480px;
+}
+
+.pricing-wave {
+  position: absolute;
+  width: 540px;
+  height: 700px;
+  opacity: 0.6;
+  left: 0;
+  top: 0;
+  margin-left: -50%;
+  margin-top: -70%;
+  border-radius: 40%;
+  animation: pricing-wave-spin 55s infinite linear;
+}
+
+.pricing-wave:nth-child(2) {
+  animation-duration: 50s;
+  top: 210px;
+}
+
+.pricing-wave:nth-child(3) {
+  animation-duration: 45s;
+  top: 210px;
+}
+
+.playing .pricing-wave {
+  animation-duration: 3000ms;
+}
+
+.playing .pricing-wave:nth-child(2) {
+  animation-duration: 4000ms;
+}
+
+.playing .pricing-wave:nth-child(3) {
+  animation-duration: 5000ms;
+}
+
+@keyframes pricing-wave-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Social Media Icons (Uiverse Loud Chicken 59) */
+.social-icons-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 0;
+  gap: 20px;
+}
+
+.social-icon-container {
+  width: 48px;
+  height: 48px;
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.social-icon-container:hover {
+  transform: scale(1.1);
+  border-color: transparent;
+}
+
+.social-icon-instagram:hover {
+  background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+  box-shadow: 0 0 20px rgba(225, 48, 108, 0.5);
+}
+
+.social-icon-linkedin:hover {
+  background-color: #0072b1;
+  box-shadow: 0 0 20px rgba(0, 114, 177, 0.5);
+}
+
+.social-icon-whatsapp:hover {
+  background-color: #25D366;
+  box-shadow: 0 0 20px rgba(37, 211, 102, 0.5);
+}
+
+.social-icon-svg {
+  width: 20px;
+  height: 20px;
+}
+
+.social-icon-svg path {
+  fill: rgba(255, 255, 255, 0.7);
+  transition: fill 0.3s ease;
+}
+
+.social-icon-container:hover .social-icon-svg path {
+  fill: white;
+}
+
+.social-icon-container:hover .social-icon-svg {
+  animation: social-slide-in 0.3s both;
+}
+
+@keyframes social-slide-in {
+  0% { transform: translateY(-50px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+:root:not(.dark) .social-icon-container {
+  background-color: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+:root:not(.dark) .social-icon-svg path {
+  fill: rgba(0, 0, 0, 0.5);
+}
+
+:root:not(.dark) .pricing-wave-card {
+  background: rgba(30, 41, 59, 0.95);
+}

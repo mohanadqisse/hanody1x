@@ -296,8 +296,6 @@ function Pricing({ isDiscountActive }: { isDiscountActive?: boolean }) {
     return { ...pkg, price, features };
   });
 
-  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
-
   return (
     <section id="services" className="py-32 relative">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-primary/5 rounded-full blur-[150px] pointer-events-none" />
@@ -323,69 +321,53 @@ function Pricing({ isDiscountActive }: { isDiscountActive?: boolean }) {
           </motion.p>
         </div>
 
-        <div 
-          className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto items-center relative"
-          onMouseLeave={() => setHoveredIdx(null)}
-        >
+        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto items-stretch">
           {packages.map((pkg, idx) => {
-            const isHovered = hoveredIdx === idx;
-            const isOtherHovered = hoveredIdx !== null && !isHovered;
+            const waveGradient = pkg.popular
+              ? "linear-gradient(744deg, hsl(var(--primary)), hsl(var(--secondary)) 60%, #00ddeb)"
+              : idx === 0
+                ? "linear-gradient(744deg, #3b82f6, #1d4ed8 60%, #06b6d4)"
+                : "linear-gradient(744deg, #6366f1, #4f46e5 60%, #818cf8)";
 
             return (
             <motion.div
               key={pkg.name}
-              onMouseEnter={() => setHoveredIdx(idx)}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={defaultViewport}
-              transition={{ duration: 0.7, delay: idx * 0.1, ease: easeApple }}
-              className={`will-change-transform relative transition-all duration-500 ease-out ${
-                pkg.popular || isHovered ? "z-20" : "z-10 h-full"
-              } ${isHovered ? "scale-105" : ""} ${
-                isOtherHovered ? "blur-[5px] opacity-50 scale-95" : ""
-              }`}
+              transition={{ duration: 0.7, delay: idx * 0.15, ease: easeApple }}
+              className={`relative ${pkg.popular ? "md:-translate-y-6 z-20" : "z-10"}`}
             >
-              {/* Outer glow for popular or hovered */}
-              {(pkg.popular || isHovered) && (
-                <div className={`absolute -inset-3 bg-gradient-to-b from-primary/50 via-secondary/30 to-primary/50 rounded-[2rem] blur-2xl pointer-events-none transition-all duration-500 ${isHovered ? "opacity-100 scale-105" : "opacity-60 animate-pulse"}`} />
+              {pkg.popular && (
+                <div className="absolute -top-5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-5 py-1.5 rounded-full bg-gradient-to-r from-primary to-secondary text-white text-xs font-black tracking-wider whitespace-nowrap shadow-[0_0_25px_rgba(59,130,246,0.6)] z-30">
+                  <Sparkles size={12} className="fill-white" />
+                  الأكثر طلباً
+                  <Sparkles size={12} className="fill-white" />
+                </div>
               )}
 
-              <div className={`relative transition-all duration-500 ${pkg.popular || isHovered ? "animated-gradient-border rounded-3xl" : "h-full"}`}>
-                <div
-                  className={`relative rounded-3xl p-8 h-full flex flex-col ${
-                    pkg.popular
-                      ? "animated-gradient-border-content md:-translate-y-6 md:py-14 bg-[#0d0b18] backdrop-blur-2xl"
-                      : "glass-card hover:bg-card/40 transition-colors border-white/5 card-glow"
-                  }`}
-                >
-                  {/* Popular badge */}
-                  {pkg.popular && (
-                    <>
-                      <div className="absolute -top-5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-5 py-1.5 rounded-full bg-gradient-to-r from-primary to-secondary text-white text-xs font-black tracking-wider whitespace-nowrap shadow-[0_0_25px_rgba(139,92,246,0.6)] z-20">
-                        <Sparkles size={12} className="fill-white" />
-                        الأكثر طلباً
-                        <Sparkles size={12} className="fill-white" />
-                      </div>
-                      {/* Top accent line */}
-                      <div className="absolute top-0 left-8 right-8 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent rounded-full z-0" />
-                    </>
-                  )}
-
-                  {/* Header */}
+              <div className={`pricing-wave-card playing relative overflow-hidden rounded-3xl h-full flex flex-col ${pkg.popular ? "shadow-[0_8px_40px_rgba(59,130,246,0.4)] ring-2 ring-primary/50" : "shadow-[0_8px_28px_-9px_rgba(0,0,0,0.45)]"}`}>
+                {/* Wave background */}
+                <div className="pricing-wave" style={{ background: waveGradient }} />
+                <div className="pricing-wave" style={{ background: waveGradient }} />
+                <div className="pricing-wave" style={{ background: waveGradient }} />
+                
+                {/* Content */}
+                <div className="relative z-10 p-8 flex flex-col h-full">
                   <div className="text-right mb-2">
-                    <h3 className={`text-2xl font-bold tracking-tight ${pkg.popular ? "text-white" : "text-foreground"}`}>{pkg.name}</h3>
-                    {pkg.popular && <p className="text-xs text-primary/80 font-semibold mt-0.5">الخيار الأمثل للمحترفين</p>}
+                    <h3 className="text-2xl font-bold tracking-tight text-white">{pkg.name}</h3>
+                    {pkg.popular && <p className="text-xs text-blue-200 font-semibold mt-0.5">الخيار الأمثل للمحترفين</p>}
                   </div>
 
                   <div className="flex flex-col items-end gap-1 mb-8">
                     {isDiscountActive && (
-                      <span className="text-xl text-white/50 line-through decoration-red-500/70 font-semibold mb-[-4px]">
+                      <span className="text-xl text-white/50 line-through decoration-red-400/70 font-semibold mb-[-4px]">
                         ${pkg.price}
                       </span>
                     )}
                     <div className="flex items-baseline gap-1 justify-end">
-                      <span className={`text-sm font-medium ${pkg.popular ? "text-white/70" : "text-muted-foreground"}`}>/لكل صورة</span>
-                      <span className={`text-5xl font-black ${pkg.popular ? "text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary" : "text-foreground"}`}>
+                      <span className="text-sm font-medium text-white/70">/لكل صورة</span>
+                      <span className="text-5xl font-black text-white drop-shadow-lg">
                         ${isDiscountActive ? (parseFloat(pkg.price) * 0.8).toFixed(0) : pkg.price}
                       </span>
                     </div>
@@ -394,13 +376,9 @@ function Pricing({ isDiscountActive }: { isDiscountActive?: boolean }) {
                   <ul className="space-y-4 mb-10 flex-grow">
                     {pkg.features.map((feat: string) => (
                       <li key={feat} className="flex items-center gap-3 text-sm justify-end">
-                        <span className={`font-medium ${pkg.popular ? "text-white" : "text-foreground/80"}`}>{feat}</span>
-                        <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
-                          pkg.popular
-                            ? "bg-primary/20 shadow-[0_0_8px_rgba(139,92,246,0.4)]"
-                            : "bg-white/5"
-                        }`}>
-                          <CheckCircle2 size={14} className={pkg.popular ? "text-primary" : "text-white/40"} />
+                        <span className="font-medium text-white/90">{feat}</span>
+                        <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 bg-white/20">
+                          <CheckCircle2 size={14} className="text-white" />
                         </div>
                       </li>
                     ))}
@@ -410,8 +388,8 @@ function Pricing({ isDiscountActive }: { isDiscountActive?: boolean }) {
                     onClick={(e) => { addRipple(e); document.getElementById("order")?.scrollIntoView({ behavior: "smooth" }); }}
                     className={`w-full rounded-2xl py-7 text-lg font-bold transition-all ripple-host ${
                       pkg.popular
-                        ? "bg-gradient-to-r from-primary to-secondary text-white shadow-[0_4px_30px_rgba(59,130,246,0.5)] hover:shadow-[0_4px_40px_rgba(59,130,246,0.7)] hover:scale-[1.02]"
-                        : "bg-primary/10 text-primary hover:bg-primary/20 border border-primary/30"
+                        ? "bg-white text-primary shadow-[0_4px_30px_rgba(255,255,255,0.3)] hover:shadow-[0_4px_40px_rgba(255,255,255,0.5)] hover:scale-[1.02]"
+                        : "bg-white/20 backdrop-blur-sm text-white border border-white/30 hover:bg-white/30"
                     }`}
                   >
                     {pkg.popular && <Sparkles size={16} className="ml-2 inline" />}
@@ -904,7 +882,7 @@ function HowItWorks() {
 
 const defaultAbout = {
   title: "مصمم متخصص في يوتيوب",
-  bio1: 'أنا <span class="text-white font-bold">Hanody1x</span>، مصمم جرافيك متخصص في صور مصغرة يوتيوب. أعمل مع يوتيوبرز عرب وعالميين لتحويل أفكارهم إلى صور مصغرة تُوقف التمرير وتُضاعف المشاهدات.',
+  bio1: 'أنا Hanody1x، مصمم جرافيك متخصص في صور مصغرة يوتيوب. أعمل مع يوتيوبرز عرب وعالميين لتحويل أفكارهم إلى صور مصغرة تُوقف التمرير وتُضاعف المشاهدات.',
   bio2: "فلسفتي بسيطة: الصورة المصغرة الجيدة لا تبدو جميلة فحسب — بل تعمل. كل تصميم أقدمه مبني على فهم عميق لعلم النفس البصري وخوارزميات يوتيوب.",
   badge1: "+50 يوتيوبر",
   badge2: "+120% CTR",
@@ -968,6 +946,25 @@ function About() {
                   <span className="text-foreground text-xs font-bold">{about.badge2}</span>
                 </div>
               </motion.div>
+
+              {/* Social Media Icons */}
+              <div className="social-icons-row flex items-center justify-center gap-5 mt-6">
+                <div className="social-icon-container social-icon-instagram">
+                  <a href="https://instagram.com/hanody1x" target="_blank" rel="noreferrer" aria-label="Instagram">
+                    <svg className="social-icon-svg" viewBox="0 0 16 16"><path d="M8 0C5.829 0 5.556.01 4.703.048 3.85.088 3.269.222 2.76.42a3.917 3.917 0 0 0-1.417.923A3.927 3.927 0 0 0 .42 2.76C.222 3.268.087 3.85.048 4.7.01 5.555 0 5.827 0 8.001c0 2.172.01 2.444.048 3.297.04.852.174 1.433.372 1.942.205.526.478.972.923 1.417.444.445.89.719 1.416.923.51.198 1.09.333 1.942.372C5.555 15.99 5.827 16 8 16s2.444-.01 3.298-.048c.851-.04 1.434-.174 1.943-.372a3.916 3.916 0 0 0 1.416-.923c.445-.445.718-.891.923-1.417.197-.509.332-1.09.372-1.942C15.99 10.445 16 10.173 16 8s-.01-2.445-.048-3.299c-.04-.851-.175-1.433-.372-1.941a3.926 3.926 0 0 0-.923-1.417A3.911 3.911 0 0 0 13.24.42c-.51-.198-1.092-.333-1.943-.372C10.443.01 10.172 0 7.998 0h.003zm-.717 1.442h.718c2.136 0 2.389.007 3.232.046.78.036 1.203.166 1.485.276.374.145.64.319.92.599.28.28.453.546.598.92.11.281.24.705.276 1.485.039.843.047 1.096.047 3.231s-.008 2.389-.047 3.232c-.036.78-.166 1.203-.276 1.485a2.47 2.47 0 0 1-.599.919c-.28.28-.546.453-.92.598-.28.11-.704.24-1.485.276-.843.038-1.096.047-3.232.047s-2.39-.009-3.233-.047c-.78-.036-1.203-.166-1.485-.276a2.478 2.478 0 0 1-.92-.598 2.48 2.48 0 0 1-.6-.92c-.109-.281-.24-.705-.275-1.485-.038-.843-.046-1.096-.046-3.233 0-2.136.008-2.388.046-3.231.036-.78.166-1.204.276-1.486.145-.373.319-.64.599-.92.28-.28.546-.453.92-.598.282-.11.705-.24 1.485-.276.738-.034 1.024-.044 2.515-.045v.002zm4.988 1.328a.96.96 0 1 0 0 1.92.96.96 0 0 0 0-1.92zm-4.27 1.122a4.109 4.109 0 1 0 0 8.217 4.109 4.109 0 0 0 0-8.217zm0 1.441a2.667 2.667 0 1 1 0 5.334 2.667 2.667 0 0 1 0-5.334z" /></svg>
+                  </a>
+                </div>
+                <div className="social-icon-container social-icon-linkedin">
+                  <a href="https://www.linkedin.com/in/muhanad-alqaisi-" target="_blank" rel="noreferrer" aria-label="LinkedIn">
+                    <svg className="social-icon-svg" viewBox="0 0 448 512"><path d="M100.28 448H7.4V148.9h92.88zM53.79 108.1C24.09 108.1 0 83.5 0 53.8a53.79 53.79 0 0 1 107.58 0c0 29.7-24.1 54.3-53.79 54.3zM447.9 448h-92.68V302.4c0-34.7-.7-79.2-48.29-79.2-48.29 0-55.69 37.7-55.69 76.7V448h-92.78V148.9h89.08v40.8h1.3c12.4-23.5 42.69-48.3 87.88-48.3 94 0 111.28 61.9 111.28 142.3V448z" /></svg>
+                  </a>
+                </div>
+                <div className="social-icon-container social-icon-whatsapp">
+                  <a href="https://wa.me/00962780691000" target="_blank" rel="noreferrer" aria-label="WhatsApp">
+                    <svg className="social-icon-svg" viewBox="0 0 16 16"><path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z" /></svg>
+                  </a>
+                </div>
+              </div>
             </div>
           </motion.div>
 
@@ -985,7 +982,7 @@ function About() {
             <h2 className="text-4xl md:text-5xl font-black mb-6 tracking-tighter leading-[1.1]">
               {about.title}
             </h2>
-            <p className="text-gray-400 leading-relaxed text-lg mb-6 whitespace-pre-line">{about.bio1}</p>
+            <p className="text-gray-400 leading-relaxed text-lg mb-6 whitespace-pre-line">{(about.bio1 || '').replace(/<[^>]*>/g, '')}</p>
             <p className="text-gray-400 leading-relaxed mb-10">{about.bio2}</p>
             
             <div className="flex flex-wrap gap-3 justify-end">
