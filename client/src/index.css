@@ -533,49 +533,6 @@ html {
   100% { transform: rotate(360deg); }
 }
 
-/* Pricing Chipmunk Animation (Uiverse cold-chipmunk-47) */
-.chipmunk-card {
-  transition: all 0.4s ease-out;
-}
-.chipmunk-card:hover {
-  transform: scale(1.05);
-  box-shadow: 0px 0px 30px 10px rgba(59, 130, 246, 0.4) !important;
-}
-
-.chipmunk-first {
-  height: 100%;
-  width: 100%;
-  transition: all 0.4s ease-out;
-  display: flex;
-  flex-direction: column;
-  opacity: 1;
-}
-.chipmunk-card:hover .chipmunk-first {
-  height: 0px;
-  opacity: 0;
-  overflow: hidden;
-  margin: 0;
-  padding: 0;
-}
-
-.chipmunk-second {
-  height: 0%;
-  width: 100%;
-  opacity: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  transition: all 0.4s ease-out;
-  transform: rotate(90deg) scale(-1);
-  overflow: visible;
-}
-.chipmunk-card:hover .chipmunk-second {
-  opacity: 1;
-  height: 100%;
-  transform: rotate(0deg);
-}
-
 /* Social Media Icons (Uiverse Loud Chicken 59) */
 .social-icons-row {
   display: flex;

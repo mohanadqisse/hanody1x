@@ -21,9 +21,10 @@ interface ContactMessage {
 interface LoginLog {
   id: number;
   username: string;
-  ip_address: string | null;
+  ipAddress: string | null;
+  deviceInfo: string | null;
   success: boolean | number;
-  attempted_at: string | number;
+  attemptedAt: string | number;
 }
 
 const packageLabels: Record<string, string> = {
@@ -106,6 +107,23 @@ export default function AdminDashboard() {
       console.error("Failed to fetch login logs", err);
     } finally {
       setLogsLoading(false);
+    }
+  }
+
+  async function deleteLoginLog(id: number) {
+    try {
+      const res = await fetch(`/api/auth/logs/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        setLoginLogs(prev => prev.filter(l => l.id !== id));
+        toast({ title: "تم حذف السجل" });
+      } else {
+        toast({ title: "خطأ في الحذف", variant: "destructive" });
+      }
+    } catch (err) {
+      toast({ title: "خطأ في الحذف", variant: "destructive" });
     }
   }
 
@@ -441,49 +459,87 @@ export default function AdminDashboard() {
             ) : (
               <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                 {loginLogs.map((log) => {
-                  const date = new Date(typeof log.attempted_at === 'number' ? log.attempted_at * 1000 : log.attempted_at);
+                  const dateValue = typeof log.attemptedAt === 'number' && log.attemptedAt < 1e12 ? log.attemptedAt * 1000 : log.attemptedAt;
+                  const date = new Date(dateValue);
                   const formattedDate = date.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
                   const formattedTime = date.toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                   const isSuccess = log.success === true || log.success === 1;
+                  
+                  // Device parsing logic
+                  let shortDevice = "جهاز غير معروف";
+                  let DeviceIcon = Globe;
+                  if (log.deviceInfo) {
+                    const ua = log.deviceInfo.toLowerCase();
+                    if (ua.includes("mobile") || ua.includes("android") || ua.includes("iphone")) {
+                      shortDevice = "هاتف محمول";
+                    } else if (ua.includes("windows") || ua.includes("mac") || ua.includes("linux")) {
+                      shortDevice = "جهاز كمبيوتر";
+                    } else {
+                      shortDevice = "متصفح ويب";
+                    }
+                  }
+
                   return (
                     <div
                       key={log.id}
-                      className={`flex items-center gap-4 p-4 rounded-2xl border transition-all ${
+                      className={`flex flex-col gap-3 p-4 rounded-2xl border transition-all ${
                         isSuccess
                           ? 'bg-green-500/5 border-green-500/20'
                           : 'bg-red-500/5 border-red-500/20'
                       }`}
                     >
-                      <div className="flex-shrink-0">
-                        {isSuccess ? (
-                          <ShieldCheck className="w-5 h-5 text-green-500" />
-                        ) : (
-                          <ShieldX className="w-5 h-5 text-red-500" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0 text-right">
-                        <div className="flex items-center gap-2 justify-end mb-1">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            isSuccess
-                              ? 'bg-green-500/20 text-green-400'
-                              : 'bg-red-500/20 text-red-400'
-                          }`}>
-                            {isSuccess ? 'نجاح' : 'فشل'}
-                          </span>
-                          <span className="font-bold text-sm text-foreground">{log.username}</span>
-                        </div>
-                        <div className="flex items-center gap-3 justify-end text-xs text-muted-foreground/60">
-                          {log.ip_address && (
-                            <span className="flex items-center gap-1">
-                              <Globe className="w-3 h-3" />
-                              <span dir="ltr">{log.ip_address}</span>
-                            </span>
+                      <div className="flex items-center gap-4">
+                        <div className="flex-shrink-0">
+                          {isSuccess ? (
+                            <ShieldCheck className="w-5 h-5 text-green-500" />
+                          ) : (
+                            <ShieldX className="w-5 h-5 text-red-500" />
                           )}
-                          <span className="flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {formattedTime}
-                          </span>
-                          <span>{formattedDate}</span>
+                        </div>
+                        <div className="flex-1 min-w-0 text-right">
+                          <div className="flex items-center gap-2 justify-end mb-1">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              isSuccess
+                                ? 'bg-green-500/20 text-green-400'
+                                : 'bg-red-500/20 text-red-400'
+                            }`}>
+                              {isSuccess ? 'نجاح' : 'فشل'}
+                            </span>
+                            <span className="font-bold text-sm text-foreground">{log.username}</span>
+                          </div>
+                          
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 justify-end text-xs text-muted-foreground/80 mt-2">
+                            {log.deviceInfo && (
+                              <span className="flex items-center gap-1 bg-black/20 px-2 py-1 rounded-md" title={log.deviceInfo}>
+                                <DeviceIcon className="w-3 h-3 text-primary/70" />
+                                <span>{shortDevice}</span>
+                              </span>
+                            )}
+                            {log.ipAddress && (
+                              <span className="flex items-center gap-1 bg-black/20 px-2 py-1 rounded-md">
+                                <span className="text-[10px] uppercase font-bold text-muted-foreground/50">IP:</span>
+                                <span dir="ltr" className="font-mono text-[11px]">{log.ipAddress}</span>
+                              </span>
+                            )}
+                            <span className="flex items-center gap-1 bg-black/20 px-2 py-1 rounded-md">
+                              <Clock className="w-3 h-3 text-secondary/70" />
+                              <span dir="ltr">{formattedTime}</span>
+                            </span>
+                            <span className="bg-black/20 px-2 py-1 rounded-md">
+                              {formattedDate}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Delete Button */}
+                        <div className="flex items-center justify-center flex-shrink-0 mr-2">
+                          <button
+                            onClick={() => deleteLoginLog(log.id)}
+                            className="p-2 rounded-xl bg-destructive/10 text-red-400 hover:bg-destructive text-xs hover:text-white transition"
+                            title="حذف السجل"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       </div>
                     </div>

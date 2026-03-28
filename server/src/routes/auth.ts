@@ -22,24 +22,25 @@ const loginLimiter = rateLimit({
 
 router.post("/login", loginLimiter, async (req, res) => {
   const ipAddress = req.ip || req.socket.remoteAddress || "unknown";
+  const deviceInfo = req.headers["user-agent"] || "unknown";
   try {
     const { username, password } = loginSchema.parse(req.body);
     const [user] = await db.select().from(adminUsers).where(eq(adminUsers.username, username));
 
     if (!user) {
-      await db.insert(loginLogs).values({ username, ipAddress, success: false });
+      await db.insert(loginLogs).values({ username, ipAddress, deviceInfo, success: false, attemptedAt: new Date() });
       res.status(401).json({ message: "اسم المستخدم أو كلمة المرور غير صحيحة" });
       return;
     }
 
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) {
-      await db.insert(loginLogs).values({ username, ipAddress, success: false });
+      await db.insert(loginLogs).values({ username, ipAddress, deviceInfo, success: false, attemptedAt: new Date() });
       res.status(401).json({ message: "اسم المستخدم أو كلمة المرور غير صحيحة" });
       return;
     }
 
-    await db.insert(loginLogs).values({ username, ipAddress, success: true });
+    await db.insert(loginLogs).values({ username, ipAddress, deviceInfo, success: true, attemptedAt: new Date() });
     const token = signToken({ id: user.id, username: user.username });
     res.json({ token, username: user.username });
   } catch (err) {
@@ -64,6 +65,21 @@ router.get("/logs", requireAuth, async (req, res) => {
   } catch (err) {
     console.error("Failed to fetch logs:", err);
     res.status(500).json({ message: "فشل في جلب سجلات الدخول" });
+  }
+});
+
+router.delete("/logs/:id", requireAuth, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id as string, 10);
+    if (isNaN(id)) {
+      res.status(400).json({ message: "معرف غير صالح" });
+      return;
+    }
+    await db.delete(loginLogs).where(eq(loginLogs.id, id));
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Failed to delete log:", err);
+    res.status(500).json({ message: "فشل في حذف السجل" });
   }
 });
 

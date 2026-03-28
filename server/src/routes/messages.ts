@@ -4,6 +4,7 @@ import { db } from "../lib/db.js";
 import { contactMessages } from "../schema/index.js";
 import { requireAuth } from "../lib/auth.js";
 import { eq } from "drizzle-orm";
+import { sendAutoReplyEmail } from "../lib/email.js";
 
 const router = Router();
 
@@ -23,6 +24,12 @@ router.post("/", async (req, res) => {
       service: data.packageType || null,
       message: data.details,
     });
+    
+    // Send auto-reply email asynchronously to not block the response
+    sendAutoReplyEmail(data.email, data.name, data.packageType || null).catch(err => {
+      console.error("Auto-reply background task failed:", err);
+    });
+
     res.json({ success: true, message: "تم إرسال الرسالة بنجاح" });
   } catch (err) {
     if (err instanceof z.ZodError) {

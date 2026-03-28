@@ -34,6 +34,7 @@ export const loginLogs = sqliteTable("login_logs", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   username: text("username").notNull(),
   ipAddress: text("ip_address"),
+  deviceInfo: text("device_info"),
   success: integer("success", { mode: "boolean" }).notNull(),
   attemptedAt: integer("attempted_at", { mode: "timestamp" }).default(sql`(unixepoch())`).notNull(),
 });

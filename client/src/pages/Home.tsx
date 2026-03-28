@@ -346,7 +346,7 @@ function Pricing({ isDiscountActive }: { isDiscountActive?: boolean }) {
                 </div>
               )}
 
-              <div className={`pricing-wave-card chipmunk-card playing relative overflow-hidden rounded-3xl h-full flex flex-col ${pkg.popular ? "shadow-[0_8px_40px_rgba(59,130,246,0.4)] ring-2 ring-primary/50" : "shadow-[0_8px_28px_-9px_rgba(0,0,0,0.45)]"}`}>
+              <div className={`pricing-wave-card playing relative overflow-hidden rounded-3xl h-full flex flex-col ${pkg.popular ? "shadow-[0_8px_40px_rgba(59,130,246,0.4)] ring-2 ring-primary/50" : "shadow-[0_8px_28px_-9px_rgba(0,0,0,0.45)]"}`}>
                 {/* Wave background */}
                 <div className="pricing-wave" style={{ background: waveGradient }} />
                 <div className="pricing-wave" style={{ background: waveGradient }} />
@@ -354,7 +354,7 @@ function Pricing({ isDiscountActive }: { isDiscountActive?: boolean }) {
                 
                 {/* Content */}
                 <div className="relative z-10 p-8 flex flex-col h-full w-full">
-                  <div className="chipmunk-first">
+                  <div className="flex flex-col h-full">
                     <div className="text-right mb-2">
                       <h3 className="text-2xl font-bold tracking-tight text-white">{pkg.name}</h3>
                       {pkg.popular && <p className="text-xs text-blue-200 font-semibold mt-0.5">الخيار الأمثل للمحترفين</p>}
@@ -395,23 +395,6 @@ function Pricing({ isDiscountActive }: { isDiscountActive?: boolean }) {
                     >
                       {pkg.popular && <Sparkles size={16} className="ml-2 inline" />}
                       اختر {pkg.name}
-                    </Button>
-                  </div>
-
-                  <div className="chipmunk-second w-full flex flex-col justify-center items-center px-2">
-                    <Sparkles size={48} className={`mb-6 ${pkg.popular ? "text-white drop-shadow-lg" : "text-primary drop-shadow-lg"}`} />
-                    <h4 className="text-3xl font-black text-white text-center mb-8 drop-shadow-md">
-                      استثمر في قناتك<br/>مع باقة {pkg.name}
-                    </h4>
-                    <Button
-                      onClick={(e) => { addRipple(e); document.getElementById("order")?.scrollIntoView({ behavior: "smooth" }); }}
-                      className={`w-[85%] rounded-2xl py-8 text-xl font-black transition-all ripple-host border-2 ${
-                        pkg.popular
-                          ? "bg-transparent border-white text-white shadow-[0_4px_30px_rgba(255,255,255,0.3)] hover:bg-white/20 hover:text-white hover:shadow-[0_4px_40px_rgba(255,255,255,0.5)] hover:scale-[1.05]"
-                          : "bg-primary border-transparent !text-white shadow-[0_4px_30px_rgba(59,130,246,0.3)] hover:bg-primary/80 hover:!text-white hover:shadow-[0_4px_40px_rgba(59,130,246,0.5)] hover:scale-[1.05]"
-                      }`}
-                    >
-                      اطلب الباقة الآن
                     </Button>
                   </div>
                 </div>
