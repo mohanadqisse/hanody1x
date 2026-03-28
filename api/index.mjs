@@ -110,6 +110,7 @@ app.use(cookieParser());
 // ─── Health Route ────────────────────────────────────────
 const healthRouter = Router();
 healthRouter.get("/health", (_req, res) => res.json({ status: "ok" }));
+healthRouter.get("/healthz", (_req, res) => res.json({ status: "ok" }));
 
 // ─── Auth Routes ─────────────────────────────────────────
 const authRouter = Router();
