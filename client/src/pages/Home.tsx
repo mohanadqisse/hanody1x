@@ -458,8 +458,8 @@ function CTRSection() {
               transition={{ duration: 0.7, delay: 0.2, ease: easeApple }}
               className="inline-flex items-center gap-4 glass-card p-6 rounded-3xl relative overflow-hidden group"
             >
-              <div className="absolute inset-0 border-2 border-transparent group-hover:border-primary/50 rounded-3xl transition-colors duration-500" style={{ boxShadow: "inset 0 0 20px rgba(139,92,246,0)" }} />
-              <div className="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center text-primary shadow-[0_0_15px_rgba(139,92,246,0.3)]">
+              <div className="absolute inset-0 border-2 border-transparent group-hover:border-primary/50 rounded-3xl transition-colors duration-500" style={{ boxShadow: "inset 0 0 20px rgba(59,130,246,0)" }} />
+              <div className="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center text-primary shadow-[0_0_15px_rgba(59,130,246,0.3)]">
                 <TrendingUp size={28} />
               </div>
               <div className="text-right z-10">
@@ -479,7 +479,7 @@ function CTRSection() {
                 transition={{ duration: 0.7, delay: idx * 0.1, ease: easeApple }}
                 className="relative w-full flex items-center gap-6 p-6 rounded-3xl bg-card/20 hover:bg-card/50 transition-all duration-300 group overflow-hidden border border-transparent hover:border-border"
               >
-                <div className="absolute right-0 top-0 bottom-0 w-1 bg-primary transform translate-x-full group-hover:translate-x-0 transition-transform duration-300 shadow-[0_0_15px_rgba(139,92,246,0.8)]" />
+                <div className="absolute right-0 top-0 bottom-0 w-1 bg-primary transform translate-x-full group-hover:translate-x-0 transition-transform duration-300 shadow-[0_0_15px_rgba(59,130,246,0.8)]" />
                 <div className="w-14 h-14 rounded-2xl bg-card border border-border flex items-center justify-center text-foreground group-hover:scale-110 group-hover:bg-primary/10 group-hover:text-primary transition-all duration-500 shrink-0 shadow-lg">
                   {item.icon}
                 </div>
@@ -603,7 +603,7 @@ function ClientShowcase() {
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               
               <div className="flex items-center gap-5 mb-6 flex-row-reverse">
-                <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-primary to-secondary flex items-center justify-center text-white font-bold text-xl group-hover:scale-110 transition-transform duration-500 group-hover:shadow-[0_0_20px_rgba(139,92,246,0.5)] overflow-hidden">
+                <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-primary to-secondary flex items-center justify-center text-white font-bold text-xl group-hover:scale-110 transition-transform duration-500 group-hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] overflow-hidden">
                   {(client as any).avatarImage ? (
                     <img src={(client as any).avatarImage} alt={client.name} className="w-full h-full object-cover" />
                   ) : (
@@ -803,7 +803,7 @@ function HowItWorks() {
       desc: hiw.step1Desc,
       color: "from-violet-500/20 to-violet-500/5",
       border: "border-violet-500/20",
-      glow: "rgba(139,92,246,0.3)",
+      glow: "rgba(59,130,246,0.3)",
     },
     {
       num: "02",
@@ -1068,7 +1068,7 @@ function SpecialOffer({
             <motion.div
               animate={{ rotate: [0, 5, -5, 0] }}
               transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-              className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary mb-6 shadow-[0_0_30px_rgba(139,92,246,0.5)]"
+              className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary mb-6 shadow-[0_0_30px_rgba(59,130,246,0.5)]"
             >
               <Gift size={28} className="text-white" />
             </motion.div>
@@ -1156,7 +1156,7 @@ function StickyOrderButton() {
           </a>
           <button
             onClick={() => document.getElementById("order")?.scrollIntoView({ behavior: "smooth" })}
-            className="flex items-center gap-3 px-5 py-3.5 rounded-full bg-primary text-white font-bold text-sm shadow-[0_4px_30px_rgba(139,92,246,0.4)] hover:scale-105 hover:shadow-[0_4px_40px_rgba(139,92,246,0.6)] transition-all duration-300"
+            className="flex items-center gap-3 px-5 py-3.5 rounded-full bg-primary text-white font-bold text-sm shadow-[0_4px_30px_rgba(59,130,246,0.4)] hover:scale-105 hover:shadow-[0_4px_40px_rgba(59,130,246,0.6)] transition-all duration-300"
           >
             <Inbox size={18} />
             اطلب الآن
