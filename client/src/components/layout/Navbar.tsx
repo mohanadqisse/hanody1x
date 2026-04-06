@@ -43,18 +43,18 @@ export function Navbar() {
   ];
 
   return (
-    <header className="fixed top-4 md:top-6 left-0 right-0 z-50 flex justify-center px-2 sm:px-4 pointer-events-none w-full">
+    <header className="fixed top-4 md:top-6 left-0 right-0 z-50 flex justify-center px-4 sm:px-4 pointer-events-none w-full">
       
       {/* Unified Nav Pill */}
       <motion.nav 
         initial={{ y: -50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
-        className="flex pointer-events-auto items-center p-1 md:p-1.5 rounded-full bg-[#1c1c1e]/95 border border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.4)] backdrop-blur-xl w-[98%] sm:w-auto overflow-x-auto no-scrollbar max-w-full"
+        className="flex pointer-events-auto items-center p-2 md:p-1.5 rounded-full bg-[#1c1c1e]/95 border border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.4)] backdrop-blur-xl w-[95%] sm:w-auto overflow-x-auto no-scrollbar max-w-full"
         dir="rtl"
         style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}
       >
-        <div className="flex items-center justify-between w-full sm:w-auto gap-0 sm:gap-1 min-w-max px-0.5">
+        <div className="flex items-center justify-between w-full sm:w-auto gap-1 min-w-max px-0.5">
           {/* Close/Icon on the right side in RTL (start) */}
           <Link href="/">
             <div className="w-8 h-8 sm:w-10 sm:h-10 shrink-0 rounded-full bg-[#2c2c2e] border border-white/5 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors cursor-pointer mr-0 sm:mr-1 overflow-hidden">
