@@ -1126,12 +1126,19 @@ function StickyOrderButton() {
 
   useEffect(() => {
     const onScroll = () => {
-      setVisible(window.scrollY > 400);
+      const scrollY = window.scrollY;
       const scrollHeight = document.documentElement.scrollHeight;
-      const scrollPosition = window.innerHeight + window.scrollY;
+      const scrollPosition = window.innerHeight + scrollY;
       const distanceFromBottom = scrollHeight - scrollPosition;
-      
-      // Stop before the footer (around 320px from bottom)
+
+      // Hide when near the FinalCTA section (about 600px from bottom) to avoid covering the button
+      if (distanceFromBottom < 600) {
+        setVisible(false);
+      } else {
+        setVisible(scrollY > 400);
+      }
+
+      // Push up when near footer
       if (distanceFromBottom < 340) {
         setBottomOffset(24 + (340 - distanceFromBottom));
       } else {
