@@ -135,9 +135,20 @@ function Hero() {
           >
             {/* Instagram Button - Mobile Only */}
             <motion.a
-              href="https://www.instagram.com/hanody1x"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="instagram://user?username=hanody1x"
+              onClick={(e) => {
+                e.preventDefault();
+                const isAndroid = /android/i.test(navigator.userAgent);
+                const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+                if (isAndroid) {
+                  window.location.href = "intent://www.instagram.com/hanody1x#Intent;package=com.instagram.android;scheme=https;end";
+                } else if (isIOS) {
+                  window.location.href = "instagram://user?username=hanody1x";
+                  setTimeout(() => { window.location.href = "https://www.instagram.com/hanody1x"; }, 1500);
+                } else {
+                  window.open("https://www.instagram.com/hanody1x", "_blank");
+                }
+              }}
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1, ease: easeApple }}
