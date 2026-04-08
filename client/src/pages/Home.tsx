@@ -133,6 +133,27 @@ function Hero() {
             transition={{ duration: 1, ease: easeApple }}
             className="text-right"
           >
+            {/* Instagram Button - Mobile Only */}
+            <motion.a
+              href="https://www.instagram.com/hanody1x"
+              target="_blank"
+              rel="noopener noreferrer"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1, ease: easeApple }}
+              className="inline-flex lg:hidden items-center gap-3 px-5 py-2.5 rounded-2xl glass-card mb-5 border border-white/10 hover:border-white/25 hover:scale-105 hover:-translate-y-0.5 transition-all duration-300 group cursor-pointer"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
+              </svg>
+              <span className="text-sm font-bold text-white group-hover:text-white/80 transition-colors">تابعني على إنستجرام</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-50 group-hover:opacity-80 group-hover:-translate-x-1 transition-all duration-300">
+                <path d="m15 18-6-6 6-6"/>
+              </svg>
+            </motion.a>
+
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card mb-8 shadow-[0_0_15px_rgba(34,197,94,0.1)] border-white/10">
               <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.8)]" />
               <span className="text-sm font-semibold text-foreground/90">{h.badge}</span>
