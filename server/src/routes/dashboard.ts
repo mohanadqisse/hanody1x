@@ -1,13 +1,13 @@
 import { Router } from "express";
-import { db } from "../lib/db";
-import { clients, timeSessions } from "../schema";
+import { db } from "../lib/db.js";
+import { clients, timeSessions } from "../schema/index.js";
 import { eq, desc, sum, count } from "drizzle-orm";
-import { authenticateToken } from "./auth";
+import { requireAuth } from "../lib/auth.js";
 
 const router = Router();
 
 // Apply authentication middleware to all dashboard routes
-router.use(authenticateToken);
+router.use(requireAuth);
 
 // =======================
 // Dashboard Stats
