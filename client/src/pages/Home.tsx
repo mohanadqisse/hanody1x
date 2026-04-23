@@ -605,7 +605,7 @@ function ClientShowcase() {
             transition={{ duration: 0.7, ease: easeApple }}
             className="text-4xl md:text-6xl font-black mb-6 tracking-tighter"
           >
-            قصص نجاح يوتيوبرز
+            قصص نجاح صناع محتوى
           </motion.h2>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}

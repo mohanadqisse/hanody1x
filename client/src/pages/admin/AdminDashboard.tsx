@@ -810,7 +810,7 @@ export default function AdminDashboard() {
 
             {/* CASE STUDIES */}
             <div className="glass-panel rounded-3xl p-8 bg-card/40 border border-white/5">
-              <h2 className="text-xl font-bold text-foreground mb-6">قصص نجاح يوتيوبرز</h2>
+              <h2 className="text-xl font-bold text-foreground mb-6">قصص نجاح صناع محتوى</h2>
               {((Array.isArray(sections.caseStudies) && sections.caseStudies.length > 0) ? sections.caseStudies : defaultCaseStudies).map((study: any, idx: number) => (
                 <div key={study.id || idx} className="mb-8 border border-white/10 rounded-2xl p-6 bg-black/20 text-right">
                   <h3 className="text-lg font-bold text-primary mb-4">قصة حالة {idx + 1}</h3>
@@ -823,8 +823,44 @@ export default function AdminDashboard() {
                     <Input value={study.niche || ""} onChange={(e) => updateCaseStudy(idx, 'niche', e.target.value)} dir="rtl" className="bg-card/50" />
                   </div>
                   <div className="mb-4">
+                    <label className="block text-sm text-gray-400 mb-2">الصورة الشخصية (تظهر مكان الحرفين)</label>
+                    <div className="flex items-center gap-4 flex-row-reverse justify-end">
+                      <label className="flex items-center gap-2 cursor-pointer bg-primary/20 text-primary px-4 py-2 rounded-xl text-sm font-bold hover:bg-primary/30 transition border border-primary/30">
+                        <Upload className="w-4 h-4" /> رفع صورة
+                        <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                          const file = e.target.files?.[0]; if (!file) return;
+                          const fd = new FormData(); fd.append("image", file);
+                          const res = await fetch("/api/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
+                          if (res.ok) {
+                            const data = await res.json();
+                            updateCaseStudy(idx, 'avatarImage', data.url);
+                            toast({ title: "تم رفع صورة صانع المحتوى بنجاح!" });
+                          }
+                        }} />
+                      </label>
+                      {study.avatarImage ? (
+                        <img src={study.avatarImage} alt="Avatar" className="w-12 h-12 rounded-full object-cover border-2 border-primary" />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-black/40 border border-white/10 flex items-center justify-center text-muted-foreground text-xs">{study.avatarInitials || "لا يوجد"}</div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="mb-4">
                     <label className="block text-sm text-gray-400 mb-2">القصة (Story)</label>
                     <Textarea value={study.story || ""} onChange={(e) => updateCaseStudy(idx, 'story', e.target.value)} dir="rtl" className="bg-card/50 min-h-24" />
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-sm text-gray-400 mb-2">إحصائيات دراسة الحالة (تظهر داخل الصفحة)</label>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {(study.metrics || []).map((metric: any, mIdx: number) => (
+                        <div key={mIdx} className="p-3 bg-black/30 rounded-xl border border-white/5">
+                          <label className="block text-xs text-muted-foreground mb-1">الرقم/القيمة</label>
+                          <Input value={metric.value || ""} onChange={(e) => updateCaseStudyMetric(idx, mIdx, 'value', e.target.value)} dir="rtl" className="bg-card/50 mb-2 text-primary font-bold text-center" />
+                          <label className="block text-xs text-muted-foreground mb-1">الوصف</label>
+                          <Input value={metric.label || ""} onChange={(e) => updateCaseStudyMetric(idx, mIdx, 'label', e.target.value)} dir="rtl" className="bg-card/50 text-center" />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               ))}
