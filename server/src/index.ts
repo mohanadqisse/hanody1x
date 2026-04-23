@@ -56,13 +56,9 @@ const apiLimiter = rateLimit({
 });
 app.use("/api/messages", apiLimiter, messagesRouter);
 
-// Serve static client files in production
-const clientDistPath = path.join(process.cwd(), "..", "client", "dist");
-app.use(express.static(clientDistPath));
-
-// SPA catch-all: serve index.html for any non-API route
-app.get("*catchall", (_req, res) => {
-  res.sendFile(path.join(clientDistPath, "index.html"));
+// Root route for API server
+app.get("/", (_req, res) => {
+  res.send("API Server is running");
 });
 
 app.listen(PORT, () => {
