@@ -1,14 +1,27 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">
-  <!-- Outer circle -->
-  <circle cx="128" cy="128" r="110" stroke="#1a2744" stroke-width="16" fill="none"/>
-  <!-- Inner badge body -->
-  <circle cx="128" cy="118" r="80" fill="white"/>
-  <!-- Crown -->
-  <path d="M80 150 L95 105 L115 130 L128 88 L141 130 L161 105 L176 150Z" fill="#7c3aed"/>
-  <!-- Crown base bar -->
-  <rect x="88" y="155" width="80" height="14" rx="7" fill="#7c3aed"/>
-  <!-- Badge ribbon left -->
-  <path d="M90 200 L115 200 L102 235Z" fill="#1a2744"/>
-  <!-- Badge ribbon right -->
-  <path d="M141 200 L166 200 L154 235Z" fill="#1a2744"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="brushGrad" x1="0%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" style="stop-color:#dc1f26;stop-opacity:1" />
+      <stop offset="45%" style="stop-color:#f47920;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#fdb913;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Main brush stroke - curved S shape -->
+  <path d="M160 60 C100 120, 70 200, 110 300 C130 350, 180 380, 210 360 C240 340, 220 290, 200 240 C180 190, 170 140, 200 100 C220 70, 250 80, 260 110 C280 160, 270 230, 250 290 C235 330, 260 360, 290 340" 
+        fill="none" stroke="url(#brushGrad)" stroke-width="38" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Pencil body -->
+  <g transform="translate(320, 50) rotate(12)">
+    <!-- Main pencil shaft -->
+    <rect x="0" y="0" width="42" height="280" rx="4" fill="#404040"/>
+    <!-- Pencil stripe -->
+    <rect x="0" y="0" width="42" height="24" rx="4" fill="#555"/>
+    <!-- Pencil ferrule -->
+    <rect x="-2" y="270" width="46" height="30" rx="2" fill="#888"/>
+    <!-- Pencil tip -->
+    <polygon points="0,300 42,300 21,370" fill="#404040"/>
+    <!-- Pencil tip point -->
+    <polygon points="12,340 30,340 21,370" fill="#f47920"/>
+  </g>
 </svg>
