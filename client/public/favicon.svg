@@ -1,10 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <rect width="100" height="100" rx="20" fill="url(#g)"/>
-  <defs>
-    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#8B5CF6"/>
-      <stop offset="100%" style="stop-color:#06B6D4"/>
-    </linearGradient>
-  </defs>
-  <text x="50" y="68" text-anchor="middle" font-family="Arial, sans-serif" font-weight="900" font-size="52" fill="white">H</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">
+  <!-- Outer circle -->
+  <circle cx="128" cy="128" r="110" stroke="#1a2744" stroke-width="16" fill="none"/>
+  <!-- Inner badge body -->
+  <circle cx="128" cy="118" r="80" fill="white"/>
+  <!-- Crown -->
+  <path d="M80 150 L95 105 L115 130 L128 88 L141 130 L161 105 L176 150Z" fill="#7c3aed"/>
+  <!-- Crown base bar -->
+  <rect x="88" y="155" width="80" height="14" rx="7" fill="#7c3aed"/>
+  <!-- Badge ribbon left -->
+  <path d="M90 200 L115 200 L102 235Z" fill="#1a2744"/>
+  <!-- Badge ribbon right -->
+  <path d="M141 200 L166 200 L154 235Z" fill="#1a2744"/>
 </svg>
