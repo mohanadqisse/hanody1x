@@ -5,6 +5,7 @@ export type CaseStudy = {
   avatarInitials: string;
   avatarImage?: string;
   shortBio: string;
+  youtubeUrl?: string;
   story: string;
   metrics: { label: string; value: string }[];
 };

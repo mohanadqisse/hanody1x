@@ -645,13 +645,29 @@ function ClientShowcase() {
               </div>
               <p className="text-gray-400 text-base mb-8 h-12 text-right leading-relaxed">{client.shortBio}</p>
               
-              <Link 
-                href={`/case-study/${client.id}`}
-                className="inline-flex items-center gap-2 text-sm font-bold text-foreground group-hover:text-primary transition-colors"
-              >
-                <ArrowLeft size={18} className="group-hover:-translate-x-2 transition-transform duration-300" />
-                عرض دراسة الحالة
-              </Link>
+              <div className="flex items-center justify-between flex-row-reverse">
+                <Link 
+                  href={`/case-study/${client.id}`}
+                  className="inline-flex items-center gap-2 text-sm font-bold text-foreground group-hover:text-primary transition-colors"
+                >
+                  <ArrowLeft size={18} className="group-hover:-translate-x-2 transition-transform duration-300" />
+                  عرض دراسة الحالة
+                </Link>
+                {(client as any).youtubeUrl && (
+                  <a
+                    href={(client as any).youtubeUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 text-xs font-bold px-3.5 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:text-red-300 hover:border-red-500/40 hover:scale-105 transition-all duration-300"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="shrink-0">
+                      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                    </svg>
+                    قناة اليوتيوب
+                  </a>
+                )}
+              </div>
             </motion.div>
           ))}
         </div>
