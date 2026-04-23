@@ -26,7 +26,7 @@ app.use(cors({
     // Allow Vercel preview deployments
     if (origin.endsWith(".vercel.app")) return callback(null, true);
     // Allow custom domain
-    if (origin.includes("izaid.tech")) return callback(null, true);
+    if (origin.includes("hanody1x.space")) return callback(null, true);
     // Allow listed origins
     if (allowedOrigins.includes(origin)) return callback(null, true);
     callback(new Error("Not allowed by CORS"));
