@@ -594,6 +594,7 @@ function Urgency() {
 }
 
 function ClientShowcase() {
+  const brand = useSection("brand", { youtubeChannelUrl: "" } as any);
   return (
     <section id="showcase" className="py-32 bg-background relative">
       <div className="container mx-auto px-6">
@@ -645,7 +646,7 @@ function ClientShowcase() {
               </div>
               <p className="text-gray-400 text-base mb-8 h-12 text-right leading-relaxed">{client.shortBio}</p>
               
-              <div className="flex items-center justify-between flex-row-reverse">
+              <div className="flex items-center justify-between">
                 <Link 
                   href={`/case-study/${client.id}`}
                   className="inline-flex items-center gap-2 text-sm font-bold text-foreground group-hover:text-primary transition-colors"
@@ -653,9 +654,9 @@ function ClientShowcase() {
                   <ArrowLeft size={18} className="group-hover:-translate-x-2 transition-transform duration-300" />
                   عرض دراسة الحالة
                 </Link>
-                {(client as any).youtubeUrl && (
+                {((client as any).youtubeUrl || brand.youtubeChannelUrl) && (
                   <a
-                    href={(client as any).youtubeUrl}
+                    href={(client as any).youtubeUrl || brand.youtubeChannelUrl}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center gap-2 text-xs font-bold px-3.5 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:text-red-300 hover:border-red-500/40 hover:scale-105 transition-all duration-300"
@@ -664,7 +665,7 @@ function ClientShowcase() {
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="shrink-0">
                       <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
                     </svg>
-                    قناة اليوتيوب
+                    انتقال إلى قناة اليوتيوب
                   </a>
                 )}
               </div>
@@ -676,12 +677,68 @@ function ClientShowcase() {
   );
 }
 
+
+function extractColorsFromImage(imgSrc: string): Promise<string[]> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { resolve(["#3b82f6","#ef4444","#22c55e","#f59e0b","#8b5cf6"]); return; }
+      const w = 100, h = 100;
+      canvas.width = w; canvas.height = h;
+      ctx.drawImage(img, 0, 0, w, h);
+      const data = ctx.getImageData(0, 0, w, h).data;
+      const colorMap: Record<string, number> = {};
+      for (let i = 0; i < data.length; i += 16) {
+        const r = Math.round(data[i] / 32) * 32;
+        const g = Math.round(data[i+1] / 32) * 32;
+        const b = Math.round(data[i+2] / 32) * 32;
+        if (r + g + b < 30 || r + g + b > 720) continue;
+        const hex = `#${r.toString(16).padStart(2,"0")}${g.toString(16).padStart(2,"0")}${b.toString(16).padStart(2,"0")}`;
+        colorMap[hex] = (colorMap[hex] || 0) + 1;
+      }
+      const sorted = Object.entries(colorMap).sort((a,b) => b[1] - a[1]);
+      const result: string[] = [];
+      for (const [hex] of sorted) {
+        if (result.length >= 6) break;
+        const isDuplicate = result.some(existing => {
+          const r1 = parseInt(existing.slice(1,3),16), g1 = parseInt(existing.slice(3,5),16), b1 = parseInt(existing.slice(5,7),16);
+          const r2 = parseInt(hex.slice(1,3),16), g2 = parseInt(hex.slice(3,5),16), b2 = parseInt(hex.slice(5,7),16);
+          return Math.abs(r1-r2) + Math.abs(g1-g2) + Math.abs(b1-b2) < 80;
+        });
+        if (!isDuplicate) result.push(hex);
+      }
+      resolve(result.length > 0 ? result : ["#3b82f6","#ef4444","#22c55e","#f59e0b","#8b5cf6"]);
+    };
+    img.onerror = () => resolve(["#3b82f6","#ef4444","#22c55e","#f59e0b","#8b5cf6"]);
+    img.src = imgSrc;
+  });
+}
+
 function PortfolioGrid() {
   const images = useImages();
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const [extractedColors, setExtractedColors] = useState<string[]>([]);
+  const [hoveredColor, setHoveredColor] = useState<string | null>(null);
+  const [copiedColor, setCopiedColor] = useState<string | null>(null);
 
-  const openLightbox = (src: string) => setLightboxSrc(src);
-  const closeLightbox = () => setLightboxSrc(null);
+  const openLightbox = async (src: string) => {
+    setLightboxSrc(src);
+    setExtractedColors([]);
+    setHoveredColor(null);
+    setCopiedColor(null);
+    const colors = await extractColorsFromImage(src);
+    setExtractedColors(colors);
+  };
+  const closeLightbox = () => { setLightboxSrc(null); setExtractedColors([]); setHoveredColor(null); };
+
+  const copyColor = (hex: string) => {
+    navigator.clipboard?.writeText(hex);
+    setCopiedColor(hex);
+    setTimeout(() => setCopiedColor(null), 1500);
+  };
 
   return (
     <section id="portfolio" className="py-32 bg-card/20 relative">
@@ -720,7 +777,7 @@ function PortfolioGrid() {
         </div>
       </div>
 
-      {/* Lightbox */}
+      {/* Lightbox with Color Palette */}
       <AnimatePresence>
         {lightboxSrc && (
           <motion.div
@@ -733,26 +790,95 @@ function PortfolioGrid() {
             onClick={closeLightbox}
           >
             <motion.div
-              key="lightbox-image"
+              key="lightbox-content"
               initial={{ scale: 0.85, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.85, opacity: 0 }}
               transition={{ duration: 0.35, ease: easeApple }}
-              className="relative max-w-5xl w-full"
+              className="relative max-w-6xl w-full flex gap-5 items-start"
               onClick={e => e.stopPropagation()}
             >
-              <img
-                src={lightboxSrc}
-                alt="عرض مكبّر"
-                className="w-full h-auto max-h-[85vh] object-contain rounded-2xl shadow-[0_30px_80px_rgba(0,0,0,0.8)]"
-              />
-              <button
-                onClick={closeLightbox}
-                className="absolute -top-4 -left-4 w-10 h-10 rounded-full bg-primary hover:bg-primary/80 transition-colors flex items-center justify-center text-white font-bold text-lg shadow-xl"
-                aria-label="إغلاق"
+              {/* Color Palette Sidebar - LEFT */}
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3, duration: 0.4 }}
+                className="hidden md:flex flex-col items-center gap-3 py-4"
               >
-                ✕
-              </button>
+                <span className="text-xs text-white/40 font-bold mb-1 tracking-wider">الألوان</span>
+                {extractedColors.length === 0 ? (
+                  <div className="flex flex-col gap-3">
+                    {[1,2,3,4,5].map(i => (
+                      <div key={i} className="w-10 h-10 rounded-full bg-white/10 animate-pulse" />
+                    ))}
+                  </div>
+                ) : (
+                  extractedColors.map((color) => (
+                    <div key={color} className="relative group/color">
+                      <button
+                        onClick={() => copyColor(color)}
+                        onMouseEnter={() => setHoveredColor(color)}
+                        onMouseLeave={() => setHoveredColor(null)}
+                        className="w-10 h-10 rounded-full border-2 border-white/20 hover:border-white/60 hover:scale-125 transition-all duration-300 shadow-lg cursor-pointer"
+                        style={{ backgroundColor: color }}
+                        title={color}
+                      />
+                      {(hoveredColor === color || copiedColor === color) && (
+                        <motion.div
+                          initial={{ opacity: 0, x: 8 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          className="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-black/80 backdrop-blur-sm border border-white/20 text-white text-xs font-mono px-3 py-1.5 rounded-lg whitespace-nowrap shadow-xl z-50"
+                        >
+                          {copiedColor === color ? "✓ تم النسخ!" : color.toUpperCase()}
+                        </motion.div>
+                      )}
+                    </div>
+                  ))
+                )}
+
+                {/* CTA Button */}
+                <button
+                  onClick={() => { closeLightbox(); setTimeout(() => document.getElementById("order")?.scrollIntoView({ behavior: "smooth" }), 300); }}
+                  className="mt-4 px-4 py-3 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/90 hover:scale-105 transition-all duration-300 shadow-[0_0_20px_rgba(59,130,246,0.3)] whitespace-nowrap"
+                >
+                  اطلب صورة مماثلة الآن
+                </button>
+              </motion.div>
+
+              {/* Image */}
+              <div className="flex-1 relative">
+                <img
+                  src={lightboxSrc}
+                  alt="عرض مكبّر"
+                  className="w-full h-auto max-h-[85vh] object-contain rounded-2xl shadow-[0_30px_80px_rgba(0,0,0,0.8)]"
+                />
+                <button
+                  onClick={closeLightbox}
+                  className="absolute -top-4 -left-4 w-10 h-10 rounded-full bg-primary hover:bg-primary/80 transition-colors flex items-center justify-center text-white font-bold text-lg shadow-xl"
+                  aria-label="إغلاق"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Mobile Color Palette - Below Image */}
+              <div className="md:hidden absolute -bottom-20 left-0 right-0 flex items-center justify-center gap-3 flex-wrap">
+                {extractedColors.map((color) => (
+                  <button
+                    key={color}
+                    onClick={() => copyColor(color)}
+                    className="w-8 h-8 rounded-full border-2 border-white/20 hover:border-white/60 transition-all shadow-lg"
+                    style={{ backgroundColor: color }}
+                    title={color}
+                  />
+                ))}
+                <button
+                  onClick={() => { closeLightbox(); setTimeout(() => document.getElementById("order")?.scrollIntoView({ behavior: "smooth" }), 300); }}
+                  className="px-4 py-2 rounded-xl bg-primary text-white text-xs font-bold"
+                >
+                  اطلب صورة مماثلة
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -760,6 +886,7 @@ function PortfolioGrid() {
     </section>
   );
 }
+
 
 const defaultWhyChooseMe = {
   title: "لماذا تختارني؟",
@@ -889,7 +1016,7 @@ function HowItWorks() {
         </motion.div>
 
         <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto relative">
-          <div className="hidden md:block absolute top-16 left-[calc(16.67%+1rem)] right-[calc(16.67%+1rem)] h-px bg-gradient-to-r from-violet-500/30 via-blue-500/30 to-green-500/30 pointer-events-none" />
+          {/* Connecting line removed as requested */}
           
           {steps.map((step, idx) => (
             <motion.div
