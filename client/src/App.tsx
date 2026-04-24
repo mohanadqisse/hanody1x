@@ -3,12 +3,16 @@ import { Switch, Route } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { Toaster } from "@/components/ui/toaster";
 import { AdminProvider } from "@/contexts/AdminContext";
+import { UserProvider } from "@/contexts/UserContext";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import Home from "@/pages/Home";
 import CaseStudy from "@/pages/CaseStudy";
 import AdminLogin from "@/pages/admin/AdminLogin";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
+import Login from "@/pages/auth/Login";
+import Register from "@/pages/auth/Register";
+import UserDashboard from "@/pages/user/UserDashboard";
 import NotFound from "@/pages/not-found";
 
 function App() {
@@ -23,7 +27,8 @@ function App() {
 
   return (
     <AdminProvider>
-      <div className="min-h-screen bg-background text-foreground" dir="rtl">
+      <UserProvider>
+        <div className="min-h-screen bg-background text-foreground" dir="rtl">
         <AnimatePresence mode="wait">
           {isLoading ? (
             <motion.div
@@ -69,6 +74,10 @@ function App() {
                     <Switch>
                       <Route path="/" component={Home} />
                       <Route path="/case-study/:id" component={CaseStudy} />
+                      <Route path="/login" component={Login} />
+                      <Route path="/register" component={Register} />
+                      <Route path="/dashboard/*" component={UserDashboard} />
+                      <Route path="/dashboard" component={UserDashboard} />
                       <Route component={NotFound} />
                     </Switch>
                     <Footer />
@@ -80,6 +89,7 @@ function App() {
           )}
         </AnimatePresence>
       </div>
+      </UserProvider>
     </AdminProvider>
   );
 }

@@ -61,8 +61,8 @@ export default function AdminDashboard() {
   const { isAuthenticated, logout, token } = useAdmin();
   const { toast } = useToast();
   
-  // Tabs: 'home' | 'clients' | 'content' | 'inbox' | 'logs'
-  const [activeTab, setActiveTab] = useState<'home' | 'clients' | 'content'>('home');
+  // Tabs: 'home' | 'clients' | 'content' | 'inbox' | 'logs' | 'users'
+  const [activeTab, setActiveTab] = useState<'home' | 'clients' | 'users' | 'content'>('home');
 
   // Existing states
   const [sections, setSections] = useState<Record<string, any>>({});
@@ -78,6 +78,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState({ totalRevenue: 0, totalDues: 0, totalClients: 0, completedOrders: 0 });
   const [clientsData, setClientsData] = useState<Client[]>([]);
   const [sessionsData, setSessionsData] = useState<TimeSession[]>([]);
+  const [usersData, setUsersData] = useState<any[]>([]);
   
   // Timer State
   const [isTracking, setIsTracking] = useState(false);
@@ -159,11 +160,13 @@ export default function AdminDashboard() {
       const pStats = fetch("/api/dashboard/stats", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
       const pClients = fetch("/api/dashboard/clients", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
       const pSessions = fetch("/api/dashboard/sessions", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
+      const pUsers = fetch("/api/dashboard/users", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
 
-      const [s, c, sess] = await Promise.all([pStats, pClients, pSessions]);
+      const [s, c, sess, u] = await Promise.all([pStats, pClients, pSessions, pUsers]);
       setStats(s);
       setClientsData(c);
       setSessionsData(sess);
+      setUsersData(u);
     } catch(err) {
       console.error(err);
     }
@@ -436,7 +439,11 @@ export default function AdminDashboard() {
           </button>
           <button onClick={() => setActiveTab('clients')} className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${activeTab === 'clients' ? 'bg-primary/20 text-primary font-bold' : 'text-muted-foreground hover:bg-white/5 hover:text-foreground'}`}>
             <Users className="w-5 h-5 flex-shrink-0" />
-            <span>العملاء والطلبات</span>
+            <span>العملاء الكلاسيكيين</span>
+          </button>
+          <button onClick={() => setActiveTab('users')} className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${activeTab === 'users' ? 'bg-primary/20 text-primary font-bold' : 'text-muted-foreground hover:bg-white/5 hover:text-foreground'}`}>
+            <Users className="w-5 h-5 flex-shrink-0" />
+            <span>حسابات المنصة</span>
           </button>
           <button onClick={() => setActiveTab('content')} className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${activeTab === 'content' ? 'bg-primary/20 text-primary font-bold' : 'text-muted-foreground hover:bg-white/5 hover:text-foreground'}`}>
             <Database className="w-5 h-5 flex-shrink-0" />
@@ -588,6 +595,50 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB: USERS */}
+        {activeTab === 'users' && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="bg-card/40 border border-white/5 rounded-3xl p-6 sm:p-10">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 border-b border-white/10 pb-6">
+                <div>
+                  <h2 className="text-2xl font-black text-foreground mb-2">حسابات المنصة</h2>
+                  <p className="text-sm text-muted-foreground">العملاء الذين قاموا بالتسجيل في الموقع لإنشاء لوحة التحكم الخاصة بهم.</p>
+                </div>
+              </div>
+
+              {usersData.length === 0 ? (
+                <div className="text-center py-20">
+                  <Users className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
+                  <p className="text-muted-foreground">لا يوجد مستخدمين مسجلين حالياً.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {usersData.map(user => (
+                    <div key={user.id} className="bg-black/20 border border-white/5 rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 hover:border-white/10 transition-colors">
+                      <div className="flex items-center gap-4 w-full sm:w-auto">
+                        <div className="w-12 h-12 rounded-full bg-blue-500/20 text-blue-500 font-black flex items-center justify-center shrink-0 text-xl border border-blue-500/30">
+                          {user.avatar ? <img src={user.avatar} className="w-full h-full object-cover rounded-full" /> : user.fullName.substring(0, 2)}
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-lg text-foreground flex items-center gap-2">
+                            {user.fullName}
+                            {user.role === 'guest' && <span className="text-[10px] bg-amber-500/20 text-amber-500 px-2 py-0.5 rounded-full">زائر</span>}
+                          </h3>
+                          <div className="flex gap-3 text-sm text-muted-foreground">
+                            <span>{user.email}</span>
+                            <span>|</span>
+                            <span>التسجيل: {new Date(user.createdAt).toLocaleDateString('ar-JO')}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}

@@ -58,9 +58,82 @@ export const timeSessions = pgTable("time_sessions", {
 export const insertClientSchema = createInsertSchema(clients).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertTimeSessionSchema = createInsertSchema(timeSessions).omit({ id: true, createdAt: true });
 
+// --- NEW TABLES FOR CLIENT ACCOUNTS ---
+
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  fullName: text("full_name").notNull(),
+  email: text("email").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  role: text("role").notNull().default("user"), // "user", "guest"
+  avatar: text("avatar"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const thumbnails = pgTable("thumbnails", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  image: text("image").notNull(),
+  title: text("title").notNull(),
+  status: text("status").notNull().default("قيد العمل"), // "قيد العمل", "تم التسليم"
+  notes: text("notes"),
+  downloadUrl: text("download_url"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const transactions = pgTable("transactions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  description: text("description").notNull(),
+  amount: integer("amount").notNull(),
+  status: text("status").notNull().default("pending"), // "pending", "paid"
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const comments = pgTable("comments", {
+  id: serial("id").primaryKey(),
+  thumbnailId: integer("thumbnail_id").references(() => thumbnails.id).notNull(),
+  authorName: text("author_name").notNull(), // To distinguish between Admin and User
+  isAdmin: boolean("is_admin").notNull().default(false),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const ratings = pgTable("ratings", {
+  id: serial("id").primaryKey(),
+  thumbnailId: integer("thumbnail_id").references(() => thumbnails.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  rating: integer("rating").notNull(), // 1 to 5
+  comment: text("comment"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  message: text("message").notNull(),
+  read: boolean("read").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
+export const insertThumbnailSchema = createInsertSchema(thumbnails).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertTransactionSchema = createInsertSchema(transactions).omit({ id: true, createdAt: true });
+export const insertCommentSchema = createInsertSchema(comments).omit({ id: true, createdAt: true });
+export const insertRatingSchema = createInsertSchema(ratings).omit({ id: true, createdAt: true });
+export const insertNotificationSchema = createInsertSchema(notifications).omit({ id: true, createdAt: true });
+
 export type AdminUser = typeof adminUsers.$inferSelect;
 export type SiteContent = typeof siteContent.$inferSelect;
 export type ContactMessage = typeof contactMessages.$inferSelect;
 export type LoginLog = typeof loginLogs.$inferSelect;
 export type Client = typeof clients.$inferSelect;
 export type TimeSession = typeof timeSessions.$inferSelect;
+
+export type User = typeof users.$inferSelect;
+export type Thumbnail = typeof thumbnails.$inferSelect;
+export type Transaction = typeof transactions.$inferSelect;
+export type Comment = typeof comments.$inferSelect;
+export type Rating = typeof ratings.$inferSelect;
+export type Notification = typeof notifications.$inferSelect;

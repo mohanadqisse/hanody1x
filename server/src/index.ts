@@ -9,6 +9,8 @@ import uploadRouter from "./routes/upload.js";
 import healthRouter from "./routes/health.js";
 import messagesRouter from "./routes/messages.js";
 import dashboardRouter from "./routes/dashboard.js";
+import userAuthRouter from "./routes/userAuth.js";
+import userDashboardRouter from "./routes/userDashboard.js";
 import rateLimit from "express-rate-limit";
 
 const app = express();
@@ -48,6 +50,8 @@ app.use("/api/auth", authRouter);
 app.use("/api/content", contentRouter);
 app.use("/api/upload", uploadRouter);
 app.use("/api/dashboard", dashboardRouter);
+app.use("/api/users/auth", userAuthRouter);
+app.use("/api/users/dashboard", userDashboardRouter);
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes

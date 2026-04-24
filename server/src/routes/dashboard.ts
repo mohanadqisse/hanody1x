@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "../lib/db.js";
-import { clients, timeSessions } from "../schema/index.js";
+import { clients, timeSessions, users, thumbnails, transactions } from "../schema/index.js";
 import { eq, desc, sum, count } from "drizzle-orm";
 import { requireAuth } from "../lib/auth.js";
 
@@ -141,6 +141,60 @@ router.delete("/clients/:id", async (req, res) => {
 
     await db.delete(clients).where(eq(clients.id, clientId));
     res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// =======================
+// Platform Users Management
+// =======================
+router.get("/users", async (req, res) => {
+  try {
+    const allUsers = await db.select().from(users).orderBy(desc(users.createdAt));
+    res.json(allUsers);
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.post("/thumbnails", async (req, res) => {
+  try {
+    const { userId, title, image, status, notes, downloadUrl } = req.body;
+    const [newThumb] = await db.insert(thumbnails).values({
+      userId: parseInt(userId),
+      title,
+      image,
+      status: status || "قيد العمل",
+      notes,
+      downloadUrl
+    }).returning();
+    res.status(201).json(newThumb);
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.post("/transactions", async (req, res) => {
+  try {
+    const { userId, description, amount, status } = req.body;
+    const [newTrans] = await db.insert(transactions).values({
+      userId: parseInt(userId),
+      description,
+      amount: parseInt(amount),
+      status: status || "pending"
+    }).returning();
+    res.status(201).json(newTrans);
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.patch("/transactions/:id/pay", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const [updated] = await db.update(transactions).set({ status: "paid" }).where(eq(transactions.id, id)).returning();
+    res.json(updated);
   } catch (error) {
     res.status(500).json({ error: "Internal Server Error" });
   }

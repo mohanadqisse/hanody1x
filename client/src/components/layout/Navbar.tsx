@@ -36,9 +36,10 @@ export function Navbar() {
   };
 
   const navLinks = [
-    { name: "الخدمات", id: "services", mobileHidden: false },
-    { name: "قصص النجاح", id: "showcase", mobileHidden: false },
-    { name: "معرض الأعمال", id: "portfolio", mobileHidden: false },
+    { name: "الخدمات", id: "services", mobileHidden: true },
+    { name: "قصص النجاح", id: "showcase", mobileHidden: true },
+    { name: "معرض الأعمال", id: "portfolio", mobileHidden: true },
+    { name: "تسجيل الدخول", href: "/login", mobileHidden: false },
     { name: "لوحة التحكم", href: "/admin", mobileHidden: false },
   ];
 
