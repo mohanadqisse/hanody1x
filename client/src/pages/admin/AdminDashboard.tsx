@@ -643,7 +643,7 @@ export default function AdminDashboard() {
         {activeTab === 'users' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {managingUser ? (
-              <UserContentManager user={managingUser} onBack={() => setManagingUser(null)} token={token} />
+              <UserContentManager user={managingUser} onBack={() => setManagingUser(null)} token={token || ""} />
             ) : (
               <div className="bg-card/40 border border-white/5 rounded-3xl p-6 sm:p-10">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 border-b border-white/10 pb-6">

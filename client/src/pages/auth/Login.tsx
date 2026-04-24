@@ -22,6 +22,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loginRole, setLoginRole] = useState<"guest" | "user" | null>(null);
   const [banData, setBanData] = useState<{ message: string } | null>(null);
+  const [isUnbanRequested, setIsUnbanRequested] = useState(false);
 
   const handleGuestLogin = async () => {
     try {
@@ -279,6 +280,12 @@ export default function Login() {
                 <AlertCircle size={40} />
               </div>
               <h2 className="text-3xl font-black mb-4 text-red-500">تم تقييد حسابك</h2>
+              {isUnbanRequested && (
+                <div className="bg-amber-500/10 border border-amber-500/20 text-amber-500 p-3 rounded-xl mb-4 text-sm font-bold flex items-center justify-center gap-2">
+                  <AlertCircle size={16} />
+                  تم طلب إزالة الحظر، بانتظار موافقة صاحب الموقع.
+                </div>
+              )}
               <div className="text-muted-foreground mb-8 text-base leading-relaxed whitespace-pre-wrap px-2">
                 {banData.message}
               </div>
@@ -289,11 +296,15 @@ export default function Login() {
                     الرجوع إلى الموقع
                   </Button>
                 </a>
-                <a href="mailto:hanody1x@gmail.com" className="flex-1">
-                  <Button variant="destructive" className="w-full rounded-xl h-12 font-bold shadow-lg shadow-red-500/20">
+                {!isUnbanRequested && (
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => setIsUnbanRequested(true)}
+                    className="flex-1 w-full rounded-xl h-12 font-bold shadow-lg shadow-red-500/20"
+                  >
                     طلب إزالة الحظر
                   </Button>
-                </a>
+                )}
               </div>
             </motion.div>
           </motion.div>
