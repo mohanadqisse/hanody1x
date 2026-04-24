@@ -205,6 +205,81 @@ router.patch("/users/:id/ban", async (req, res) => {
   }
 });
 
+// =======================
+// Admin - Creator Management Endpoints
+// =======================
+router.get("/users/:id/thumbnails", async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    const userThumbnails = await db.select().from(thumbnails).where(eq(thumbnails.userId, userId)).orderBy(desc(thumbnails.createdAt));
+    res.json(userThumbnails);
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.get("/users/:id/transactions", async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    const userTransactions = await db.select().from(transactions).where(eq(transactions.userId, userId)).orderBy(desc(transactions.createdAt));
+    res.json(userTransactions);
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.patch("/thumbnails/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { title, image, status, notes, downloadUrl } = req.body;
+    const [updated] = await db.update(thumbnails).set({
+      ...(title !== undefined && { title }),
+      ...(image !== undefined && { image }),
+      ...(status !== undefined && { status }),
+      ...(notes !== undefined && { notes }),
+      ...(downloadUrl !== undefined && { downloadUrl }),
+    }).where(eq(thumbnails.id, id)).returning();
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.delete("/thumbnails/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await db.delete(thumbnails).where(eq(thumbnails.id, id));
+    res.json({ message: "Thumbnail deleted" });
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.patch("/transactions/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { description, amount, status } = req.body;
+    const [updated] = await db.update(transactions).set({
+      ...(description !== undefined && { description }),
+      ...(amount !== undefined && { amount }),
+      ...(status !== undefined && { status }),
+    }).where(eq(transactions.id, id)).returning();
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.delete("/transactions/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await db.delete(transactions).where(eq(transactions.id, id));
+    res.json({ message: "Transaction deleted" });
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 router.post("/thumbnails", async (req, res) => {
   try {
     const { userId, title, image, status, notes, downloadUrl } = req.body;

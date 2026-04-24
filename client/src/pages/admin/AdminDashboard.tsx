@@ -9,9 +9,10 @@ import {
   LogOut, Save, Upload, Trash2, Settings, Mail, MailOpen, 
   ChevronDown, ChevronUp, Package, User, AtSign, Clock, 
   Inbox, Shield, ShieldCheck, ShieldX, Globe, Smartphone, 
-  Monitor, LayoutDashboard, Users, Database, Play, Square, FileText, CheckCircle
+  Monitor, LayoutDashboard, Users, Database, Play, Square, FileText, CheckCircle, Edit
 } from "lucide-react";
 import { caseStudies as defaultCaseStudies } from "@/lib/data";
+import UserContentManager from "./UserContentManager";
 
 interface ContactMessage {
   id: number;
@@ -80,6 +81,7 @@ export default function AdminDashboard() {
   const [sessionsData, setSessionsData] = useState<TimeSession[]>([]);
   const [usersData, setUsersData] = useState<any[]>([]);
   const [expandedUser, setExpandedUser] = useState<number | null>(null);
+  const [managingUser, setManagingUser] = useState<any>(null);
   
   // Timer State
   const [isTracking, setIsTracking] = useState(false);
@@ -640,91 +642,104 @@ export default function AdminDashboard() {
         {/* TAB: USERS */}
         {activeTab === 'users' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="bg-card/40 border border-white/5 rounded-3xl p-6 sm:p-10">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 border-b border-white/10 pb-6">
-                <div>
-                  <h2 className="text-2xl font-black text-foreground mb-2">حسابات المنصة</h2>
-                  <p className="text-sm text-muted-foreground">العملاء الذين قاموا بالتسجيل في الموقع لإنشاء لوحة التحكم الخاصة بهم.</p>
+            {managingUser ? (
+              <UserContentManager user={managingUser} onBack={() => setManagingUser(null)} token={token} />
+            ) : (
+              <div className="bg-card/40 border border-white/5 rounded-3xl p-6 sm:p-10">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 border-b border-white/10 pb-6">
+                  <div>
+                    <h2 className="text-2xl font-black text-foreground mb-2">حسابات المنصة</h2>
+                    <p className="text-sm text-muted-foreground">العملاء الذين قاموا بالتسجيل في الموقع لإنشاء لوحة التحكم الخاصة بهم.</p>
+                  </div>
                 </div>
-              </div>
 
-              {usersData.length === 0 ? (
-                <div className="text-center py-20">
-                  <Users className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
-                  <p className="text-muted-foreground">لا يوجد مستخدمين مسجلين حالياً.</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {usersData.map(user => (
-                    <div key={user.id} className="bg-black/20 border border-white/5 rounded-2xl p-4 sm:p-6 flex flex-col items-start gap-4 hover:border-white/10 transition-colors">
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full gap-4">
-                        <div className="flex items-center gap-4 w-full sm:w-auto">
-                          <div className="w-12 h-12 rounded-full bg-blue-500/20 text-blue-500 font-black flex items-center justify-center shrink-0 text-xl border border-blue-500/30">
-                            {user.avatar ? <img src={user.avatar} className="w-full h-full object-cover rounded-full" /> : user.fullName.substring(0, 2)}
-                          </div>
-                          <div>
-                            <h3 className="font-bold text-lg text-foreground flex items-center gap-2">
-                              {user.fullName}
-                              {user.role === 'guest' && <span className="text-[10px] bg-amber-500/20 text-amber-500 px-2 py-0.5 rounded-full">زائر</span>}
-                              {user.isBanned && <span className="text-[10px] bg-red-500/20 text-red-500 px-2 py-0.5 rounded-full flex items-center gap-1"><ShieldX size={10} /> محظور</span>}
-                            </h3>
-                            <div className="flex gap-3 text-sm text-muted-foreground items-center">
-                              <span>{user.email}</span>
-                              <span>|</span>
-                              <button onClick={() => setExpandedUser(expandedUser === user.id ? null : user.id)} className="text-primary hover:underline text-xs flex items-center gap-1">
-                                إظهار المعلومات {expandedUser === user.id ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
-                              </button>
+                {usersData.length === 0 ? (
+                  <div className="text-center py-20">
+                    <Users className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
+                    <p className="text-muted-foreground">لا يوجد مستخدمين مسجلين حالياً.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {usersData.map(user => (
+                      <div key={user.id} className="bg-black/20 border border-white/5 rounded-2xl p-4 sm:p-6 flex flex-col items-start gap-4 hover:border-white/10 transition-colors">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full gap-4">
+                          <div className="flex items-center gap-4 w-full sm:w-auto">
+                            <div className="w-12 h-12 rounded-full bg-blue-500/20 text-blue-500 font-black flex items-center justify-center shrink-0 text-xl border border-blue-500/30">
+                              {user.avatar ? <img src={user.avatar} className="w-full h-full object-cover rounded-full" /> : user.fullName.substring(0, 2)}
+                            </div>
+                            <div>
+                              <h3 className="font-bold text-lg text-foreground flex items-center gap-2">
+                                {user.fullName}
+                                {user.role === 'guest' && <span className="text-[10px] bg-amber-500/20 text-amber-500 px-2 py-0.5 rounded-full">زائر</span>}
+                                {user.isBanned && <span className="text-[10px] bg-red-500/20 text-red-500 px-2 py-0.5 rounded-full flex items-center gap-1"><ShieldX size={10} /> محظور</span>}
+                              </h3>
+                              <div className="flex gap-3 text-sm text-muted-foreground items-center">
+                                <span>{user.email}</span>
+                                <span>|</span>
+                                <button onClick={() => setExpandedUser(expandedUser === user.id ? null : user.id)} className="text-primary hover:underline text-xs flex items-center gap-1">
+                                  إظهار المعلومات {expandedUser === user.id ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
+                                </button>
+                              </div>
                             </div>
                           </div>
+                          
+                          <div className="flex items-center gap-3 w-full sm:w-auto shrink-0 justify-end mt-2 sm:mt-0">
+                            <Button 
+                              size="sm" 
+                              onClick={() => handleBanUser(user.id, user.isBanned)}
+                              variant={user.isBanned ? "outline" : "secondary"}
+                              className="text-xs rounded-xl font-bold border-white/10"
+                            >
+                              {user.isBanned ? <><ShieldCheck className="w-4 h-4 ml-1 text-green-400" /> إلغاء الحظر</> : <><ShieldX className="w-4 h-4 ml-1 text-red-400" /> حظر المستخدم</>}
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="destructive"
+                              onClick={() => handleDeletePlatformUser(user.id)}
+                              className="text-xs rounded-xl font-bold w-10 p-0"
+                              title="حذف الحساب"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </div>
-                        
-                        <div className="flex items-center gap-3 w-full sm:w-auto shrink-0 justify-end mt-2 sm:mt-0">
-                          <Button 
-                            size="sm" 
-                            onClick={() => handleBanUser(user.id, user.isBanned)}
-                            variant={user.isBanned ? "outline" : "secondary"}
-                            className="text-xs rounded-xl font-bold border-white/10"
-                          >
-                            {user.isBanned ? <><ShieldCheck className="w-4 h-4 ml-1 text-green-400" /> إلغاء الحظر</> : <><ShieldX className="w-4 h-4 ml-1 text-red-400" /> حظر المستخدم</>}
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="destructive"
-                            onClick={() => handleDeletePlatformUser(user.id)}
-                            className="text-xs rounded-xl font-bold w-10 p-0"
-                            title="حذف الحساب"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
 
-                      {/* Dropdown Information */}
-                      {expandedUser === user.id && (
-                        <div className="w-full mt-2 pt-4 border-t border-white/5 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm animate-in fade-in slide-in-from-top-2">
-                          <div className="bg-black/30 p-3 rounded-xl border border-white/5">
-                            <span className="text-muted-foreground block text-xs mb-1">اسم المستخدم:</span>
-                            <span className="font-mono text-foreground font-bold">{user.username || "غير متوفر"}</span>
+                        {/* Dropdown Information */}
+                        {expandedUser === user.id && (
+                          <div className="w-full mt-2 pt-4 border-t border-white/5 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm animate-in fade-in slide-in-from-top-2 relative">
+                            <div className="bg-black/30 p-3 rounded-xl border border-white/5">
+                              <span className="text-muted-foreground block text-xs mb-1">اسم المستخدم:</span>
+                              <span className="font-mono text-foreground font-bold">{user.username || "غير متوفر"}</span>
+                            </div>
+                            <div className="bg-black/30 p-3 rounded-xl border border-white/5">
+                              <span className="text-muted-foreground block text-xs mb-1">الاسم الكامل:</span>
+                              <span className="text-foreground font-bold">{user.fullName}</span>
+                            </div>
+                            <div className="bg-black/30 p-3 rounded-xl border border-white/5">
+                              <span className="text-muted-foreground block text-xs mb-1">تاريخ التسجيل:</span>
+                              <span className="text-foreground">{new Date(user.createdAt).toLocaleDateString('ar-JO', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute:'2-digit' })}</span>
+                            </div>
+                            <div className="bg-black/30 p-3 rounded-xl border border-white/5">
+                              <span className="text-muted-foreground block text-xs mb-1">حالة الحساب:</span>
+                              <span className={`font-bold ${user.isBanned ? "text-red-400" : "text-green-400"}`}>{user.isBanned ? `محظور (${user.banReason || "بدون سبب"})` : "نشط"}</span>
+                            </div>
+                            
+                            <div className="sm:col-span-2 mt-2">
+                              <Button 
+                                onClick={() => setManagingUser(user)}
+                                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl h-12 shadow-lg shadow-blue-500/20"
+                              >
+                                <Edit className="w-5 h-5 ml-2" /> إدارة محتوى هذا المستخدم (الثمنيلات والفواتير)
+                              </Button>
+                            </div>
                           </div>
-                          <div className="bg-black/30 p-3 rounded-xl border border-white/5">
-                            <span className="text-muted-foreground block text-xs mb-1">الاسم الكامل:</span>
-                            <span className="text-foreground font-bold">{user.fullName}</span>
-                          </div>
-                          <div className="bg-black/30 p-3 rounded-xl border border-white/5">
-                            <span className="text-muted-foreground block text-xs mb-1">تاريخ التسجيل:</span>
-                            <span className="text-foreground">{new Date(user.createdAt).toLocaleDateString('ar-JO', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute:'2-digit' })}</span>
-                          </div>
-                          <div className="bg-black/30 p-3 rounded-xl border border-white/5">
-                            <span className="text-muted-foreground block text-xs mb-1">حالة الحساب:</span>
-                            <span className={`font-bold ${user.isBanned ? "text-red-400" : "text-green-400"}`}>{user.isBanned ? `محظور (${user.banReason || "بدون سبب"})` : "نشط"}</span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -1083,9 +1098,9 @@ export default function AdminDashboard() {
             <h2 className="text-xl font-black text-foreground mb-2">{modalConfig.title}</h2>
             <p className="text-sm text-muted-foreground mb-6">{modalConfig.description}</p>
             
-            {['addClient', 'addWork', 'editOrder'].includes(modalConfig.type || '') && (
+            {(['addClient', 'addWork', 'editOrder'].includes(modalConfig.type || '') || (modalConfig.type === 'banUser' && modalConfig.initialValue !== "unban")) && (
               <Input
-                type={modalConfig.type === 'addClient' ? 'text' : 'number'}
+                type={modalConfig.type === 'addClient' || modalConfig.type === 'banUser' ? 'text' : 'number'}
                 autoFocus
                 placeholder={modalConfig.placeholder}
                 value={modalInputValue}

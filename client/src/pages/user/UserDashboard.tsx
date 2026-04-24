@@ -124,16 +124,11 @@ export default function UserDashboard() {
       <main className="flex-1 flex flex-col h-screen overflow-y-auto relative">
         {/* Guest Banner */}
         {isGuest && (
-          <div className="bg-amber-500/10 border-b border-amber-500/20 px-6 py-3 flex flex-col sm:flex-row items-center justify-between gap-4 sticky top-0 z-20 backdrop-blur-md">
+          <div className="bg-amber-500/10 border-b border-amber-500/20 px-6 py-3 flex flex-col sm:flex-row items-center justify-center gap-4 sticky top-0 z-20 backdrop-blur-md">
             <div className="flex items-center gap-2 text-amber-500 font-bold">
               <span className="text-xl">⚠️</span>
               <p className="text-sm sm:text-base">أنت حالياً في وضع التجربة (Demo)، هذه البيانات غير حقيقية.</p>
             </div>
-            <Link href="/register">
-              <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-black font-black whitespace-nowrap rounded-xl">
-                إنشاء حساب الآن
-              </Button>
-            </Link>
           </div>
         )}
 
