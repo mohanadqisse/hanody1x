@@ -68,16 +68,16 @@ function App() {
               <Switch>
                 <Route path="/admin" component={AdminLogin} />
                 <Route path="/admin/dashboard" component={AdminDashboard} />
+                <Route path="/login" component={Login} />
+                <Route path="/register" component={Register} />
+                <Route path="/dashboard/*" component={UserDashboard} />
+                <Route path="/dashboard" component={UserDashboard} />
                 <Route>
                   <>
                     <Navbar />
                     <Switch>
                       <Route path="/" component={Home} />
                       <Route path="/case-study/:id" component={CaseStudy} />
-                      <Route path="/login" component={Login} />
-                      <Route path="/register" component={Register} />
-                      <Route path="/dashboard/*" component={UserDashboard} />
-                      <Route path="/dashboard" component={UserDashboard} />
                       <Route component={NotFound} />
                     </Switch>
                     <Footer />

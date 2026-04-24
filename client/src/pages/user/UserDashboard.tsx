@@ -4,7 +4,7 @@ import { useUser } from "@/contexts/UserContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   LayoutDashboard, Image as ImageIcon, CreditCard, 
-  Settings, LogOut, Bell, Menu, X, CheckCircle, Clock 
+  Settings, LogOut, Bell, Menu, X, CheckCircle, Clock, Home 
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -100,13 +100,22 @@ export default function UserDashboard() {
               })}
             </nav>
 
-            <button
-              onClick={logout}
-              className="flex items-center gap-3 px-4 py-3 rounded-2xl text-red-500 hover:bg-red-500/10 transition-colors mt-auto font-bold"
-            >
-              <LogOut size={20} />
-              <span>تسجيل الخروج</span>
-            </button>
+            <div className="mt-auto space-y-2 pt-4 border-t border-white/5">
+              <a
+                href="/"
+                className="flex items-center gap-3 px-4 py-3 rounded-2xl text-blue-400 hover:bg-blue-500/10 transition-colors font-bold"
+              >
+                <Home size={20} />
+                <span>الرجوع إلى الموقع</span>
+              </a>
+              <button
+                onClick={logout}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-red-500 hover:bg-red-500/10 transition-colors font-bold"
+              >
+                <LogOut size={20} />
+                <span>تسجيل الخروج</span>
+              </button>
+            </div>
           </motion.aside>
         )}
       </AnimatePresence>

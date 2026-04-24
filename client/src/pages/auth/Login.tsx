@@ -22,11 +22,17 @@ export default function Login() {
 
   const handleGuestLogin = async () => {
     try {
-      const res = await fetch("/api/users/auth/guest", { method: "POST" });
+      const apiBase = import.meta.env.VITE_API_URL || "";
+      const res = await fetch(`${apiBase}/api/users/auth/guest`, { method: "POST" });
       if (res.ok) {
         const data = await res.json();
+        // Store token first, then navigate
+        localStorage.setItem("user_token", data.token);
         login(data.token, data.user);
-        window.location.href = "/dashboard";
+        // Use setTimeout to ensure state is saved before navigation on mobile
+        setTimeout(() => {
+          window.location.href = "/dashboard";
+        }, 100);
       }
     } catch (error) {
       toast({ title: "حدث خطأ", variant: "destructive" });
