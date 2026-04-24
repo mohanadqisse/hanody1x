@@ -129,7 +129,7 @@ export default function AdminLogin() {
                   <FormItem>
                     <FormLabel>اسم المستخدم</FormLabel>
                     <FormControl>
-                      <Input placeholder="admin" {...field} className="bg-card/50 border-white/10 text-right" />
+                      <Input placeholder="hanody" {...field} className="bg-card/50 border-white/10 text-right" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
