@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/contexts/UserContext";
 import { useSection } from "@/hooks/useContent";
-import { User, LogIn, UserPlus, AlertCircle, ArrowRight } from "lucide-react";
+import { User, LogIn, UserPlus, AlertCircle, ArrowRight, Eye, EyeOff } from "lucide-react";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -19,6 +19,8 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginRole, setLoginRole] = useState<"guest" | "user" | null>(null);
 
   const handleGuestLogin = async () => {
     try {
@@ -44,10 +46,11 @@ export default function Login() {
     if (!email || !password) return toast({ title: "يرجى تعبئة جميع الحقول", variant: "destructive" });
     setIsLoading(true);
     try {
-      const res = await fetch("/api/users/auth/login", {
+      const apiBase = import.meta.env.VITE_API_URL || "";
+      const res = await fetch(`${apiBase}/api/users/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password, role: loginRole })
       });
       const data = await res.json();
       if (res.ok) {
@@ -57,7 +60,7 @@ export default function Login() {
         toast({ title: data.message || "فشل تسجيل الدخول", variant: "destructive" });
       }
     } catch (error) {
-      toast({ title: "حدث خطأ", variant: "destructive" });
+      toast({ title: "حدث خطأ في الاتصال، يرجى المحاولة مرة أخرى", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -156,18 +159,33 @@ export default function Login() {
                 className="bg-black/20 border-white/10 text-right h-12 rounded-xl"
                 dir="ltr"
                 placeholder="اسم المستخدم"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck="false"
               />
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">كلمة المرور</label>
-              <Input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="bg-black/20 border-white/10 text-right h-12 rounded-xl"
-                dir="ltr"
-                placeholder="••••••••"
-              />
+              <div className="relative">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="bg-black/20 border-white/10 text-right h-12 rounded-xl pl-12"
+                  dir="ltr"
+                  placeholder="••••••••"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck="false"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-colors"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
             </div>
             <div className="pt-4 flex gap-3">
               <Button 
@@ -225,6 +243,7 @@ export default function Login() {
                 </Button>
                 <Button 
                   onClick={() => {
+                    setLoginRole(popup === "guest" ? "guest" : "user");
                     setPopup(null);
                     setView("loginForm");
                   }}

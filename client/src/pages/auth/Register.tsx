@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/contexts/UserContext";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Eye, EyeOff } from "lucide-react";
 
 export default function Register() {
   const [, setLocation] = useLocation();
@@ -20,6 +20,7 @@ export default function Register() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleRegister = async (role: "user" | "guest", e?: React.FormEvent) => {
     e?.preventDefault();
@@ -35,7 +36,8 @@ export default function Register() {
 
     setIsLoading(true);
     try {
-      const res = await fetch("/api/users/auth/register", {
+      const apiBase = import.meta.env.VITE_API_URL || "";
+      const res = await fetch(`${apiBase}/api/users/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fullName, username, email, password, role })
@@ -93,6 +95,9 @@ export default function Register() {
               className="bg-black/20 border-white/10 text-right h-12 rounded-xl"
               dir="ltr"
               placeholder="email@example.com"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck="false"
             />
           </div>
           <div>
@@ -104,29 +109,56 @@ export default function Register() {
               className="bg-black/20 border-white/10 text-right h-12 rounded-xl"
               dir="ltr"
               placeholder="username"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck="false"
             />
           </div>
           <div>
             <label className="block text-sm font-medium mb-2">كلمة المرور</label>
-            <Input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="bg-black/20 border-white/10 text-right h-12 rounded-xl"
-              dir="ltr"
-              placeholder="••••••••"
-            />
+            <div className="relative">
+              <Input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="bg-black/20 border-white/10 text-right h-12 rounded-xl pl-12"
+                dir="ltr"
+                placeholder="••••••••"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck="false"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-colors"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium mb-2">تأكيد كلمة المرور</label>
-            <Input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="bg-black/20 border-white/10 text-right h-12 rounded-xl"
-              dir="ltr"
-              placeholder="••••••••"
-            />
+            <div className="relative">
+              <Input
+                type={showPassword ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="bg-black/20 border-white/10 text-right h-12 rounded-xl pl-12"
+                dir="ltr"
+                placeholder="••••••••"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck="false"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-colors"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
           </div>
           <div className="pt-4 flex flex-col gap-3">
             <div className="flex gap-3">

@@ -20,6 +20,7 @@ const registerSchema = z.object({
 const loginSchema = z.object({
   email: z.string().min(1),
   password: z.string().min(1),
+  role: z.string().optional(),
 });
 
 const loginLimiter = rateLimit({
@@ -64,19 +65,28 @@ router.post("/register", async (req, res) => {
 
 router.post("/login", loginLimiter, async (req, res) => {
   try {
-    const { email, password } = loginSchema.parse(req.body);
+    const { email, password, role } = loginSchema.parse(req.body);
     const [user] = await db.select().from(users).where(
       or(eq(users.email, email), eq(users.username, email))
     );
 
     if (!user) {
-      res.status(401).json({ message: "البريد الإلكتروني أو كلمة المرور غير صحيحة" });
+      res.status(401).json({ message: "اسم المستخدم أو كلمة المرور غير صحيحة" });
       return;
     }
 
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) {
-      res.status(401).json({ message: "البريد الإلكتروني أو كلمة المرور غير صحيحة" });
+      res.status(401).json({ message: "اسم المستخدم أو كلمة المرور غير صحيحة" });
+      return;
+    }
+
+    if (role && user.role !== role) {
+      if (role === "guest") {
+        res.status(403).json({ message: "بيانات الدخول الخاصة بك هي لصانع محتوى وليس كزائر، يرجى تسجيل الدخول من بوابة صناع المحتوى" });
+      } else {
+        res.status(403).json({ message: "بيانات الدخول الخاصة بك هي لزائر وليست كصانع محتوى، يرجى تسجيل الدخول من بوابة الزوار" });
+      }
       return;
     }
 
