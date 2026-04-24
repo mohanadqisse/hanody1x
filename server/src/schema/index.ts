@@ -60,6 +60,15 @@ export const insertTimeSessionSchema = createInsertSchema(timeSessions).omit({ i
 
 // --- NEW TABLES FOR CLIENT ACCOUNTS ---
 
+export const creatorCodes = pgTable("creator_codes", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull().unique(),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertCreatorCodeSchema = createInsertSchema(creatorCodes).omit({ id: true, createdAt: true });
+
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   fullName: text("full_name").notNull(),
@@ -140,3 +149,4 @@ export type Transaction = typeof transactions.$inferSelect;
 export type Comment = typeof comments.$inferSelect;
 export type Rating = typeof ratings.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
+export type CreatorCode = typeof creatorCodes.$inferSelect;

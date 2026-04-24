@@ -62,8 +62,8 @@ export default function AdminDashboard() {
   const { isAuthenticated, logout, token } = useAdmin();
   const { toast } = useToast();
   
-  // Tabs: 'home' | 'clients' | 'content' | 'inbox' | 'logs' | 'users'
-  const [activeTab, setActiveTab] = useState<'home' | 'clients' | 'users' | 'content'>('home');
+  // Tabs: 'home' | 'clients' | 'content' | 'inbox' | 'logs' | 'users' | 'codes'
+  const [activeTab, setActiveTab] = useState<'home' | 'clients' | 'users' | 'content' | 'codes'>('home');
 
   // Existing states
   const [sections, setSections] = useState<Record<string, any>>({});
@@ -80,6 +80,7 @@ export default function AdminDashboard() {
   const [clientsData, setClientsData] = useState<Client[]>([]);
   const [sessionsData, setSessionsData] = useState<TimeSession[]>([]);
   const [usersData, setUsersData] = useState<any[]>([]);
+  const [codesData, setCodesData] = useState<any[]>([]);
   const [expandedUser, setExpandedUser] = useState<number | null>(null);
   const [managingUser, setManagingUser] = useState<any>(null);
   
@@ -92,7 +93,7 @@ export default function AdminDashboard() {
   // Modal State
   const [modalConfig, setModalConfig] = useState<{
     isOpen: boolean;
-    type: 'addClient' | 'addWork' | 'editOrder' | 'clearBalance' | 'deleteClient' | 'banUser' | 'deletePlatformUser' | null;
+    type: 'addClient' | 'addWork' | 'editOrder' | 'clearBalance' | 'deleteClient' | 'banUser' | 'deletePlatformUser' | 'addCode' | null;
     title: string;
     description: string;
     placeholder?: string;
@@ -164,12 +165,14 @@ export default function AdminDashboard() {
       const pClients = fetch("/api/dashboard/clients", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
       const pSessions = fetch("/api/dashboard/sessions", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
       const pUsers = fetch("/api/dashboard/users", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
+      const pCodes = fetch("/api/dashboard/codes", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
 
-      const [s, c, sess, u] = await Promise.all([pStats, pClients, pSessions, pUsers]);
+      const [s, c, sess, u, codes] = await Promise.all([pStats, pClients, pSessions, pUsers, pCodes]);
       setStats(s);
       setClientsData(c);
       setSessionsData(sess);
       setUsersData(u);
+      setCodesData(codes);
     } catch(err) {
       console.error(err);
     }
@@ -389,6 +392,36 @@ export default function AdminDashboard() {
     });
   };
 
+  const handleAddCode = () => {
+    setModalConfig({
+      isOpen: true,
+      type: 'addCode',
+      title: 'إضافة كود جديد',
+      description: 'أدخل الكود الذي سيستخدمه صناع المحتوى عند إنشاء حساب جديد.',
+      placeholder: 'مثال: hanody2024'
+    });
+    setModalInputValue("");
+  };
+
+  const handleToggleCode = async (id: number) => {
+    try {
+      const res = await fetch(`/api/dashboard/codes/${id}/toggle`, {
+        method: "PATCH", headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) fetchDashboardData();
+    } catch (e) { toast({ title: "حدث خطأ", variant: "destructive" }); }
+  };
+
+  const handleDeleteCode = async (id: number) => {
+    if (!confirm("هل أنت متأكد من حذف هذا الكود؟")) return;
+    try {
+      const res = await fetch(`/api/dashboard/codes/${id}`, {
+        method: "DELETE", headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) { toast({ title: "تم الحذف" }); fetchDashboardData(); }
+    } catch (e) { toast({ title: "حدث خطأ", variant: "destructive" }); }
+  };
+
   const submitModal = async () => {
     if (!modalConfig.type) return;
     const val = modalInputValue.trim();
@@ -446,6 +479,15 @@ export default function AdminDashboard() {
         });
         if (res.ok) { toast({ title: "تم حذف المستخدم" }); fetchDashboardData(); }
       }
+      else if (modalConfig.type === 'addCode') {
+        if (!val) return toast({ title: "يرجى إدخال الكود", variant: "destructive" });
+        const res = await fetch("/api/dashboard/codes", {
+          method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ code: val })
+        });
+        if (res.ok) { toast({ title: "تم إضافة الكود" }); fetchDashboardData(); }
+        else { toast({ title: "فشل، ربما الكود مستخدم", variant: "destructive" }); }
+      }
     } catch (e) {
       toast({ title: "حدث خطأ", variant: "destructive" });
     }
@@ -484,6 +526,10 @@ export default function AdminDashboard() {
           <button onClick={() => setActiveTab('users')} className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${activeTab === 'users' ? 'bg-primary/20 text-primary font-bold' : 'text-muted-foreground hover:bg-white/5 hover:text-foreground'}`}>
             <Users className="w-5 h-5 flex-shrink-0" />
             <span>حسابات المنصة</span>
+          </button>
+          <button onClick={() => setActiveTab('codes')} className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${activeTab === 'codes' ? 'bg-primary/20 text-primary font-bold' : 'text-muted-foreground hover:bg-white/5 hover:text-foreground'}`}>
+            <ShieldCheck className="w-5 h-5 flex-shrink-0" />
+            <span>أكواد الدعوة</span>
           </button>
           <button onClick={() => setActiveTab('content')} className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${activeTab === 'content' ? 'bg-primary/20 text-primary font-bold' : 'text-muted-foreground hover:bg-white/5 hover:text-foreground'}`}>
             <Database className="w-5 h-5 flex-shrink-0" />
@@ -818,6 +864,58 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* TAB: CODES */}
+        {activeTab === 'codes' && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="bg-card/40 border border-white/5 rounded-3xl p-6 sm:p-10">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 border-b border-white/10 pb-6">
+                <div>
+                  <h2 className="text-2xl font-black text-foreground mb-2">أكواد صناع المحتوى</h2>
+                  <p className="text-sm text-muted-foreground">قم بإدارة الأكواد التي تسمح بصناع المحتوى بتسجيل حساب جديد.</p>
+                </div>
+                <Button onClick={handleAddCode} className="bg-primary hover:bg-primary/90 text-white rounded-xl shadow-lg font-bold shrink-0">
+                  + إضافة كود جديد
+                </Button>
+              </div>
+
+              {codesData.length === 0 ? (
+                <div className="text-center py-20">
+                  <ShieldCheck className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
+                  <p className="text-muted-foreground">لا يوجد أكواد مسجلة حالياً.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {codesData.map(code => (
+                    <div key={code.id} className="bg-black/20 border border-white/5 rounded-2xl p-5 flex flex-col justify-between gap-4">
+                      <div>
+                        <div className="flex justify-between items-start mb-2">
+                          <span className={`text-xs px-2 py-1 rounded-full font-bold ${code.isActive ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
+                            {code.isActive ? 'مُفعّل' : 'مُعطّل'}
+                          </span>
+                          <button onClick={() => handleDeleteCode(code.id)} className="text-muted-foreground hover:text-red-500 transition">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <h3 className="text-2xl font-mono font-black text-foreground mb-1" dir="ltr">{code.code}</h3>
+                        <p className="text-xs text-muted-foreground">تم الإنشاء: {new Date(code.createdAt).toLocaleDateString('ar-JO')}</p>
+                      </div>
+                      
+                      <Button 
+                        variant={code.isActive ? "destructive" : "secondary"} 
+                        size="sm" 
+                        onClick={() => handleToggleCode(code.id)}
+                        className="w-full rounded-xl font-bold text-xs"
+                      >
+                        {code.isActive ? "إيقاف الكود" : "تفعيل الكود"}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* TAB: CONTENT MANAGEMENT (Brings back all original settings) */}
         {activeTab === 'content' && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-4xl max-w-[100%] mx-auto">
@@ -1098,9 +1196,9 @@ export default function AdminDashboard() {
             <h2 className="text-xl font-black text-foreground mb-2">{modalConfig.title}</h2>
             <p className="text-sm text-muted-foreground mb-6">{modalConfig.description}</p>
             
-            {(['addClient', 'addWork', 'editOrder'].includes(modalConfig.type || '') || (modalConfig.type === 'banUser' && modalConfig.initialValue !== "unban")) && (
+            {(['addClient', 'addWork', 'editOrder', 'addCode'].includes(modalConfig.type || '') || (modalConfig.type === 'banUser' && modalConfig.initialValue !== "unban")) && (
               <Input
-                type={modalConfig.type === 'addClient' || modalConfig.type === 'banUser' ? 'text' : 'number'}
+                type={modalConfig.type === 'addClient' || modalConfig.type === 'banUser' || modalConfig.type === 'addCode' ? 'text' : 'number'}
                 autoFocus
                 placeholder={modalConfig.placeholder}
                 value={modalInputValue}

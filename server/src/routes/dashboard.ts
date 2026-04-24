@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "../lib/db.js";
-import { clients, timeSessions, users, thumbnails, transactions, comments, ratings, notifications } from "../schema/index.js";
+import { clients, timeSessions, users, thumbnails, transactions, comments, ratings, notifications, creatorCodes } from "../schema/index.js";
 import { eq, desc, sum, count } from "drizzle-orm";
 import { requireAuth } from "../lib/auth.js";
 
@@ -8,6 +8,57 @@ const router = Router();
 
 // Apply authentication middleware to all dashboard routes
 router.use(requireAuth);
+
+// =======================
+// Creator Invite Codes Management
+// =======================
+router.get("/codes", async (req, res) => {
+  try {
+    const codes = await db.select().from(creatorCodes).orderBy(desc(creatorCodes.createdAt));
+    res.json(codes);
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.post("/codes", async (req, res) => {
+  try {
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ error: "Code is required" });
+
+    // Check if code already exists
+    const existing = await db.select().from(creatorCodes).where(eq(creatorCodes.code, code));
+    if (existing.length > 0) return res.status(400).json({ error: "Code already exists" });
+
+    const [newCode] = await db.insert(creatorCodes).values({ code, isActive: true }).returning();
+    res.status(201).json(newCode);
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.patch("/codes/:id/toggle", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const [existingCode] = await db.select().from(creatorCodes).where(eq(creatorCodes.id, id));
+    if (!existingCode) return res.status(404).json({ error: "Code not found" });
+
+    const [updatedCode] = await db.update(creatorCodes).set({ isActive: !existingCode.isActive }).where(eq(creatorCodes.id, id)).returning();
+    res.json(updatedCode);
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.delete("/codes/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await db.delete(creatorCodes).where(eq(creatorCodes.id, id));
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 
 // =======================
 // Dashboard Stats

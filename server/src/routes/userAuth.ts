@@ -2,19 +2,20 @@ import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { db } from "../lib/db.js";
-import { users } from "../schema/index.js";
+import { users, creatorCodes } from "../schema/index.js";
 import { signToken, requireUserAuth } from "../lib/auth.js";
-import { eq, or } from "drizzle-orm";
+import { eq, or, and } from "drizzle-orm";
 import rateLimit from "express-rate-limit";
 
 const router = Router();
 
 const registerSchema = z.object({
   fullName: z.string().min(2),
-  username: z.string().min(3),
+  username: z.string().min(3).regex(/^[A-Za-z0-9_]+$/, "اسم المستخدم يجب أن لا يحتوي على مسافات أو رموز خاصة"),
   email: z.string().email(),
-  password: z.string().min(6),
+  password: z.string().min(6).regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, "كلمة المرور يجب أن تحتوي على حرف كبير وحرف صغير ورقم واحد على الأقل"),
   role: z.enum(["user", "guest"]).optional().default("user"),
+  inviteCode: z.string().optional(),
 });
 
 const loginSchema = z.object({
@@ -31,14 +32,34 @@ const loginLimiter = rateLimit({
 
 router.post("/register", async (req, res) => {
   try {
-    const { fullName, username, email, password, role } = registerSchema.parse(req.body);
+    const { fullName, username, email, password, role, inviteCode } = registerSchema.parse(req.body);
     
-    // Check if email or username exists
-    const [existing] = await db.select().from(users).where(
-      or(eq(users.email, email), eq(users.username, username))
-    );
-    if (existing) {
-      res.status(400).json({ message: "البريد الإلكتروني أو اسم المستخدم مستخدم مسبقاً" });
+    // Invite Code validation for Creators
+    if (role === "user") {
+      if (!inviteCode) {
+        res.status(400).json({ message: "يرجى إدخال كود صانع المحتوى لإنشاء الحساب" });
+        return;
+      }
+      const [validCode] = await db.select().from(creatorCodes).where(
+        and(eq(creatorCodes.code, inviteCode), eq(creatorCodes.isActive, true))
+      );
+      if (!validCode) {
+        res.status(400).json({ message: "الكود خطأ يرجى التواصل مع صاحب الموقع لطلب كود جديد" });
+        return;
+      }
+    }
+
+    // Check if email exists
+    const [existingEmail] = await db.select().from(users).where(eq(users.email, email));
+    if (existingEmail) {
+      res.status(400).json({ message: "البريد الإلكتروني مستخدم مسبقاً" });
+      return;
+    }
+
+    // Check if username exists
+    const [existingUsername] = await db.select().from(users).where(eq(users.username, username));
+    if (existingUsername) {
+      res.status(400).json({ message: "اسم المستخدم مستخدم مسبقاً" });
       return;
     }
 
