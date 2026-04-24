@@ -1068,7 +1068,7 @@ function About() {
   const about = { ...aboutRaw, logoImage: brand.logoImage };
   const skills = (about.skills || "").split(",").map((s: string) => s.trim()).filter(Boolean);
   
-  const whatsappUrl = "https://wa.me/00962780691000?text=" + encodeURIComponent("مرحباً، أريد طلب صورة مصغرة لقناتي");
+  const whatsappUrl = "https://wa.me/+962780691000?text=" + encodeURIComponent("مرحباً، أريد طلب صورة مصغرة لقناتي");
 
   return (
     <section className="py-32 bg-card/20 relative overflow-hidden border-t border-border">
@@ -1324,7 +1324,7 @@ function StickyOrderButton() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const whatsappUrl = "https://wa.me/00962780691000?text=" + encodeURIComponent("مرحباً، أريد طلب صورة مصغرة لقناتي");
+  const whatsappUrl = "https://wa.me/+962780691000?text=" + encodeURIComponent("مرحباً، أريد طلب صورة مصغرة لقناتي");
 
   return (
     <AnimatePresence>
@@ -1419,7 +1419,7 @@ function Contact({ isDiscountActive }: { isDiscountActive?: boolean }) {
     }
   };
 
-  const whatsappUrl = "https://wa.me/00962780691000?text=" + encodeURIComponent("مرحباً، أريد طلب صورة مصغرة لقناتي");
+  const whatsappUrl = "https://wa.me/+962780691000?text=" + encodeURIComponent("مرحباً، أريد طلب صورة مصغرة لقناتي");
 
   return (
     <section id="order" className="py-32 bg-background relative border-t border-border">
