@@ -85,6 +85,18 @@ export default function AdminDashboard() {
   const [trackingTitle, setTrackingTitle] = useState("");
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Modal State
+  const [modalConfig, setModalConfig] = useState<{
+    isOpen: boolean;
+    type: 'addClient' | 'addWork' | 'editOrder' | 'clearBalance' | 'deleteClient' | null;
+    title: string;
+    description: string;
+    placeholder?: string;
+    initialValue?: string;
+    clientId?: number;
+  }>({ isOpen: false, type: null, title: "", description: "" });
+  const [modalInputValue, setModalInputValue] = useState("");
+
   useEffect(() => {
     if (!isAuthenticated) {
       navigate("/admin");
@@ -292,82 +304,110 @@ export default function AdminDashboard() {
   );
 
   // Dash specific Actions
-  const handleAddClient = async () => {
-    const name = prompt("اسم العميل الجديد:");
-    if (!name) return;
-    try {
-      const res = await fetch("/api/dashboard/clients", {
-        method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ name })
-      });
-      if (res.ok) {
-        toast({ title: "تم إضافة العميل" });
-        fetchDashboardData();
-      }
-    } catch (e) {}
+  const handleAddClient = () => {
+    setModalConfig({
+      isOpen: true,
+      type: 'addClient',
+      title: 'إضافة عميل جديد',
+      description: 'أدخل اسم العميل الجديد لإنشاء سجل له.',
+      placeholder: 'اسم العميل'
+    });
+    setModalInputValue("");
   };
 
-  const handleAddWorkAction = async (clientId: number) => {
-    // defaults to 1 pic = $10. We can ask how many pics.
-    const picsStr = prompt("أدخل عدد الصور المنجزة:", "1");
-    if (!picsStr) return;
-    const pics = parseInt(picsStr);
-    if (isNaN(pics) || pics <= 0) { toast({ title: "قيمة غير صالحة", variant: "destructive" }); return; }
+  const handleAddWorkAction = (clientId: number) => {
+    setModalConfig({
+      isOpen: true,
+      type: 'addWork',
+      title: 'تسجيل عمل / صور',
+      description: 'أدخل عدد الصور المنجزة (الافتراضي: 1 = $10).',
+      placeholder: 'مثال: 1',
+      clientId
+    });
+    setModalInputValue("1");
+  };
+
+  const handleClearBalance = (clientId: number) => {
+    setModalConfig({
+      isOpen: true,
+      type: 'clearBalance',
+      title: 'تصفير الحساب',
+      description: 'هل أنت متأكد من تصفير حساب هذا العميل؟',
+      clientId
+    });
+  };
+
+  const handleEditOrderCount = (clientId: number, currentOrders: number) => {
+    setModalConfig({
+      isOpen: true,
+      type: 'editOrder',
+      title: 'تعديل الصور المنجزة',
+      description: 'أدخل العدد الصحيح للصور المنجزة للعميل.',
+      placeholder: 'مثال: 10',
+      initialValue: currentOrders.toString(),
+      clientId
+    });
+    setModalInputValue(currentOrders.toString());
+  };
+
+  const handleDeleteClient = (clientId: number) => {
+    setModalConfig({
+      isOpen: true,
+      type: 'deleteClient',
+      title: 'حذف العميل',
+      description: 'هل أنت متأكد من حذف هذا العميل تماماً؟ سيتم مسح كافة سجلاته بشكل نهائي ولا يمكن التراجع عن ذلك.',
+      clientId
+    });
+  };
+
+  const submitModal = async () => {
+    if (!modalConfig.type) return;
+    const val = modalInputValue.trim();
+
+    try {
+      if (modalConfig.type === 'addClient') {
+        if (!val) return toast({ title: "يرجى إدخال اسم العميل", variant: "destructive" });
+        const res = await fetch("/api/dashboard/clients", {
+          method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ name: val })
+        });
+        if (res.ok) { toast({ title: "تم إضافة العميل" }); fetchDashboardData(); }
+      } 
+      else if (modalConfig.type === 'addWork' && modalConfig.clientId) {
+        const pics = parseInt(val);
+        if (isNaN(pics) || pics <= 0) return toast({ title: "قيمة غير صالحة", variant: "destructive" });
+        const res = await fetch(`/api/dashboard/clients/${modalConfig.clientId}/work`, {
+          method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ items: pics, amount: 10 }) 
+        });
+        if (res.ok) { toast({ title: "تم إضافة السجل للعميل" }); fetchDashboardData(); }
+      }
+      else if (modalConfig.type === 'clearBalance' && modalConfig.clientId) {
+        const res = await fetch(`/api/dashboard/clients/${modalConfig.clientId}/clear`, {
+          method: "PATCH", headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) { toast({ title: "تم تصفير الحساب بنجاح" }); fetchDashboardData(); }
+      }
+      else if (modalConfig.type === 'editOrder' && modalConfig.clientId) {
+        const newCount = parseInt(val);
+        if (isNaN(newCount) || newCount < 0) return toast({ title: "قيمة غير صالحة", variant: "destructive" });
+        const res = await fetch(`/api/dashboard/clients/${modalConfig.clientId}/set-orders`, {
+          method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ ordersCompleted: newCount })
+        });
+        if (res.ok) { toast({ title: "تم التعديل بنجاح" }); fetchDashboardData(); }
+      }
+      else if (modalConfig.type === 'deleteClient' && modalConfig.clientId) {
+        const res = await fetch(`/api/dashboard/clients/${modalConfig.clientId}`, {
+          method: "DELETE", headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) { toast({ title: "تم حذف العميل" }); fetchDashboardData(); }
+      }
+    } catch (e) {
+      toast({ title: "حدث خطأ", variant: "destructive" });
+    }
     
-    try {
-      const res = await fetch(`/api/dashboard/clients/${clientId}/work`, {
-        method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ items: pics, amount: 10 }) // $10 per item configurable maybe later
-      });
-      if (res.ok) {
-        toast({ title: "تم إضافة السجل للعميل" });
-        fetchDashboardData();
-      }
-    } catch(e) {}
-  };
-
-  const handleClearBalance = async (clientId: number) => {
-    if (!confirm("هل أنت متأكد من تصفير حساب هذا العميل؟")) return;
-    try {
-      const res = await fetch(`/api/dashboard/clients/${clientId}/clear`, {
-        method: "PATCH", headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        toast({ title: "تم تصفير الحساب بنجاح" });
-        fetchDashboardData();
-      }
-    } catch(e) {}
-  };
-
-  const handleEditOrderCount = async (clientId: number, currentOrders: number) => {
-    const newCountStr = prompt("أدخل العدد الصحيح للصور المنجزة:", currentOrders.toString());
-    if (newCountStr === null) return;
-    const newCount = parseInt(newCountStr);
-    if (isNaN(newCount) || newCount < 0) { toast({ title: "قيمة غير صالحة", variant: "destructive" }); return; }
-    
-    try {
-      const res = await fetch(`/api/dashboard/clients/${clientId}/set-orders`, {
-        method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ ordersCompleted: newCount })
-      });
-      if (res.ok) {
-        toast({ title: "تم التعديل بنجاح" });
-        fetchDashboardData();
-      }
-    } catch(e) {}
-  };
-
-  const handleDeleteClient = async (clientId: number) => {
-    if (!confirm("هل أنت متأكد من حذف هذا العميل تماماً؟ سيتم مسح كافة سجلاته.")) return;
-    try {
-      const res = await fetch(`/api/dashboard/clients/${clientId}`, {
-        method: "DELETE", headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        toast({ title: "تم حذف العميل" });
-        fetchDashboardData();
-      }
-    } catch(e) {}
+    setModalConfig({ ...modalConfig, isOpen: false });
   };
 
   if (!isAuthenticated) return null;
@@ -900,6 +940,44 @@ export default function AdminDashboard() {
         )}
 
       </main>
+      {/* GLOBAL MODAL */}
+      {modalConfig.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-card border border-white/10 p-8 rounded-3xl shadow-2xl max-w-md w-full animate-in zoom-in-95 duration-200">
+            <h2 className="text-xl font-black text-foreground mb-2">{modalConfig.title}</h2>
+            <p className="text-sm text-muted-foreground mb-6">{modalConfig.description}</p>
+            
+            {['addClient', 'addWork', 'editOrder'].includes(modalConfig.type || '') && (
+              <Input
+                type={modalConfig.type === 'addClient' ? 'text' : 'number'}
+                autoFocus
+                placeholder={modalConfig.placeholder}
+                value={modalInputValue}
+                onChange={(e) => setModalInputValue(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && submitModal()}
+                className="bg-black/20 border-white/10 mb-6 rounded-xl text-right"
+                dir="rtl"
+              />
+            )}
+            
+            <div className="flex gap-3 justify-end mt-2">
+              <Button variant="ghost" onClick={() => setModalConfig({ ...modalConfig, isOpen: false })} className="rounded-xl">
+                إلغاء
+              </Button>
+              <Button 
+                onClick={submitModal} 
+                className={`rounded-xl font-bold text-white ${
+                  ['deleteClient', 'clearBalance'].includes(modalConfig.type || '') 
+                    ? 'bg-red-500 hover:bg-red-600' 
+                    : 'bg-primary hover:bg-primary/90'
+                }`}
+              >
+                تأكيد
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
