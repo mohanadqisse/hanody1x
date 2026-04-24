@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useUser } from "@/contexts/UserContext";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -60,8 +59,8 @@ export default function UserSettings() {
         <p className="text-muted-foreground mt-1">قم بتحديث معلوماتك الشخصية وصورتك وكلمة المرور.</p>
       </div>
 
-      <Card className="bg-card border-white/5">
-        <CardContent className="p-6">
+      <div className="bg-card border border-white/5 rounded-xl shadow-sm">
+        <div className="p-6">
           <form onSubmit={handleUpdate} className="space-y-6">
             
             <div className="flex flex-col sm:flex-row items-center gap-6 pb-6 border-b border-white/5">
@@ -124,8 +123,8 @@ export default function UserSettings() {
             </div>
             
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

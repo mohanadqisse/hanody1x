@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useUser } from "@/contexts/UserContext";
-import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Image as ImageIcon, CreditCard, Wallet, Calendar } from "lucide-react";
 
 export default function Overview() {
@@ -90,9 +88,9 @@ export default function Overview() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
           >
-            <Card className="border-white/5 bg-card hover:bg-white/5 transition-colors overflow-hidden relative">
+            <div className="border border-white/5 bg-card hover:bg-white/5 transition-colors overflow-hidden relative rounded-xl shadow-sm">
               {isGuest && <div className="absolute inset-0 bg-background/40 backdrop-blur-[2px] z-10 flex items-center justify-center"><span className="text-xs bg-black/80 px-2 py-1 rounded text-white font-bold">للمسجلين فقط</span></div>}
-              <CardContent className="p-6 flex items-center gap-4">
+              <div className="p-6 flex items-center gap-4">
                 <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${stat.bg} ${stat.color}`}>
                   {stat.icon}
                 </div>
@@ -100,8 +98,8 @@ export default function Overview() {
                   <p className="text-sm text-muted-foreground font-medium">{stat.title}</p>
                   <h3 className="text-2xl font-black mt-1">{stat.value}</h3>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </motion.div>
         ))}
       </div>
@@ -112,19 +110,21 @@ export default function Overview() {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.4 }}
       >
-        <Card className="border-white/5 bg-card overflow-hidden relative">
+        <div className="border border-white/5 bg-card overflow-hidden relative rounded-xl shadow-sm">
           {isGuest && <div className="absolute inset-0 bg-background/40 backdrop-blur-[2px] z-10 flex items-center justify-center"><span className="text-sm bg-black/80 px-3 py-1.5 rounded-lg text-white font-bold">متاح بعد إنشاء حساب</span></div>}
-          <CardContent className="p-6">
+          <div className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold">معدل الإنجاز الشهري</h3>
               <span className="text-sm font-bold bg-primary/20 text-primary px-3 py-1 rounded-full">
                 {stats.monthlyThumbnails} / 30
               </span>
             </div>
-            <Progress value={(stats.monthlyThumbnails / 30) * 100} className="h-4 bg-white/5" />
+            <div className="h-4 bg-white/5 rounded-full overflow-hidden">
+              <div className="h-full bg-primary" style={{ width: `${(stats.monthlyThumbnails / 30) * 100}%` }} />
+            </div>
             <p className="text-sm text-muted-foreground mt-3">لقد أنجزت {stats.monthlyThumbnails} تصاميم هذا الشهر من أصل 30 مستهدفة.</p>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </motion.div>
 
       {/* Recent Work */}

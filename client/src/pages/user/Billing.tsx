@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useUser } from "@/contexts/UserContext";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileText, CheckCircle, Clock } from "lucide-react";
 
@@ -48,24 +47,24 @@ export default function Billing() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <Card className="bg-card border-white/5">
-          <CardContent className="p-6">
+        <div className="bg-card border border-white/5 rounded-xl shadow-sm">
+          <div className="p-6">
             <p className="text-sm text-muted-foreground mb-1">المبلغ الإجمالي</p>
             <h3 className="text-3xl font-black">${total}</h3>
-          </CardContent>
-        </Card>
-        <Card className="bg-primary/10 border-primary/20 text-primary">
-          <CardContent className="p-6">
+          </div>
+        </div>
+        <div className="bg-primary/10 border border-primary/20 text-primary rounded-xl shadow-sm">
+          <div className="p-6">
             <p className="text-sm opacity-80 mb-1">تم دفعه</p>
             <h3 className="text-3xl font-black">${paid}</h3>
-          </CardContent>
-        </Card>
-        <Card className="bg-red-500/10 border-red-500/20 text-red-500">
-          <CardContent className="p-6">
+          </div>
+        </div>
+        <div className="bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl shadow-sm">
+          <div className="p-6">
             <p className="text-sm opacity-80 mb-1">المبلغ المتبقي</p>
             <h3 className="text-3xl font-black">${remaining}</h3>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
       <div className="bg-card border border-white/5 rounded-3xl overflow-hidden">
