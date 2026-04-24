@@ -15,14 +15,15 @@ export default function Register() {
   const [popup, setPopup] = useState<boolean>(true);
   
   const [fullName, setFullName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!fullName || !email || !password || !confirmPassword) {
+  const handleRegister = async (role: "user" | "guest", e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!fullName || !username || !email || !password || !confirmPassword) {
       return toast({ title: "يرجى تعبئة جميع الحقول", variant: "destructive" });
     }
     if (password !== confirmPassword) {
@@ -37,7 +38,7 @@ export default function Register() {
       const res = await fetch("/api/users/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fullName, email, password })
+        body: JSON.stringify({ fullName, username, email, password, role })
       });
       const data = await res.json();
       if (res.ok) {
@@ -70,7 +71,7 @@ export default function Register() {
         </div>
 
         <motion.form
-          onSubmit={handleRegister}
+          onSubmit={(e) => e.preventDefault()}
           className="bg-card p-6 rounded-3xl border border-white/5 shadow-2xl space-y-4"
         >
           <div>
@@ -92,6 +93,17 @@ export default function Register() {
               className="bg-black/20 border-white/10 text-right h-12 rounded-xl"
               dir="ltr"
               placeholder="email@example.com"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">اسم المستخدم</label>
+            <Input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="bg-black/20 border-white/10 text-right h-12 rounded-xl"
+              dir="ltr"
+              placeholder="username"
             />
           </div>
           <div>
@@ -117,13 +129,25 @@ export default function Register() {
             />
           </div>
           <div className="pt-4 flex flex-col gap-3">
-            <Button 
-              type="submit" 
-              disabled={isLoading}
-              className="w-full rounded-xl h-12 font-bold bg-green-600 hover:bg-green-700 text-white"
-            >
-              {isLoading ? "جاري الإنشاء..." : "إنشاء حساب"}
-            </Button>
+            <div className="flex gap-3">
+              <Button 
+                type="button" 
+                onClick={(e) => handleRegister("guest", e)}
+                disabled={isLoading}
+                variant="outline"
+                className="flex-1 rounded-xl h-12 font-bold border-white/20 hover:bg-white/10"
+              >
+                {isLoading ? "جاري..." : "إنشاء حساب كزائر"}
+              </Button>
+              <Button 
+                type="button" 
+                onClick={(e) => handleRegister("user", e)}
+                disabled={isLoading}
+                className="flex-1 rounded-xl h-12 font-bold bg-green-600 hover:bg-green-700 text-white"
+              >
+                {isLoading ? "جاري..." : "إنشاء كصانع محتوى"}
+              </Button>
+            </div>
             <Button 
               type="button" 
               variant="ghost" 

@@ -225,8 +225,8 @@ export default function Login() {
                 </Button>
                 <Button 
                   onClick={() => {
-                    if (popup === "guest") handleGuestLogin();
-                    else { setPopup(null); setView("loginForm"); }
+                    setPopup(null);
+                    setView("loginForm");
                   }}
                   className="flex-1 rounded-xl h-12 font-bold"
                 >

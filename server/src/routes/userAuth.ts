@@ -4,19 +4,21 @@ import { z } from "zod";
 import { db } from "../lib/db.js";
 import { users } from "../schema/index.js";
 import { signToken, requireUserAuth } from "../lib/auth.js";
-import { eq } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 import rateLimit from "express-rate-limit";
 
 const router = Router();
 
 const registerSchema = z.object({
   fullName: z.string().min(2),
+  username: z.string().min(3),
   email: z.string().email(),
   password: z.string().min(6),
+  role: z.enum(["user", "guest"]).optional().default("user"),
 });
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  email: z.string().min(1),
   password: z.string().min(1),
 });
 
@@ -28,25 +30,28 @@ const loginLimiter = rateLimit({
 
 router.post("/register", async (req, res) => {
   try {
-    const { fullName, email, password } = registerSchema.parse(req.body);
+    const { fullName, username, email, password, role } = registerSchema.parse(req.body);
     
-    // Check if email exists
-    const [existing] = await db.select().from(users).where(eq(users.email, email));
+    // Check if email or username exists
+    const [existing] = await db.select().from(users).where(
+      or(eq(users.email, email), eq(users.username, username))
+    );
     if (existing) {
-      res.status(400).json({ message: "البريد الإلكتروني مستخدم مسبقاً" });
+      res.status(400).json({ message: "البريد الإلكتروني أو اسم المستخدم مستخدم مسبقاً" });
       return;
     }
 
     const hash = await bcrypt.hash(password, 10);
     const [user] = await db.insert(users).values({
       fullName,
+      username,
       email,
       passwordHash: hash,
-      role: "user",
+      role,
     }).returning();
 
     const token = signToken({ id: user.id, role: user.role });
-    res.json({ token, user: { id: user.id, fullName: user.fullName, email: user.email, role: user.role, avatar: user.avatar } });
+    res.json({ token, user: { id: user.id, fullName: user.fullName, username: user.username, email: user.email, role: user.role, avatar: user.avatar } });
   } catch (err) {
     if (err instanceof z.ZodError) {
       res.status(400).json({ message: "بيانات غير صالحة" });
@@ -60,7 +65,9 @@ router.post("/register", async (req, res) => {
 router.post("/login", loginLimiter, async (req, res) => {
   try {
     const { email, password } = loginSchema.parse(req.body);
-    const [user] = await db.select().from(users).where(eq(users.email, email));
+    const [user] = await db.select().from(users).where(
+      or(eq(users.email, email), eq(users.username, email))
+    );
 
     if (!user) {
       res.status(401).json({ message: "البريد الإلكتروني أو كلمة المرور غير صحيحة" });
@@ -74,7 +81,7 @@ router.post("/login", loginLimiter, async (req, res) => {
     }
 
     const token = signToken({ id: user.id, role: user.role });
-    res.json({ token, user: { id: user.id, fullName: user.fullName, email: user.email, role: user.role, avatar: user.avatar } });
+    res.json({ token, user: { id: user.id, fullName: user.fullName, username: user.username, email: user.email, role: user.role, avatar: user.avatar } });
   } catch (err) {
     if (err instanceof z.ZodError) {
       res.status(400).json({ message: "بيانات غير صالحة" });

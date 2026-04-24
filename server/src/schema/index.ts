@@ -63,6 +63,7 @@ export const insertTimeSessionSchema = createInsertSchema(timeSessions).omit({ i
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   fullName: text("full_name").notNull(),
+  username: text("username").unique(),
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   role: text("role").notNull().default("user"), // "user", "guest"
