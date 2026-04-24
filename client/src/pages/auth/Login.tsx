@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/contexts/UserContext";
+import { useSection } from "@/hooks/useContent";
 import { User, LogIn, UserPlus, AlertCircle, ArrowRight } from "lucide-react";
 
 export default function Login() {
@@ -13,6 +14,7 @@ export default function Login() {
   const { login } = useUser();
   const [view, setView] = useState<"options" | "loginForm">("options");
   const [popup, setPopup] = useState<"guest" | "creator" | null>(null);
+  const brand = useSection("brand", { logoLetter: "H", logoImage: "" } as any);
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -24,7 +26,7 @@ export default function Login() {
       if (res.ok) {
         const data = await res.json();
         login(data.token, data.user);
-        setLocation("/dashboard");
+        window.location.href = "/dashboard";
       }
     } catch (error) {
       toast({ title: "حدث خطأ", variant: "destructive" });
@@ -44,7 +46,7 @@ export default function Login() {
       const data = await res.json();
       if (res.ok) {
         login(data.token, data.user);
-        setLocation("/dashboard");
+        window.location.href = "/dashboard";
       } else {
         toast({ title: data.message || "فشل تسجيل الدخول", variant: "destructive" });
       }
@@ -68,8 +70,12 @@ export default function Login() {
       >
         <div className="text-center mb-8">
           <Link href="/">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/5 border border-white/10 mb-6 cursor-pointer hover:bg-white/10 transition-colors">
-              <span className="text-2xl font-black">H</span>
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/5 border border-white/10 mb-6 cursor-pointer hover:bg-white/10 transition-colors overflow-hidden">
+              {brand?.logoImage ? (
+                <img src={brand.logoImage} alt="Logo" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-2xl font-black">{brand?.logoLetter || "H"}</span>
+              )}
             </div>
           </Link>
           <h1 className="text-3xl font-black mb-2 tracking-tight">بوابة الدخول</h1>
@@ -136,14 +142,14 @@ export default function Login() {
             className="bg-card p-6 rounded-3xl border border-white/5 shadow-2xl space-y-4"
           >
             <div>
-              <label className="block text-sm font-medium mb-2">البريد الإلكتروني</label>
+              <label className="block text-sm font-medium mb-2">اسم المستخدم</label>
               <Input
-                type="email"
+                type="text"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="bg-black/20 border-white/10 text-right h-12 rounded-xl"
                 dir="ltr"
-                placeholder="email@example.com"
+                placeholder="اسم المستخدم"
               />
             </div>
             <div>
