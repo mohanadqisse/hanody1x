@@ -79,6 +79,7 @@ export default function AdminDashboard() {
   const [clientsData, setClientsData] = useState<Client[]>([]);
   const [sessionsData, setSessionsData] = useState<TimeSession[]>([]);
   const [usersData, setUsersData] = useState<any[]>([]);
+  const [expandedUser, setExpandedUser] = useState<number | null>(null);
   
   // Timer State
   const [isTracking, setIsTracking] = useState(false);
@@ -89,7 +90,7 @@ export default function AdminDashboard() {
   // Modal State
   const [modalConfig, setModalConfig] = useState<{
     isOpen: boolean;
-    type: 'addClient' | 'addWork' | 'editOrder' | 'clearBalance' | 'deleteClient' | null;
+    type: 'addClient' | 'addWork' | 'editOrder' | 'clearBalance' | 'deleteClient' | 'banUser' | 'deletePlatformUser' | null;
     title: string;
     description: string;
     placeholder?: string;
@@ -363,6 +364,29 @@ export default function AdminDashboard() {
     });
   };
 
+  const handleBanUser = (userId: number, currentBanStatus: boolean) => {
+    setModalConfig({
+      isOpen: true,
+      type: 'banUser',
+      title: currentBanStatus ? 'إلغاء الحظر' : 'حظر مستخدم',
+      description: currentBanStatus ? 'هل أنت متأكد من إلغاء الحظر عن هذا المستخدم؟' : 'أدخل سبب الحظر (اختياري). سيمنع هذا المستخدم من تسجيل الدخول.',
+      placeholder: 'سبب الحظر...',
+      clientId: userId,
+      initialValue: currentBanStatus ? "unban" : "" 
+    });
+    setModalInputValue("");
+  };
+
+  const handleDeletePlatformUser = (userId: number) => {
+    setModalConfig({
+      isOpen: true,
+      type: 'deletePlatformUser',
+      title: 'حذف حساب المنصة',
+      description: 'هل أنت متأكد من حذف هذا الحساب نهائياً؟ سيتم مسح كافة صوره، سجلاته وتقييماته المرتبطة.',
+      clientId: userId
+    });
+  };
+
   const submitModal = async () => {
     if (!modalConfig.type) return;
     const val = modalInputValue.trim();
@@ -405,6 +429,20 @@ export default function AdminDashboard() {
           method: "DELETE", headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) { toast({ title: "تم حذف العميل" }); fetchDashboardData(); }
+      }
+      else if (modalConfig.type === 'banUser' && modalConfig.clientId) {
+        const isBanned = modalConfig.initialValue !== "unban";
+        const res = await fetch(`/api/dashboard/users/${modalConfig.clientId}/ban`, {
+          method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ isBanned, banReason: isBanned ? val : null })
+        });
+        if (res.ok) { toast({ title: isBanned ? "تم حظر المستخدم" : "تم إلغاء الحظر" }); fetchDashboardData(); }
+      }
+      else if (modalConfig.type === 'deletePlatformUser' && modalConfig.clientId) {
+        const res = await fetch(`/api/dashboard/users/${modalConfig.clientId}`, {
+          method: "DELETE", headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) { toast({ title: "تم حذف المستخدم" }); fetchDashboardData(); }
       }
     } catch (e) {
       toast({ title: "حدث خطأ", variant: "destructive" });
@@ -618,23 +656,70 @@ export default function AdminDashboard() {
               ) : (
                 <div className="space-y-4">
                   {usersData.map(user => (
-                    <div key={user.id} className="bg-black/20 border border-white/5 rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 hover:border-white/10 transition-colors">
-                      <div className="flex items-center gap-4 w-full sm:w-auto">
-                        <div className="w-12 h-12 rounded-full bg-blue-500/20 text-blue-500 font-black flex items-center justify-center shrink-0 text-xl border border-blue-500/30">
-                          {user.avatar ? <img src={user.avatar} className="w-full h-full object-cover rounded-full" /> : user.fullName.substring(0, 2)}
-                        </div>
-                        <div>
-                          <h3 className="font-bold text-lg text-foreground flex items-center gap-2">
-                            {user.fullName}
-                            {user.role === 'guest' && <span className="text-[10px] bg-amber-500/20 text-amber-500 px-2 py-0.5 rounded-full">زائر</span>}
-                          </h3>
-                          <div className="flex gap-3 text-sm text-muted-foreground">
-                            <span>{user.email}</span>
-                            <span>|</span>
-                            <span>التسجيل: {new Date(user.createdAt).toLocaleDateString('ar-JO')}</span>
+                    <div key={user.id} className="bg-black/20 border border-white/5 rounded-2xl p-4 sm:p-6 flex flex-col items-start gap-4 hover:border-white/10 transition-colors">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full gap-4">
+                        <div className="flex items-center gap-4 w-full sm:w-auto">
+                          <div className="w-12 h-12 rounded-full bg-blue-500/20 text-blue-500 font-black flex items-center justify-center shrink-0 text-xl border border-blue-500/30">
+                            {user.avatar ? <img src={user.avatar} className="w-full h-full object-cover rounded-full" /> : user.fullName.substring(0, 2)}
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-lg text-foreground flex items-center gap-2">
+                              {user.fullName}
+                              {user.role === 'guest' && <span className="text-[10px] bg-amber-500/20 text-amber-500 px-2 py-0.5 rounded-full">زائر</span>}
+                              {user.isBanned && <span className="text-[10px] bg-red-500/20 text-red-500 px-2 py-0.5 rounded-full flex items-center gap-1"><ShieldX size={10} /> محظور</span>}
+                            </h3>
+                            <div className="flex gap-3 text-sm text-muted-foreground items-center">
+                              <span>{user.email}</span>
+                              <span>|</span>
+                              <button onClick={() => setExpandedUser(expandedUser === user.id ? null : user.id)} className="text-primary hover:underline text-xs flex items-center gap-1">
+                                إظهار المعلومات {expandedUser === user.id ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
+                              </button>
+                            </div>
                           </div>
                         </div>
+                        
+                        <div className="flex items-center gap-3 w-full sm:w-auto shrink-0 justify-end mt-2 sm:mt-0">
+                          <Button 
+                            size="sm" 
+                            onClick={() => handleBanUser(user.id, user.isBanned)}
+                            variant={user.isBanned ? "outline" : "secondary"}
+                            className="text-xs rounded-xl font-bold border-white/10"
+                          >
+                            {user.isBanned ? <><ShieldCheck className="w-4 h-4 ml-1 text-green-400" /> إلغاء الحظر</> : <><ShieldX className="w-4 h-4 ml-1 text-red-400" /> حظر المستخدم</>}
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="destructive"
+                            onClick={() => handleDeletePlatformUser(user.id)}
+                            className="text-xs rounded-xl font-bold w-10 p-0"
+                            title="حذف الحساب"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
+
+                      {/* Dropdown Information */}
+                      {expandedUser === user.id && (
+                        <div className="w-full mt-2 pt-4 border-t border-white/5 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm animate-in fade-in slide-in-from-top-2">
+                          <div className="bg-black/30 p-3 rounded-xl border border-white/5">
+                            <span className="text-muted-foreground block text-xs mb-1">اسم المستخدم:</span>
+                            <span className="font-mono text-foreground font-bold">{user.username || "غير متوفر"}</span>
+                          </div>
+                          <div className="bg-black/30 p-3 rounded-xl border border-white/5">
+                            <span className="text-muted-foreground block text-xs mb-1">الاسم الكامل:</span>
+                            <span className="text-foreground font-bold">{user.fullName}</span>
+                          </div>
+                          <div className="bg-black/30 p-3 rounded-xl border border-white/5">
+                            <span className="text-muted-foreground block text-xs mb-1">تاريخ التسجيل:</span>
+                            <span className="text-foreground">{new Date(user.createdAt).toLocaleDateString('ar-JO', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute:'2-digit' })}</span>
+                          </div>
+                          <div className="bg-black/30 p-3 rounded-xl border border-white/5">
+                            <span className="text-muted-foreground block text-xs mb-1">حالة الحساب:</span>
+                            <span className={`font-bold ${user.isBanned ? "text-red-400" : "text-green-400"}`}>{user.isBanned ? `محظور (${user.banReason || "بدون سبب"})` : "نشط"}</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

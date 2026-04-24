@@ -3,7 +3,7 @@ import { useUser } from "@/contexts/UserContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { User as UserIcon, Lock, Camera } from "lucide-react";
+import { User as UserIcon, Lock, Camera, Image as ImageIcon, Upload } from "lucide-react";
 
 export default function UserSettings() {
   const { user, updateUser } = useUser();
@@ -14,6 +14,35 @@ export default function UserSettings() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [settingsContent, setSettingsContent] = useState<any>(null);
+  const [showImageOptions, setShowImageOptions] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const fd = new FormData();
+    fd.append("image", file);
+    
+    try {
+      const token = localStorage.getItem("user_token");
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAvatar(data.url);
+        toast({ title: "تم رفع الصورة بنجاح!" });
+      } else {
+        toast({ title: "حدث خطأ أثناء رفع الصورة", variant: "destructive" });
+      }
+    } catch (err) {
+      toast({ title: "حدث خطأ أثناء رفع الصورة", variant: "destructive" });
+    }
+    setShowImageOptions(false);
+  };
 
   useEffect(() => {
     // Fetch dynamic texts
@@ -63,23 +92,52 @@ export default function UserSettings() {
         <div className="p-6">
           <form onSubmit={handleUpdate} className="space-y-6">
             
-            <div className="flex flex-col sm:flex-row items-center gap-6 pb-6 border-b border-white/5">
+            <div className="flex flex-col sm:flex-row items-center gap-6 pb-6 border-b border-white/5 relative">
               <div className="relative group">
-                <div className="w-24 h-24 rounded-full bg-primary/20 flex items-center justify-center text-primary text-3xl font-black overflow-hidden border-2 border-primary/30">
+                <div className="w-24 h-24 rounded-full bg-primary/20 flex items-center justify-center text-primary text-3xl font-black overflow-hidden border-2 border-primary/30 relative">
                   {avatar ? <img src={avatar} className="w-full h-full object-cover" /> : fullName.charAt(0)}
                 </div>
-                <div className="absolute inset-0 bg-black/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                <div 
+                  onClick={() => setShowImageOptions(!showImageOptions)}
+                  className="absolute inset-0 bg-black/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                >
                   <Camera className="text-white" />
                 </div>
+
+                {/* Dropdown Options */}
+                {showImageOptions && (
+                  <div className="absolute top-full mt-2 w-40 bg-card border border-white/10 rounded-xl shadow-xl z-10 right-1/2 translate-x-1/2 overflow-hidden flex flex-col animate-in fade-in zoom-in-95">
+                    {avatar && (
+                      <a 
+                        href={avatar} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        onClick={() => setShowImageOptions(false)}
+                        className="flex items-center gap-2 px-4 py-3 text-sm hover:bg-white/5 transition-colors cursor-pointer"
+                      >
+                        <ImageIcon size={16} /> عرض الصورة
+                      </a>
+                    )}
+                    <div 
+                      onClick={() => {
+                        fileInputRef.current?.click();
+                      }}
+                      className="flex items-center gap-2 px-4 py-3 text-sm hover:bg-white/5 transition-colors cursor-pointer text-primary"
+                    >
+                      <Upload size={16} /> تعديل الصورة
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="flex-1 w-full">
-                <label className="block text-sm font-medium mb-2">رابط الصورة الشخصية</label>
-                <Input 
-                  value={avatar}
-                  onChange={(e) => setAvatar(e.target.value)}
-                  placeholder="https://example.com/image.jpg"
-                  className="bg-black/20 border-white/10 rounded-xl"
-                  dir="ltr"
+              <div className="flex-1 w-full flex flex-col justify-center">
+                <h3 className="font-bold text-lg mb-1">تغيير الصورة الشخصية</h3>
+                <p className="text-sm text-muted-foreground">قم بالنقر على الصورة لاختيار وتعديل صورتك الشخصية.</p>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  ref={fileInputRef} 
+                  onChange={handleImageUpload} 
+                  className="hidden" 
                 />
               </div>
             </div>

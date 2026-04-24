@@ -68,6 +68,8 @@ export const users = pgTable("users", {
   passwordHash: text("password_hash").notNull(),
   role: text("role").notNull().default("user"), // "user", "guest"
   avatar: text("avatar"),
+  isBanned: boolean("is_banned").notNull().default(false),
+  banReason: text("ban_reason"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

@@ -81,6 +81,11 @@ router.post("/login", loginLimiter, async (req, res) => {
       return;
     }
 
+    if (user.isBanned) {
+      res.status(403).json({ message: user.banReason || "عذراً، لقد تم حظر حسابك من قبل الإدارة." });
+      return;
+    }
+
     if (role && user.role !== role) {
       if (role === "guest") {
         res.status(403).json({ message: "بيانات الدخول الخاصة بك هي لصانع محتوى وليس كزائر، يرجى تسجيل الدخول من بوابة صناع المحتوى" });

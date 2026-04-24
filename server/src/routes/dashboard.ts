@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "../lib/db.js";
-import { clients, timeSessions, users, thumbnails, transactions } from "../schema/index.js";
+import { clients, timeSessions, users, thumbnails, transactions, comments, ratings, notifications } from "../schema/index.js";
 import { eq, desc, sum, count } from "drizzle-orm";
 import { requireAuth } from "../lib/auth.js";
 
@@ -154,6 +154,53 @@ router.get("/users", async (req, res) => {
     const allUsers = await db.select().from(users).orderBy(desc(users.createdAt));
     res.json(allUsers);
   } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.delete("/users/:id", async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    // Delete related data first
+    await db.delete(notifications).where(eq(notifications.userId, userId));
+    await db.delete(transactions).where(eq(transactions.userId, userId));
+    
+    const userThumbs = await db.select({ id: thumbnails.id }).from(thumbnails).where(eq(thumbnails.userId, userId));
+    for (const thumb of userThumbs) {
+      await db.delete(comments).where(eq(comments.thumbnailId, thumb.id));
+      await db.delete(ratings).where(eq(ratings.thumbnailId, thumb.id));
+    }
+    await db.delete(ratings).where(eq(ratings.userId, userId));
+    await db.delete(thumbnails).where(eq(thumbnails.userId, userId));
+
+    // Finally delete user
+    await db.delete(users).where(eq(users.id, userId));
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Delete user error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.patch("/users/:id/ban", async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    const { isBanned, banReason } = req.body;
+    
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const [updatedUser] = await db.update(users).set({
+      isBanned: isBanned,
+      banReason: isBanned ? banReason : null
+    }).where(eq(users.id, userId)).returning();
+
+    res.json(updatedUser);
+  } catch (error) {
+    console.error("Ban user error:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
