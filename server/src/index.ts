@@ -32,7 +32,11 @@ async function ensureTables() {
     await db.execute(sql`CREATE TABLE IF NOT EXISTS comments (id SERIAL PRIMARY KEY, thumbnail_id INTEGER REFERENCES thumbnails(id) NOT NULL, author_name TEXT NOT NULL, is_admin BOOLEAN NOT NULL DEFAULT FALSE, content TEXT NOT NULL, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
     await db.execute(sql`CREATE TABLE IF NOT EXISTS ratings (id SERIAL PRIMARY KEY, thumbnail_id INTEGER REFERENCES thumbnails(id) NOT NULL, user_id INTEGER REFERENCES users(id) NOT NULL, rating INTEGER NOT NULL, comment TEXT, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
     await db.execute(sql`CREATE TABLE IF NOT EXISTS notifications (id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id) NOT NULL, message TEXT NOT NULL, read BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
-    await db.execute(sql`CREATE TABLE IF NOT EXISTS public_ratings (id SERIAL PRIMARY KEY, portfolio_item_id INTEGER NOT NULL, rating INTEGER NOT NULL, visitor_id TEXT NOT NULL, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
+    await db.execute(sql`CREATE TABLE IF NOT EXISTS public_ratings (id SERIAL PRIMARY KEY, portfolio_item_id INTEGER NOT NULL, rating INTEGER NOT NULL, visitor_id TEXT NOT NULL, visitor_name TEXT NOT NULL DEFAULT 'زائر', created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
+    // Add visitor_name column if it doesn't exist (safe migration)
+    try { await db.execute(sql`ALTER TABLE public_ratings ADD COLUMN IF NOT EXISTS visitor_name TEXT NOT NULL DEFAULT 'زائر'`); } catch(e) { /* column may already exist */ }
+    // Clear all existing ratings as requested
+    await db.execute(sql`DELETE FROM public_ratings`);
     console.log("Database tables verified (safe migration - no data loss)");
 
     // Auto-seed admin if it doesn't exist

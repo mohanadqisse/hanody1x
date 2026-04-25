@@ -135,6 +135,7 @@ export const publicRatings = pgTable("public_ratings", {
   portfolioItemId: integer("portfolio_item_id").notNull(),
   rating: integer("rating").notNull(),
   visitorId: text("visitor_id").notNull(),
+  visitorName: text("visitor_name").notNull().default("زائر"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

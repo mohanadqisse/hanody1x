@@ -85,6 +85,7 @@ export default function AdminDashboard() {
   const [expandedUser, setExpandedUser] = useState<number | null>(null);
   const [managingUser, setManagingUser] = useState<any>(null);
   const [publicRatingsData, setPublicRatingsData] = useState<any[]>([]);
+  const [expandedVisitors, setExpandedVisitors] = useState<Set<string>>(new Set());
   
   // Timer State
   const [isTracking, setIsTracking] = useState(false);
@@ -216,6 +217,37 @@ export default function AdminDashboard() {
   }
 
   // --- ACTIONS ---
+
+  async function deletePublicRating(id: number) {
+    if (!confirm("\u0647\u0644 \u0623\u0646\u062a \u0645\u062a\u0623\u0643\u062f \u0645\u0646 \u062d\u0630\u0641 \u0647\u0630\u0627 \u0627\u0644\u062a\u0642\u064a\u064a\u0645\u061f")) return;
+    try {
+      const res = await fetch(API_BASE + `/api/public-ratings/${id}`, {
+        method: "DELETE", headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) { toast({ title: "\u062a\u0645 \u062d\u0630\u0641 \u0627\u0644\u062a\u0642\u064a\u064a\u0645" }); fetchPublicRatings(); }
+    } catch (e) { toast({ title: "\u062d\u062f\u062b \u062e\u0637\u0623", variant: "destructive" }); }
+  }
+
+  async function deleteVisitorRatings(vName: string) {
+    if (!confirm(`\u0647\u0644 \u0623\u0646\u062a \u0645\u062a\u0623\u0643\u062f \u0645\u0646 \u062d\u0630\u0641 \u062c\u0645\u064a\u0639 \u062a\u0642\u064a\u064a\u0645\u0627\u062a "${vName}"\u061f`)) return;
+    try {
+      const res = await fetch(API_BASE + `/api/public-ratings/visitor/${encodeURIComponent(vName)}`, {
+        method: "DELETE", headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) { toast({ title: "\u062a\u0645 \u062d\u0630\u0641 \u062c\u0645\u064a\u0639 \u0627\u0644\u062a\u0642\u064a\u064a\u0645\u0627\u062a" }); fetchPublicRatings(); }
+    } catch (e) { toast({ title: "\u062d\u062f\u062b \u062e\u0637\u0623", variant: "destructive" }); }
+  }
+
+  function toggleVisitorExpand(name: string) {
+    setExpandedVisitors(prev => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  }
+
+
   async function deleteLoginLog(id: number) {
     try {
       const res = await fetch(API_BASE + `/api/auth/logs/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
@@ -759,46 +791,138 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {activeTab === 'public_ratings' && (
-          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="bg-card/40 border border-white/5 rounded-3xl p-6 sm:p-10">
-              <div className="mb-8 border-b border-white/10 pb-6">
-                <h2 className="text-2xl font-black text-foreground mb-2">تقييم العملاء للصور</h2>
-                <p className="text-sm text-muted-foreground">عرض تقييمات الزوار للصور في قسم الأعمال المختارة.</p>
+        {activeTab === 'public_ratings' && (() => {
+          // Group ratings by visitor name
+          const groupedByVisitor: Record<string, any[]> = {};
+          publicRatingsData.forEach(r => {
+            const name = r.visitorName || r.visitorId || 'زائر';
+            if (!groupedByVisitor[name]) groupedByVisitor[name] = [];
+            groupedByVisitor[name].push(r);
+          });
+          const visitorNames = Object.keys(groupedByVisitor);
+
+          return (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="bg-card/40 border border-white/5 rounded-3xl p-6 sm:p-10">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 border-b border-white/10 pb-6 gap-4">
+                  <div>
+                    <h2 className="text-2xl font-black text-foreground mb-2">تقييم العملاء للصور</h2>
+                    <p className="text-sm text-muted-foreground">عرض تقييمات الزوار للصور في قسم الأعمال المختارة.</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-muted-foreground bg-white/5 px-3 py-1.5 rounded-full">
+                      إجمالي التقييمات: <strong className="text-foreground">{publicRatingsData.length}</strong>
+                    </span>
+                    <span className="text-xs text-muted-foreground bg-white/5 px-3 py-1.5 rounded-full">
+                      عدد المُقيِّمين: <strong className="text-foreground">{visitorNames.length}</strong>
+                    </span>
+                  </div>
+                </div>
+                
+                {publicRatingsData.length === 0 ? (
+                  <div className="text-center py-20">
+                    <Star className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
+                    <p className="text-muted-foreground">لا يوجد تقييمات حتى الآن.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {visitorNames.map(visitorName => {
+                      const ratings = groupedByVisitor[visitorName];
+                      const isExpanded = expandedVisitors.has(visitorName);
+                      const avgRating = (ratings.reduce((sum: number, r: any) => sum + r.rating, 0) / ratings.length).toFixed(1);
+
+                      return (
+                        <div key={visitorName} className="bg-black/20 border border-white/5 rounded-2xl overflow-hidden transition-all">
+                          {/* Visitor Header - Collapsible */}
+                          <div
+                            className="flex items-center justify-between p-4 sm:p-5 cursor-pointer hover:bg-white/5 transition-colors"
+                            onClick={() => toggleVisitorExpand(visitorName)}
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="w-11 h-11 rounded-xl bg-primary/20 text-primary flex items-center justify-center font-bold text-lg shrink-0">
+                                {visitorName.charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <h3 className="font-bold text-foreground text-base flex items-center gap-2">
+                                  <span className="text-primary text-xs">تصويت</span>
+                                  {visitorName}
+                                </h3>
+                                <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                                  <span>عدد التقييمات: <strong className="text-foreground">{ratings.length}</strong></span>
+                                  <span>•</span>
+                                  <span>المتوسط: <strong className="text-yellow-400">{avgRating}</strong> / 5</span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={(e) => { e.stopPropagation(); deleteVisitorRatings(visitorName); }}
+                                className="text-xs rounded-xl font-bold h-9 px-3 bg-red-900/50 hover:bg-red-600"
+                                title="حذف جميع تقييمات هذا الزائر"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                              <button className="text-muted-foreground hover:text-foreground transition-colors p-1">
+                                {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Expanded Ratings Table */}
+                          {isExpanded && (
+                            <div className="border-t border-white/5 px-4 sm:px-5 pb-4">
+                              <table className="w-full text-right mt-3" dir="rtl">
+                                <thead>
+                                  <tr className="text-muted-foreground text-xs border-b border-white/10">
+                                    <th className="pb-2 px-3 font-bold">صورة العمل المختارة</th>
+                                    <th className="pb-2 px-3 font-bold">التقييم</th>
+                                    <th className="pb-2 px-3 font-bold">تاريخ التقييم</th>
+                                    <th className="pb-2 px-3 font-bold text-center">حذف</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {ratings.map((rating: any) => (
+                                    <tr key={rating.id} className="border-b border-white/5 hover:bg-white/5 text-sm">
+                                      <td className="py-3 px-3">رقم {rating.portfolioItemId}</td>
+                                      <td className="py-3 px-3">
+                                        <div className="flex items-center gap-1" dir="ltr">
+                                          {[1, 2, 3, 4, 5].map(s => (
+                                            <Star
+                                              key={s}
+                                              size={14}
+                                              className={s <= rating.rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-700 fill-gray-700'}
+                                            />
+                                          ))}
+                                          <span className="text-yellow-400 font-bold text-xs mr-1">{rating.rating}/5</span>
+                                        </div>
+                                      </td>
+                                      <td className="py-3 px-3 text-xs text-muted-foreground">{new Date(rating.createdAt).toLocaleDateString('ar-JO')}</td>
+                                      <td className="py-3 px-3 text-center">
+                                        <button
+                                          onClick={() => deletePublicRating(rating.id)}
+                                          className="p-1.5 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500 hover:text-white transition-all"
+                                          title="حذف هذا التقييم"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-              
-              {publicRatingsData.length === 0 ? (
-                <div className="text-center py-20">
-                  <Star className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
-                  <p className="text-muted-foreground">لا يوجد تقييمات حتى الآن.</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-right" dir="rtl">
-                    <thead>
-                      <tr className="border-b border-white/10 text-muted-foreground text-sm">
-                        <th className="pb-3 px-4 font-bold">صورة العمل المختارة</th>
-                        <th className="pb-3 px-4 font-bold">التقييم</th>
-                        <th className="pb-3 px-4 font-bold">الزائر</th>
-                        <th className="pb-3 px-4 font-bold">تاريخ التقييم</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {publicRatingsData.map(rating => (
-                        <tr key={rating.id} className="border-b border-white/5 hover:bg-white/5">
-                          <td className="py-4 px-4">رقم {rating.portfolioItemId}</td>
-                          <td className="py-4 px-4 text-yellow-400 font-bold">{rating.rating} / 5</td>
-                          <td className="py-4 px-4 text-sm font-mono text-muted-foreground">{rating.visitorId}</td>
-                          <td className="py-4 px-4 text-xs text-muted-foreground">{new Date(rating.createdAt).toLocaleDateString('ar-JO')}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {activeTab === 'users' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">

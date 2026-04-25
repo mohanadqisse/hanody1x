@@ -730,6 +730,10 @@ const getVisitorId = () => {
 function RatingModal({ isOpen, onClose, images, items }: { isOpen: boolean, onClose: () => void, images: any, items: any[] }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedRating, setSelectedRating] = useState(0);
+  const [hoveredStar, setHoveredStar] = useState(0);
+  const [visitorName, setVisitorName] = useState("");
+  const [nameSubmitted, setNameSubmitted] = useState(false);
   const { toast } = useToast();
 
   if (!isOpen) return null;
@@ -737,8 +741,8 @@ function RatingModal({ isOpen, onClose, images, items }: { isOpen: boolean, onCl
   const currentItem = items[currentIndex];
   const src = (images && images[currentItem.id - 1]) || `${import.meta.env.BASE_URL}images/thumb-${(currentItem.id % 3) + 1}.png`;
 
-  const handleRate = async (rating: number) => {
-    if (isSubmitting) return;
+  const handleSubmitRating = async () => {
+    if (isSubmitting || !selectedRating) return;
     setIsSubmitting(true);
     try {
       await fetch(`${API_BASE}/api/public-ratings`, {
@@ -746,17 +750,24 @@ function RatingModal({ isOpen, onClose, images, items }: { isOpen: boolean, onCl
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           portfolioItemId: currentItem.id,
-          rating,
+          rating: selectedRating,
           visitorId: getVisitorId(),
+          visitorName: visitorName.trim(),
         }),
       });
       
       if (currentIndex < items.length - 1) {
         setCurrentIndex(prev => prev + 1);
+        setSelectedRating(0);
+        setHoveredStar(0);
       } else {
         toast({ title: "شكراً لتقييمك جميع الصور!", variant: "default" });
         onClose();
         setCurrentIndex(0);
+        setSelectedRating(0);
+        setHoveredStar(0);
+        setVisitorName("");
+        setNameSubmitted(false);
       }
     } catch (err) {
       toast({ title: "حدث خطأ أثناء التقييم", variant: "destructive" });
@@ -764,6 +775,18 @@ function RatingModal({ isOpen, onClose, images, items }: { isOpen: boolean, onCl
       setIsSubmitting(false);
     }
   };
+
+  const handleClose = () => {
+    onClose();
+    setCurrentIndex(0);
+    setSelectedRating(0);
+    setHoveredStar(0);
+    setVisitorName("");
+    setNameSubmitted(false);
+  };
+
+  // Determine which stars should be highlighted
+  const activeStars = hoveredStar || selectedRating;
 
   return (
     <AnimatePresence>
@@ -773,7 +796,7 @@ function RatingModal({ isOpen, onClose, images, items }: { isOpen: boolean, onCl
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/95 backdrop-blur-xl p-4"
       >
-        <div className="absolute inset-0" onClick={onClose} />
+        <div className="absolute inset-0" onClick={handleClose} />
         
         <motion.div
           initial={{ scale: 0.9, y: 20 }}
@@ -781,41 +804,107 @@ function RatingModal({ isOpen, onClose, images, items }: { isOpen: boolean, onCl
           exit={{ scale: 0.9, y: 20 }}
           className="relative max-w-4xl w-full flex flex-col items-center gap-6"
         >
-          <div className="text-white/70 text-sm font-bold bg-white/10 px-4 py-1.5 rounded-full">
-            صورة {currentIndex + 1} من {items.length}
-          </div>
-
-          <div className="w-full max-h-[65vh] flex justify-center items-center relative group">
-            <img 
-              src={src} 
-              className="max-w-full max-h-[65vh] object-contain rounded-2xl shadow-2xl border border-white/10" 
-              alt="Rating Image"
-            />
-          </div>
-
-          <div className="flex flex-col items-center gap-4 bg-card/40 p-6 rounded-3xl border border-white/10 shadow-2xl w-full max-w-sm backdrop-blur-md">
-            <p className="text-white font-bold text-lg">ما تقييمك لهذه الصورة؟</p>
-            <div className="flex items-center gap-2" dir="ltr">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  disabled={isSubmitting}
-                  onClick={() => handleRate(star)}
-                  className="text-gray-500 hover:text-yellow-400 hover:scale-125 transition-all focus:outline-none"
-                >
-                  <Star size={36} className="fill-current" />
-                </button>
-              ))}
-            </div>
-            
-            <Button 
-              variant="outline" 
-              onClick={() => { onClose(); setCurrentIndex(0); }}
-              className="mt-2 w-full rounded-xl border-white/20 text-white/80 hover:text-white hover:bg-white/10"
+          {/* Step 1: Name Input */}
+          {!nameSubmitted ? (
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="flex flex-col items-center gap-5 bg-card/50 p-8 rounded-3xl border border-white/10 shadow-2xl w-full max-w-sm backdrop-blur-md"
             >
-              الانتهاء من التقييم
-            </Button>
-          </div>
+              <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-2">
+                <Star size={32} className="text-primary fill-primary" />
+              </div>
+              <h3 className="text-white font-bold text-xl text-center">مرحباً بك في تقييم الصور</h3>
+              <p className="text-white/60 text-sm text-center">يرجى إدخال اسمك قبل البدء بالتقييم</p>
+              <input
+                type="text"
+                value={visitorName}
+                onChange={(e) => setVisitorName(e.target.value)}
+                placeholder="أدخل اسمك هنا..."
+                className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-white/40 text-center text-lg focus:outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all"
+                dir="rtl"
+                onKeyDown={(e) => { if (e.key === 'Enter' && visitorName.trim()) setNameSubmitted(true); }}
+              />
+              <div className="flex gap-3 w-full">
+                <Button
+                  onClick={() => { if (visitorName.trim()) setNameSubmitted(true); }}
+                  disabled={!visitorName.trim()}
+                  className="flex-1 rounded-xl py-3 bg-primary hover:bg-primary/90 text-white font-bold disabled:opacity-40"
+                >
+                  ابدأ التقييم
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={handleClose}
+                  className="rounded-xl border-white/20 text-white/80 hover:text-white hover:bg-white/10"
+                >
+                  إلغاء
+                </Button>
+              </div>
+            </motion.div>
+          ) : (
+            /* Step 2: Rating UI */
+            <>
+              <div className="text-white/70 text-sm font-bold bg-white/10 px-4 py-1.5 rounded-full">
+                صورة {currentIndex + 1} من {items.length}
+              </div>
+
+              <div className="w-full max-h-[55vh] flex justify-center items-center relative group">
+                <img 
+                  src={src} 
+                  className="max-w-full max-h-[55vh] object-contain rounded-2xl shadow-2xl border border-white/10" 
+                  alt="Rating Image"
+                />
+              </div>
+
+              <div className="flex flex-col items-center gap-4 bg-card/40 p-6 rounded-3xl border border-white/10 shadow-2xl w-full max-w-sm backdrop-blur-md">
+                <p className="text-white font-bold text-lg">ما تقييمك لهذه الصورة؟</p>
+                <div className="flex items-center gap-2" dir="ltr">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      disabled={isSubmitting}
+                      onClick={() => setSelectedRating(star)}
+                      onMouseEnter={() => setHoveredStar(star)}
+                      onMouseLeave={() => setHoveredStar(0)}
+                      className={`transition-all duration-200 focus:outline-none ${
+                        star <= activeStars
+                          ? 'text-yellow-400 scale-110'
+                          : 'text-gray-600 hover:text-gray-400'
+                      } hover:scale-125`}
+                    >
+                      <Star size={40} className="fill-current" />
+                    </button>
+                  ))}
+                </div>
+                {selectedRating > 0 && (
+                  <motion.p
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-yellow-400 text-sm font-bold"
+                  >
+                    تقييمك: {selectedRating} من 5 نجوم ⭐
+                  </motion.p>
+                )}
+                
+                <Button 
+                  onClick={handleSubmitRating}
+                  disabled={isSubmitting || !selectedRating}
+                  className="w-full rounded-xl py-3 bg-primary hover:bg-primary/90 text-white font-bold disabled:opacity-40 shadow-lg shadow-primary/20"
+                >
+                  {isSubmitting ? "جاري الإرسال..." : "تأكيد التقييم"}
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  onClick={handleClose}
+                  className="w-full rounded-xl border-white/20 text-white/80 hover:text-white hover:bg-white/10"
+                >
+                  الانتهاء من التقييم
+                </Button>
+              </div>
+            </>
+          )}
         </motion.div>
       </motion.div>
     </AnimatePresence>
