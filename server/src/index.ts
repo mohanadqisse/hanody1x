@@ -32,6 +32,21 @@ async function ensureTables() {
     await db.execute(sql`CREATE TABLE IF NOT EXISTS ratings (id SERIAL PRIMARY KEY, thumbnail_id INTEGER REFERENCES thumbnails(id) NOT NULL, user_id INTEGER REFERENCES users(id) NOT NULL, rating INTEGER NOT NULL, comment TEXT, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
     await db.execute(sql`CREATE TABLE IF NOT EXISTS notifications (id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id) NOT NULL, message TEXT NOT NULL, read BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
     console.log("Database tables verified (safe migration - no data loss)");
+
+    // Auto-seed admin if it doesn't exist
+    const { adminUsers } = await import("./schema/index.js");
+    const { eq } = await import("drizzle-orm");
+    const bcrypt = (await import("bcryptjs")).default;
+    
+    const DEFAULT_USERNAME = process.env.ADMIN_USERNAME || "admin";
+    const DEFAULT_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
+    
+    const [existingAdmin] = await db.select().from(adminUsers).where(eq(adminUsers.username, DEFAULT_USERNAME));
+    if (!existingAdmin) {
+      const hash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+      await db.insert(adminUsers).values({ username: DEFAULT_USERNAME, passwordHash: hash });
+      console.log(`Auto-seeded admin user: ${DEFAULT_USERNAME}`);
+    }
   } catch (err) {
     console.error("Database table check error:", err);
   }
@@ -52,7 +67,7 @@ app.use(cors({
     // Allow Vercel preview deployments
     if (origin.endsWith(".vercel.app")) return callback(null, true);
     // Allow custom domain
-    if (origin.includes("hanody1x.space")) return callback(null, true);
+    if (origin.includes("hanody1x.com")) return callback(null, true);
     // Allow listed origins
     if (allowedOrigins.includes(origin)) return callback(null, true);
     callback(new Error("Not allowed by CORS"));

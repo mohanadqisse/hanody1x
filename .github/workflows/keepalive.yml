@@ -16,4 +16,4 @@ jobs:
         run: |
           curl -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
                -sL -w "HTTP Status: %{http_code}\n" -o /dev/null \
-               https://hanody1x.space/api/healthz
+               https://hanody1x-1-n380.onrender.com/api/healthz
