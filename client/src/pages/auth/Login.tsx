@@ -280,13 +280,8 @@ export default function Login() {
               <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 mx-auto mb-6 border border-red-500/20">
                 <AlertCircle size={40} />
               </div>
-              <h2 className="text-3xl font-black mb-4 text-red-500">تم تقييد حسابك</h2>
-              {isUnbanRequested && (
-                <div className="bg-amber-500/10 border border-amber-500/20 text-amber-500 p-3 rounded-xl mb-4 text-sm font-bold flex items-center justify-center gap-2">
-                  <AlertCircle size={16} />
-                  تم طلب إزالة الحظر، بانتظار موافقة صاحب الموقع.
-                </div>
-              )}
+              <h2 className="text-3xl font-black mb-4 text-red-500">تم تسجيل حسابك في المكان الخطأ</h2>
+              
               <div className="text-muted-foreground mb-8 text-base leading-relaxed whitespace-pre-wrap px-2">
                 {banData.message}
               </div>
@@ -297,15 +292,16 @@ export default function Login() {
                     الرجوع إلى الموقع
                   </Button>
                 </a>
-                {!isUnbanRequested && (
-                  <Button 
-                    variant="destructive" 
-                    onClick={() => setIsUnbanRequested(true)}
-                    className="flex-1 w-full rounded-xl h-12 font-bold shadow-lg shadow-red-500/20"
-                  >
-                    طلب إزالة الحظر
-                  </Button>
-                )}
+                <Button 
+                  onClick={() => {
+                    setBanData(null);
+                    setPopup("guest");
+                    setView("options");
+                  }}
+                  className="flex-1 w-full rounded-xl h-12 font-bold shadow-lg shadow-blue-500/20 bg-blue-600 hover:bg-blue-700"
+                >
+                  التسجيل كزائر
+                </Button>
               </div>
             </motion.div>
           </motion.div>
