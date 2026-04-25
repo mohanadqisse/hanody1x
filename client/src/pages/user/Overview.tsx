@@ -147,7 +147,12 @@ export default function Overview() {
                   <p className="text-xs text-muted-foreground">{new Date(work.createdAt).toLocaleDateString('ar-JO')}</p>
                 </div>
               </div>
-              <span className={`text-xs px-3 py-1 rounded-full font-bold ${work.status === 'تم التسليم' ? 'bg-green-500/20 text-green-500' : 'bg-amber-500/20 text-amber-500'}`}>
+              <span className={`text-xs px-3 py-1 rounded-full font-bold ${
+                work.status === 'تم التسليم' ? 'bg-green-500/20 text-green-500' :
+                work.status === 'تم التنفيذ' ? 'bg-blue-500/20 text-blue-500' :
+                work.status === 'قيد التنفيذ' ? 'bg-amber-500/20 text-amber-500' :
+                'bg-gray-500/20 text-gray-400'
+              }`}>
                 {work.status}
               </span>
             </div>

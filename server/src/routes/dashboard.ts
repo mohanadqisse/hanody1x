@@ -405,4 +405,60 @@ router.post("/sessions", async (req, res) => {
   }
 });
 
+// Notifications Management
+router.get("/users/:id/notifications", async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    const userNotifs = await db.select().from(notifications).where(eq(notifications.userId, userId)).orderBy(desc(notifications.createdAt));
+    res.json(userNotifs);
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.post("/notifications", async (req, res) => {
+  try {
+    const { userId, message } = req.body;
+    const [newNotif] = await db.insert(notifications).values({
+      userId: parseInt(userId),
+      message
+    }).returning();
+    res.status(201).json(newNotif);
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.delete("/notifications/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await db.delete(notifications).where(eq(notifications.id, id));
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Settings Management
+import { hash } from "bcrypt";
+router.patch("/users/:id/settings", async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    const { fullName, avatar, password } = req.body;
+    
+    let updateData: any = {};
+    if (fullName !== undefined) updateData.fullName = fullName;
+    if (avatar !== undefined) updateData.avatar = avatar;
+    if (password) {
+      updateData.password = await hash(password, 10);
+    }
+    
+    const [updated] = await db.update(users).set(updateData).where(eq(users.id, userId)).returning();
+    res.json(updated);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 export default router;

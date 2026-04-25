@@ -96,7 +96,12 @@ export default function Thumbnails() {
                   <h3 className="font-bold text-lg leading-tight mb-1">{thumb.title}</h3>
                   <p className="text-xs text-muted-foreground">{new Date(thumb.createdAt).toLocaleDateString('ar-JO')}</p>
                 </div>
-                <span className={`text-xs px-2 py-1 rounded font-bold whitespace-nowrap ${thumb.status === 'تم التسليم' ? 'bg-green-500/20 text-green-500' : 'bg-amber-500/20 text-amber-500'}`}>
+                <span className={`text-xs px-2 py-1 rounded font-bold whitespace-nowrap ${
+                  thumb.status === 'تم التسليم' ? 'bg-green-500/20 text-green-500' :
+                  thumb.status === 'تم التنفيذ' ? 'bg-blue-500/20 text-blue-500' :
+                  thumb.status === 'قيد التنفيذ' ? 'bg-amber-500/20 text-amber-500' :
+                  'bg-gray-500/20 text-gray-400'
+                }`}>
                   {thumb.status}
                 </span>
               </div>

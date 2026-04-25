@@ -3,13 +3,13 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useUser } from "@/contexts/UserContext";
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import html2canvas from "html2canvas";
 import { Button } from "@/components/ui/button";
 import { FileText, CheckCircle, Clock } from "lucide-react";
 
 export default function Billing() {
   const { user } = useUser();
-    const [transactions, setTransactions] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
   const [thumbnails, setThumbnails] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -22,7 +22,6 @@ export default function Billing() {
         });
         if (res.ok) {
           const data = await res.json();
-          // If the backend isn't updated yet or returns array, handle gracefully
           if (Array.isArray(data)) {
             setTransactions(data);
           } else {
@@ -45,75 +44,39 @@ export default function Billing() {
   const paid = transactions.filter(t => t.status === "paid").reduce((sum, t) => sum + t.amount, 0);
   const remaining = total - paid;
 
-  
-  const handleDownloadPDF = () => {
-    const doc = new jsPDF();
-    
-    // Add Arabic Font Support (using a basic embedded font trick or simply English/Romanized for now if a specific font isn't loaded)
-    // To support Arabic properly, we need to load an Arabic font. For simplicity, we can use default fonts, but they might not render Arabic well.
-    // However, jspdf-autotable handles basic tables. We will write English or simple text if Arabic is corrupted, but we will try.
-    
-    doc.setFontSize(22);
-    doc.text("Invoice - " + (user?.fullName || "Creator"), 14, 20);
-    
-    doc.setFontSize(12);
-    doc.text("Date: " + new Date().toLocaleDateString(), 14, 30);
-    
-    doc.setFontSize(16);
-    doc.text("Thumbnails & Work", 14, 45);
-    
-    const thumbData = thumbnails.map(t => [
-      t.title, 
-      new Date(t.createdAt).toLocaleDateString(), 
-      t.status, 
-      "$" + (t.price || 0)
-    ]);
-    
-    (doc as any).autoTable({
-      startY: 50,
-      head: [["Thumbnail Name", "Date", "Status", "Price"]],
-      body: thumbData.length ? thumbData : [["No thumbnails", "-", "-", "-"]],
-      theme: 'grid',
-      headStyles: { fillColor: [41, 128, 185] },
-    });
-    
-    let finalY = (doc as any).lastAutoTable.finalY || 50;
-    
-    doc.setFontSize(16);
-    doc.text("Payments & Transactions", 14, finalY + 15);
-    
-    const transData = transactions.map(t => [
-      t.description,
-      new Date(t.date || t.createdAt).toLocaleDateString(),
-      t.status === "paid" ? "Paid" : "Pending",
-      "$" + t.amount
-    ]);
-    
-    (doc as any).autoTable({
-      startY: finalY + 20,
-      head: [["Description", "Date", "Status", "Amount"]],
-      body: transData.length ? transData : [["No payments", "-", "-", "-"]],
-      theme: 'grid',
-      headStyles: { fillColor: [39, 174, 96] },
-    });
-    
-    finalY = (doc as any).lastAutoTable.finalY || finalY + 20;
-    
-    doc.setFontSize(14);
-    doc.text("Summary", 14, finalY + 15);
-    
-    (doc as any).autoTable({
-      startY: finalY + 20,
-      head: [["Total Owed", "Total Paid", "Remaining Balance"]],
-      body: [["$" + total, "$" + paid, "$" + remaining]],
-      theme: 'plain',
-      styles: { fontSize: 12, fontStyle: 'bold' }
-    });
-    
-    doc.save(`Invoice_${user?.fullName || 'Creator'}.pdf`);
+  const handleDownloadPDF = async () => {
+    setIsLoading(true);
+    try {
+      const element = document.getElementById("invoice-template");
+      if (!element) return;
+      
+      element.style.display = "block";
+      
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false
+      });
+      
+      element.style.display = "none";
+      
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Invoice_${user?.fullName || 'Creator'}.pdf`);
+    } catch (err) {
+      console.error("PDF generation error:", err);
+    } finally {
+      setIsLoading(false);
+    }
   };
-return (
-    <div className="space-y-6">
+
+  return (
+    <div className="space-y-6 relative">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
           <h2 className="text-2xl font-black">الحسابات والفوترة</h2>
@@ -190,6 +153,84 @@ return (
               )}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Hidden Invoice Template for PDF */}
+      <div id="invoice-template" style={{ display: 'none', position: 'absolute', top: 0, left: 0, zIndex: -100, width: '800px', padding: '40px', backgroundColor: '#0f0f13', color: '#fff', direction: 'rtl', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #2a2a35', paddingBottom: '20px', marginBottom: '30px' }}>
+          <div>
+            <h1 style={{ fontSize: '32px', margin: 0, color: '#3b82f6' }}>فاتورة حساب</h1>
+            <p style={{ margin: '5px 0 0', color: '#9ca3af' }}>صانع المحتوى: {user?.fullName}</p>
+          </div>
+          <div style={{ textAlign: 'left' }}>
+            <p style={{ margin: 0, fontWeight: 'bold' }}>التاريخ: {new Date().toLocaleDateString('ar-JO')}</p>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: '40px' }}>
+          <h2 style={{ fontSize: '20px', borderBottom: '1px solid #2a2a35', paddingBottom: '10px', marginBottom: '15px' }}>الأعمال والثمنيلات</h2>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'right' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#1e1e24' }}>
+                <th style={{ padding: '12px', borderBottom: '1px solid #3b82f6' }}>عنوان العمل</th>
+                <th style={{ padding: '12px', borderBottom: '1px solid #3b82f6' }}>التاريخ</th>
+                <th style={{ padding: '12px', borderBottom: '1px solid #3b82f6' }}>الحالة</th>
+                <th style={{ padding: '12px', borderBottom: '1px solid #3b82f6' }}>السعر</th>
+              </tr>
+            </thead>
+            <tbody>
+              {thumbnails.map(t => (
+                <tr key={t.id} style={{ borderBottom: '1px solid #2a2a35' }}>
+                  <td style={{ padding: '12px' }}>{t.title}</td>
+                  <td style={{ padding: '12px' }}>{new Date(t.createdAt).toLocaleDateString('ar-JO')}</td>
+                  <td style={{ padding: '12px' }}>{t.status}</td>
+                  <td style={{ padding: '12px', fontWeight: 'bold' }}>${t.price || 0}</td>
+                </tr>
+              ))}
+              {thumbnails.length === 0 && <tr><td colSpan={4} style={{ padding: '20px', textAlign: 'center', color: '#9ca3af' }}>لا يوجد أعمال مسجلة</td></tr>}
+            </tbody>
+          </table>
+        </div>
+
+        <div style={{ marginBottom: '40px' }}>
+          <h2 style={{ fontSize: '20px', borderBottom: '1px solid #2a2a35', paddingBottom: '10px', marginBottom: '15px' }}>سجل الفواتير والمدفوعات</h2>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'right' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#1e1e24' }}>
+                <th style={{ padding: '12px', borderBottom: '1px solid #10b981' }}>الوصف</th>
+                <th style={{ padding: '12px', borderBottom: '1px solid #10b981' }}>التاريخ</th>
+                <th style={{ padding: '12px', borderBottom: '1px solid #10b981' }}>الحالة</th>
+                <th style={{ padding: '12px', borderBottom: '1px solid #10b981' }}>المبلغ</th>
+              </tr>
+            </thead>
+            <tbody>
+              {transactions.map(t => (
+                <tr key={t.id} style={{ borderBottom: '1px solid #2a2a35' }}>
+                  <td style={{ padding: '12px' }}>{t.description}</td>
+                  <td style={{ padding: '12px' }}>{new Date(t.date || t.createdAt).toLocaleDateString('ar-JO')}</td>
+                  <td style={{ padding: '12px' }}>{t.status === 'paid' ? 'مدفوع' : 'غير مدفوع'}</td>
+                  <td style={{ padding: '12px', fontWeight: 'bold' }}>${t.amount}</td>
+                </tr>
+              ))}
+              {transactions.length === 0 && <tr><td colSpan={4} style={{ padding: '20px', textAlign: 'center', color: '#9ca3af' }}>لا يوجد مدفوعات مسجلة</td></tr>}
+            </tbody>
+          </table>
+        </div>
+
+        <div style={{ marginTop: '50px', backgroundColor: '#1e1e24', padding: '25px', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ textAlign: 'center', flex: 1 }}>
+            <p style={{ color: '#9ca3af', margin: '0 0 5px' }}>المبلغ الإجمالي</p>
+            <h3 style={{ fontSize: '24px', margin: 0 }}>${total}</h3>
+          </div>
+          <div style={{ textAlign: 'center', flex: 1 }}>
+            <p style={{ color: '#9ca3af', margin: '0 0 5px' }}>تم سداده</p>
+            <h3 style={{ fontSize: '24px', margin: 0, color: '#10b981' }}>${paid}</h3>
+          </div>
+          <div style={{ textAlign: 'center', padding: '10px 20px', backgroundColor: '#ef444420', borderRadius: '8px', border: '1px solid #ef444450', flex: 1 }}>
+            <p style={{ color: '#ef4444', margin: '0 0 5px', fontSize: '14px' }}>المبلغ المتبقي</p>
+            <h3 style={{ fontSize: '28px', margin: 0, color: '#ef4444' }}>${remaining}</h3>
+          </div>
         </div>
       </div>
     </div>
