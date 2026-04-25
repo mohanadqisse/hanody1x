@@ -27,7 +27,7 @@ export default function Login() {
 
   const handleGuestLogin = async () => {
     try {
-      const apiBase = import.meta.env.VITE_API_URL || "";
+      const apiBase = API_BASE;
       const res = await fetch(`${apiBase}/api/users/auth/guest`, { method: "POST" });
       if (res.ok) {
         const data = await res.json();
@@ -49,7 +49,7 @@ export default function Login() {
     if (!email || !password) return toast({ title: "يرجى تعبئة جميع الحقول", variant: "destructive" });
     setIsLoading(true);
     try {
-      const apiBase = import.meta.env.VITE_API_URL || "";
+      const apiBase = API_BASE;
       const res = await fetch(`${apiBase}/api/users/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
