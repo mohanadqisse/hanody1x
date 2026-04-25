@@ -63,8 +63,8 @@ export default function AdminDashboard() {
   const { isAuthenticated, logout, token } = useAdmin();
   const { toast } = useToast();
   
-  // Tabs: 'home' | 'clients' | 'content' | 'inbox' | 'logs' | 'users' | 'codes'
-  const [activeTab, setActiveTab] = useState<'home' | 'clients' | 'users' | 'content' | 'codes'>('home');
+  // Tabs: 'home' | 'clients' | 'content' | 'inbox' | 'logs' | 'users' | 'codes' | 'creators'
+  const [activeTab, setActiveTab] = useState<'home' | 'clients' | 'users' | 'content' | 'codes' | 'creators'>('home');
 
   // Existing states
   const [sections, setSections] = useState<Record<string, any>>({});
@@ -536,6 +536,10 @@ export default function AdminDashboard() {
             <Database className="w-5 h-5 flex-shrink-0" />
             <span>إدارة المحتوى</span>
           </button>
+          <button onClick={() => setActiveTab('creators')} className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${activeTab === 'creators' ? 'bg-primary/20 text-primary font-bold' : 'text-muted-foreground hover:bg-white/5 hover:text-foreground'}`}>
+            <User className="w-5 h-5 flex-shrink-0" />
+            <span>إدارة صناع المحتوى</span>
+          </button>
         </nav>
 
         <div className="pt-8 border-t border-white/10 mt-auto">
@@ -555,7 +559,7 @@ export default function AdminDashboard() {
             <h1 className="text-3xl font-black text-foreground mb-1">مرحباً بعودتك، <span className="text-primary">مهند</span> 👋</h1>
             <p className="text-muted-foreground">إليك نظرة عامة على أعمالك وإحصائياتك اليوم.</p>
           </div>
-          <Button variant="outline" onClick={() => navigate("/")} className="border-border rounded-xl text-primary hover:text-primary/80 shrink-0">
+          <Button variant="outline" onClick={() => navigate("/")} className="border-border rounded-xl text-primary hover:bg-primary hover:text-white shrink-0">
             العودة للموقع
           </Button>
         </div>
@@ -687,7 +691,8 @@ export default function AdminDashboard() {
         )}
 
         {/* TAB: USERS */}
-        {activeTab === 'users' && (
+        
+        {activeTab === 'creators' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {managingUser ? (
               <UserContentManager user={managingUser} onBack={() => setManagingUser(null)} token={token || ""} />
@@ -695,92 +700,43 @@ export default function AdminDashboard() {
               <div className="bg-card/40 border border-white/5 rounded-3xl p-6 sm:p-10">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 border-b border-white/10 pb-6">
                   <div>
-                    <h2 className="text-2xl font-black text-foreground mb-2">حسابات المنصة</h2>
-                    <p className="text-sm text-muted-foreground">العملاء الذين قاموا بالتسجيل في الموقع لإنشاء لوحة التحكم الخاصة بهم.</p>
+                    <h2 className="text-2xl font-black text-foreground mb-2">إدارة صناع المحتوى</h2>
+                    <p className="text-sm text-muted-foreground">قم بإدارة الثمنيلات والفواتير الخاصة بصناع المحتوى.</p>
                   </div>
                 </div>
 
-                {usersData.length === 0 ? (
+                {usersData.filter(u => u.role === 'user').length === 0 ? (
                   <div className="text-center py-20">
-                    <Users className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
-                    <p className="text-muted-foreground">لا يوجد مستخدمين مسجلين حالياً.</p>
+                    <User className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
+                    <p className="text-muted-foreground">لا يوجد صناع محتوى مسجلين حالياً.</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {usersData.map(user => (
-                      <div key={user.id} className="bg-black/20 border border-white/5 rounded-2xl p-4 sm:p-6 flex flex-col items-start gap-4 hover:border-white/10 transition-colors">
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between w-full gap-4">
-                          <div className="flex items-center gap-4 w-full sm:w-auto">
-                            <div className="w-12 h-12 rounded-full bg-blue-500/20 text-blue-500 font-black flex items-center justify-center shrink-0 text-xl border border-blue-500/30">
-                              {user.avatar ? <img src={user.avatar} className="w-full h-full object-cover rounded-full" /> : user.fullName.substring(0, 2)}
-                            </div>
-                            <div>
-                              <h3 className="font-bold text-lg text-foreground flex items-center gap-2">
-                                {user.fullName}
-                                {user.role === 'guest' && <span className="text-[10px] bg-amber-500/20 text-amber-500 px-2 py-0.5 rounded-full">زائر</span>}
-                                {user.isBanned && <span className="text-[10px] bg-red-500/20 text-red-500 px-2 py-0.5 rounded-full flex items-center gap-1"><ShieldX size={10} /> محظور</span>}
-                              </h3>
-                              <div className="flex gap-3 text-sm text-muted-foreground items-center">
-                                <span>{user.email}</span>
-                                <span>|</span>
-                                <button onClick={() => setExpandedUser(expandedUser === user.id ? null : user.id)} className="text-primary hover:underline text-xs flex items-center gap-1">
-                                  إظهار المعلومات {expandedUser === user.id ? <ChevronUp size={14}/> : <ChevronDown size={14}/>}
-                                </button>
-                              </div>
-                            </div>
+                    {usersData.filter(u => u.role === 'user').map(user => (
+                      <div key={user.id} className="bg-card p-5 rounded-2xl border border-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all hover:bg-white/5">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-xl bg-primary/20 text-primary flex items-center justify-center font-bold text-xl">
+                            {user.fullName.charAt(0).toUpperCase()}
                           </div>
-                          
-                          <div className="flex items-center gap-3 w-full sm:w-auto shrink-0 justify-end mt-2 sm:mt-0">
-                            <Button 
-                              size="sm" 
-                              onClick={() => handleBanUser(user.id, user.isBanned)}
-                              variant={user.isBanned ? "outline" : "secondary"}
-                              className="text-xs rounded-xl font-bold border-white/10"
-                            >
-                              {user.isBanned ? <><ShieldCheck className="w-4 h-4 ml-1 text-green-400" /> إلغاء الحظر</> : <><ShieldX className="w-4 h-4 ml-1 text-red-400" /> حظر المستخدم</>}
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="destructive"
-                              onClick={() => handleDeletePlatformUser(user.id)}
-                              className="text-xs rounded-xl font-bold w-10 p-0"
-                              title="حذف الحساب"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                          <div>
+                            <h3 className="font-bold text-lg flex items-center gap-2">
+                              {user.fullName}
+                              {user.isBanned && <span className="bg-red-500/20 text-red-500 text-[10px] px-2 py-0.5 rounded-full">محظور</span>}
+                            </h3>
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                              <span className="flex items-center gap-1"><AtSign size={12}/> {user.username || "بدون يوزر"}</span>
+                              <span className="flex items-center gap-1"><Mail size={12}/> {user.email}</span>
+                            </div>
                           </div>
                         </div>
-
-                        {/* Dropdown Information */}
-                        {expandedUser === user.id && (
-                          <div className="w-full mt-2 pt-4 border-t border-white/5 grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm animate-in fade-in slide-in-from-top-2 relative">
-                            <div className="bg-black/30 p-3 rounded-xl border border-white/5">
-                              <span className="text-muted-foreground block text-xs mb-1">اسم المستخدم:</span>
-                              <span className="font-mono text-foreground font-bold">{user.username || "غير متوفر"}</span>
-                            </div>
-                            <div className="bg-black/30 p-3 rounded-xl border border-white/5">
-                              <span className="text-muted-foreground block text-xs mb-1">الاسم الكامل:</span>
-                              <span className="text-foreground font-bold">{user.fullName}</span>
-                            </div>
-                            <div className="bg-black/30 p-3 rounded-xl border border-white/5">
-                              <span className="text-muted-foreground block text-xs mb-1">تاريخ التسجيل:</span>
-                              <span className="text-foreground">{new Date(user.createdAt).toLocaleDateString('ar-JO', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute:'2-digit' })}</span>
-                            </div>
-                            <div className="bg-black/30 p-3 rounded-xl border border-white/5">
-                              <span className="text-muted-foreground block text-xs mb-1">حالة الحساب:</span>
-                              <span className={`font-bold ${user.isBanned ? "text-red-400" : "text-green-400"}`}>{user.isBanned ? `محظور (${user.banReason || "بدون سبب"})` : "نشط"}</span>
-                            </div>
-                            
-                            <div className="sm:col-span-2 mt-2">
-                              <Button 
-                                onClick={() => setManagingUser(user)}
-                                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl h-12 shadow-lg shadow-blue-500/20"
-                              >
-                                <Edit className="w-5 h-5 ml-2" /> إدارة محتوى هذا المستخدم (الثمنيلات والفواتير)
-                              </Button>
-                            </div>
-                          </div>
-                        )}
+                        <div className="flex gap-2">
+                          <Button 
+                            onClick={() => setManagingUser(user)}
+                            className="bg-primary hover:bg-primary/90 text-white font-bold rounded-xl shadow-lg shadow-primary/20"
+                          >
+                            إدارة بيانات صانع المحتوى
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -789,9 +745,69 @@ export default function AdminDashboard() {
             )}
           </div>
         )}
+        {activeTab === 'users' && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="bg-card/40 border border-white/5 rounded-3xl p-6 sm:p-10">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 border-b border-white/10 pb-6">
+                <div>
+                  <h2 className="text-2xl font-black text-foreground mb-2">حسابات المنصة</h2>
+                  <p className="text-sm text-muted-foreground">العملاء الذين قاموا بالتسجيل في الموقع الخاص بك.</p>
+                </div>
+              </div>
 
-        {/* TAB: CLIENTS & ORDERS */}
-        {activeTab === 'clients' && (
+              {usersData.length === 0 ? (
+                <div className="text-center py-20">
+                  <Users className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
+                  <p className="text-muted-foreground">لا يوجد مستخدمين مسجلين حالياً.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {usersData.map(user => (
+                    <div key={user.id} className="bg-card p-5 rounded-2xl border border-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all hover:bg-white/5">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-primary/20 text-primary flex items-center justify-center font-bold text-xl">
+                          {user.fullName.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-lg flex items-center gap-2">
+                            {user.fullName}
+                            {user.isBanned && <span className="bg-red-500/20 text-red-500 text-[10px] px-2 py-0.5 rounded-full">محظور</span>}
+                            <span className="bg-white/10 text-white text-[10px] px-2 py-0.5 rounded-full">{user.role === 'guest' ? 'ضيف' : 'صانع محتوى'}</span>
+                          </h3>
+                          <div className="flex flex-col gap-1 text-xs text-muted-foreground mt-1">
+                            <span className="flex items-center gap-1"><AtSign size={12}/> {user.username || "بدون يوزر"}</span>
+                            <span className="flex items-center gap-1"><Mail size={12}/> {user.email}</span>
+                            <span className="flex items-center gap-1"><Clock size={12}/> انضم: {new Date(user.createdAt).toLocaleDateString('ar-JO')}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                        <Button 
+                          size="sm" 
+                          onClick={() => handleBanUser(user.id, user.isBanned)}
+                          variant={user.isBanned ? "outline" : "destructive"}
+                          className="rounded-xl w-full sm:w-auto font-bold h-10"
+                        >
+                          {user.isBanned ? <ShieldCheck className="w-4 h-4 mr-1 ml-1" /> : <ShieldX className="w-4 h-4 mr-1 ml-1" />}
+                          {user.isBanned ? "إلغاء الحظر" : "حظر المستخدم"}
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="destructive"
+                          onClick={() => setModalConfig({ isOpen: true, type: 'deletePlatformUser', title: 'حذف المستخدم نهائياً', description: 'هل أنت متأكد من حذف هذا المستخدم وكل بياناته؟', clientId: user.id })}
+                          className="rounded-xl w-full sm:w-auto h-10 bg-red-900/50 hover:bg-red-600 text-white"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+{activeTab === 'clients' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="bg-card/40 border border-white/5 rounded-3xl p-6 sm:p-10">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 border-b border-white/10 pb-6">

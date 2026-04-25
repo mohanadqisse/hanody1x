@@ -82,11 +82,12 @@ router.get("/thumbnails", requireUserAuth, async (req, res) => {
 
 router.get("/billing", requireUserAuth, async (req, res) => {
   const payload = (req as typeof req & { user: { id: number; role: string } }).user;
-  if (payload.role === "guest") { res.json(guestData.transactions); return; }
+  if (payload.role === "guest") { res.json({ transactions: guestData.transactions, thumbnails: guestData.thumbnails }); return; }
 
   try {
     const userTransactions = await db.select().from(transactions).where(eq(transactions.userId, payload.id)).orderBy(desc(transactions.createdAt));
-    res.json(userTransactions);
+    const userThumbnails = await db.select().from(thumbnails).where(eq(thumbnails.userId, payload.id)).orderBy(desc(thumbnails.createdAt));
+    res.json({ transactions: userTransactions, thumbnails: userThumbnails });
   } catch (err) {
     res.status(500).json({ message: "خطأ في الخادم" });
   }

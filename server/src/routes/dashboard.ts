@@ -282,13 +282,14 @@ router.get("/users/:id/transactions", async (req, res) => {
 router.patch("/thumbnails/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const { title, image, status, notes, downloadUrl } = req.body;
+    const { title, image, status, notes, downloadUrl, price } = req.body;
     const [updated] = await db.update(thumbnails).set({
       ...(title !== undefined && { title }),
       ...(image !== undefined && { image }),
       ...(status !== undefined && { status }),
       ...(notes !== undefined && { notes }),
       ...(downloadUrl !== undefined && { downloadUrl }),
+      ...(price !== undefined && { price: parseInt(price) || 0 }),
     }).where(eq(thumbnails.id, id)).returning();
     res.json(updated);
   } catch (error) {
@@ -333,14 +334,15 @@ router.delete("/transactions/:id", async (req, res) => {
 
 router.post("/thumbnails", async (req, res) => {
   try {
-    const { userId, title, image, status, notes, downloadUrl } = req.body;
+    const { userId, title, image, status, notes, downloadUrl, price } = req.body;
     const [newThumb] = await db.insert(thumbnails).values({
       userId: parseInt(userId),
       title,
       image,
       status: status || "قيد العمل",
       notes,
-      downloadUrl
+      downloadUrl,
+      price: price ? parseInt(price) : 0
     }).returning();
     res.status(201).json(newThumb);
   } catch (error) {

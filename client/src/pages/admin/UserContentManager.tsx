@@ -12,7 +12,7 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
   const [loading, setLoading] = useState(true);
 
   // New thumbnail state
-  const [newThumb, setNewThumb] = useState({ title: "", image: "", status: "قيد العمل", downloadUrl: "", notes: "" });
+  const [newThumb, setNewThumb] = useState({ title: "", image: "", status: "قيد العمل", downloadUrl: "", notes: "", price: "" });
   
   // New transaction state
   const [newTrans, setNewTrans] = useState({ description: "", amount: "", status: "pending" });
@@ -46,7 +46,7 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
       });
       if (res.ok) {
         toast({ title: "تم إضافة الثمنيل" });
-        setNewThumb({ title: "", image: "", status: "قيد العمل", downloadUrl: "", notes: "" });
+        setNewThumb({ title: "", image: "", status: "قيد العمل", downloadUrl: "", notes: "", price: "" });
         fetchUserData();
       }
     } catch (e) { toast({ title: "حدث خطأ", variant: "destructive" }); }

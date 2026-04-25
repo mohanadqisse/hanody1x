@@ -88,6 +88,7 @@ export const thumbnails = pgTable("thumbnails", {
   image: text("image").notNull(),
   title: text("title").notNull(),
   status: text("status").notNull().default("قيد العمل"), // "قيد العمل", "تم التسليم"
+  price: integer("price").notNull().default(0),
   notes: text("notes"),
   downloadUrl: text("download_url"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
