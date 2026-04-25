@@ -1,3 +1,4 @@
+import { API_BASE } from "@/lib/api";
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,8 +25,8 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
     setLoading(true);
     try {
       const [tRes, trRes] = await Promise.all([
-        fetch(`/api/dashboard/users/${user.id}/thumbnails`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`/api/dashboard/users/${user.id}/transactions`, { headers: { Authorization: `Bearer ${token}` } })
+        fetch(API_BASE + `/api/dashboard/users/${user.id}/thumbnails`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(API_BASE + `/api/dashboard/users/${user.id}/transactions`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
       if (tRes.ok) setThumbnails(await tRes.json());
       if (trRes.ok) setTransactions(await trRes.json());
@@ -39,7 +40,7 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
   const addThumbnail = async () => {
     if (!newThumb.title || !newThumb.image) return toast({ title: "يرجى تعبئة العنوان ورابط الصورة", variant: "destructive" });
     try {
-      const res = await fetch("/api/dashboard/thumbnails", {
+      const res = await fetch(API_BASE + "/api/dashboard/thumbnails", {
         method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ userId: user.id, ...newThumb })
       });
@@ -53,7 +54,7 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
 
   const updateThumbnail = async (id: number, field: string, value: string) => {
     try {
-      await fetch(`/api/dashboard/thumbnails/${id}`, {
+      await fetch(API_BASE + `/api/dashboard/thumbnails/${id}`, {
         method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ [field]: value })
       });
@@ -63,7 +64,7 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
 
   const deleteThumbnail = async (id: number) => {
     try {
-      await fetch(`/api/dashboard/thumbnails/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+      await fetch(API_BASE + `/api/dashboard/thumbnails/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       fetchUserData();
       toast({ title: "تم الحذف" });
     } catch (e) { toast({ title: "حدث خطأ", variant: "destructive" }); }
@@ -72,7 +73,7 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
   const addTransaction = async () => {
     if (!newTrans.description || !newTrans.amount) return toast({ title: "يرجى تعبئة الوصف والمبلغ", variant: "destructive" });
     try {
-      const res = await fetch("/api/dashboard/transactions", {
+      const res = await fetch(API_BASE + "/api/dashboard/transactions", {
         method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ userId: user.id, ...newTrans })
       });
@@ -86,7 +87,7 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
 
   const updateTransaction = async (id: number, field: string, value: string | number) => {
     try {
-      await fetch(`/api/dashboard/transactions/${id}`, {
+      await fetch(API_BASE + `/api/dashboard/transactions/${id}`, {
         method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ [field]: value })
       });
@@ -96,7 +97,7 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
 
   const deleteTransaction = async (id: number) => {
     try {
-      await fetch(`/api/dashboard/transactions/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+      await fetch(API_BASE + `/api/dashboard/transactions/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       fetchUserData();
       toast({ title: "تم الحذف" });
     } catch (e) { toast({ title: "حدث خطأ", variant: "destructive" }); }

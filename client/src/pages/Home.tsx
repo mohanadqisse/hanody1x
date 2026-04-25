@@ -1,3 +1,4 @@
+import { API_BASE } from "@/lib/api";
 import { useEffect, useState, useRef } from "react";
 import { motion, useInView, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { ParticleField } from "@/components/ParticleField";
@@ -1397,7 +1398,7 @@ function Contact({ isDiscountActive }: { isDiscountActive?: boolean }) {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
     try {
-      const res = await fetch("/api/messages", {
+      const res = await fetch(API_BASE + "/api/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: values.name, email: values.email, packageType: values.package, details: values.details }),

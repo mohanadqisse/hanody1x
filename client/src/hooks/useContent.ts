@@ -1,3 +1,4 @@
+import { API_BASE } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 
 type SectionContent = Record<string, any> | any[];
@@ -11,7 +12,7 @@ interface ImagesMap {
 
 async function fetchSection(section: string): Promise<any> {
   try {
-    const res = await fetch(`/api/content/${section}`);
+    const res = await fetch(API_BASE + `/api/content/${section}`);
     if (!res.ok) return {};
     return res.json();
   } catch {
@@ -21,7 +22,7 @@ async function fetchSection(section: string): Promise<any> {
 
 async function fetchImagesFromApi(): Promise<string[]> {
   try {
-    const res = await fetch("/api/content/images");
+    const res = await fetch(API_BASE + "/api/content/images");
     if (!res.ok) return [];
     return res.json();
   } catch {

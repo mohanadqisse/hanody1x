@@ -1,3 +1,4 @@
+import { API_BASE } from "@/lib/api";
 import { useState, useEffect, useRef } from "react";
 import { useUser } from "@/contexts/UserContext";
 import { Button } from "@/components/ui/button";
@@ -26,7 +27,7 @@ export default function UserSettings() {
     
     try {
       const token = localStorage.getItem("user_token");
-      const res = await fetch("/api/upload", {
+      const res = await fetch(API_BASE + "/api/upload", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: fd
@@ -46,7 +47,7 @@ export default function UserSettings() {
 
   useEffect(() => {
     // Fetch dynamic texts
-    fetch("/api/users/dashboard/settings-content")
+    fetch(API_BASE + "/api/users/dashboard/settings-content")
       .then(res => res.json())
       .then(data => setSettingsContent(data))
       .catch(() => {});
@@ -61,7 +62,7 @@ export default function UserSettings() {
     setIsLoading(true);
     try {
       const token = localStorage.getItem("user_token");
-      const res = await fetch("/api/users/auth/me", {
+      const res = await fetch(API_BASE + "/api/users/auth/me", {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ fullName, avatar, password: password || undefined })

@@ -1,3 +1,4 @@
+import { API_BASE } from "@/lib/api";
 import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -140,7 +141,7 @@ export default function AdminDashboard() {
       setIsTracking(false);
       // Save session
       try {
-        const res = await fetch("/api/dashboard/sessions", {
+        const res = await fetch(API_BASE + "/api/dashboard/sessions", {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({ title: trackingTitle, durationSeconds: trackingSeconds })
@@ -161,11 +162,11 @@ export default function AdminDashboard() {
 
   async function fetchDashboardData() {
     try {
-      const pStats = fetch("/api/dashboard/stats", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
-      const pClients = fetch("/api/dashboard/clients", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
-      const pSessions = fetch("/api/dashboard/sessions", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
-      const pUsers = fetch("/api/dashboard/users", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
-      const pCodes = fetch("/api/dashboard/codes", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
+      const pStats = fetch(API_BASE + "/api/dashboard/stats", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
+      const pClients = fetch(API_BASE + "/api/dashboard/clients", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
+      const pSessions = fetch(API_BASE + "/api/dashboard/sessions", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
+      const pUsers = fetch(API_BASE + "/api/dashboard/users", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
+      const pCodes = fetch(API_BASE + "/api/dashboard/codes", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
 
       const [s, c, sess, u, codes] = await Promise.all([pStats, pClients, pSessions, pUsers, pCodes]);
       setStats(s);
@@ -180,19 +181,19 @@ export default function AdminDashboard() {
 
   // --- EXISTING FETCHERS ---
   async function fetchSections() {
-    const res = await fetch("/api/content/all", { headers: { Authorization: `Bearer ${token}` } });
+    const res = await fetch(API_BASE + "/api/content/all", { headers: { Authorization: `Bearer ${token}` } });
     if (res.ok) setSections(await res.json());
   }
 
   async function fetchImages() {
-    const res = await fetch("/api/content/images");
+    const res = await fetch(API_BASE + "/api/content/images");
     if (res.ok) setImages(await res.json());
   }
 
   async function fetchMessages() {
     setMessagesLoading(true);
     try {
-      const res = await fetch("/api/messages", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(API_BASE + "/api/messages", { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) setMessages(await res.json());
     } catch (err) { console.error(err); } finally { setMessagesLoading(false); }
   }
@@ -200,7 +201,7 @@ export default function AdminDashboard() {
   async function fetchLoginLogs() {
     setLogsLoading(true);
     try {
-      const res = await fetch("/api/auth/logs", { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(API_BASE + "/api/auth/logs", { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) setLoginLogs(await res.json());
     } catch (err) { console.error(err); } finally { setLogsLoading(false); }
   }
@@ -208,7 +209,7 @@ export default function AdminDashboard() {
   // --- ACTIONS ---
   async function deleteLoginLog(id: number) {
     try {
-      const res = await fetch(`/api/auth/logs/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(API_BASE + `/api/auth/logs/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) {
         setLoginLogs(prev => prev.filter(l => l.id !== id));
         toast({ title: "تم حذف السجل" });
@@ -218,14 +219,14 @@ export default function AdminDashboard() {
 
   async function markAsRead(id: number) {
     try {
-      await fetch(`/api/messages/${id}/read`, { method: "PATCH", headers: { Authorization: `Bearer ${token}` } });
+      await fetch(API_BASE + `/api/messages/${id}/read`, { method: "PATCH", headers: { Authorization: `Bearer ${token}` } });
       setMessages(prev => prev.map(m => m.id === id ? { ...m, read: true } : m));
     } catch (err) { console.error(err); }
   }
 
   async function deleteMessage(id: number) {
     try {
-      const res = await fetch(`/api/messages/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(API_BASE + `/api/messages/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) {
         setMessages(prev => prev.filter(m => m.id !== id));
         toast({ title: "تم حذف الرسالة" });
@@ -240,7 +241,7 @@ export default function AdminDashboard() {
         ? (Array.isArray(sections.caseStudies) && sections.caseStudies.length > 0 ? sections.caseStudies : defaultCaseStudies)
         : (sections[section] || {});
         
-      const res = await fetch(`/api/content/${section}`, {
+      const res = await fetch(API_BASE + `/api/content/${section}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ content: JSON.stringify(contentToSave) }),
@@ -257,7 +258,7 @@ export default function AdminDashboard() {
     if (!file) return;
     const fd = new FormData(); fd.append("image", file);
     try {
-      const res = await fetch("/api/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
+      const res = await fetch(API_BASE + "/api/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
       if (res.ok) { await fetchImages(); toast({ title: "تم رفع الصورة" }); }
     } catch { toast({ title: "خطأ", variant: "destructive" }); }
   }
@@ -268,7 +269,7 @@ export default function AdminDashboard() {
       const filename = oldUrl.split("/").pop();
       const publicId = filename?.split(".")[0];
       const fd = new FormData(); if (publicId) fd.append("publicId", publicId); fd.append("image", file);
-      const res = await fetch("/api/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
+      const res = await fetch(API_BASE + "/api/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
       if (res.ok) { await fetchImages(); toast({ title: "تم الاستبدال" }); }
     } catch { toast({ title: "خطأ", variant: "destructive" }); }
   }
@@ -276,7 +277,7 @@ export default function AdminDashboard() {
   async function deleteImage(url: string) {
     try {
       const filename = url.split("/").pop();
-      const res = await fetch(`/api/upload/${filename}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(API_BASE + `/api/upload/${filename}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) { await fetchImages(); toast({ title: "تم الحذف" }); }
     } catch (err) { toast({ title: "خطأ", variant: "destructive" }); }
   }
@@ -405,7 +406,7 @@ export default function AdminDashboard() {
 
   const handleToggleCode = async (id: number) => {
     try {
-      const res = await fetch(`/api/dashboard/codes/${id}/toggle`, {
+      const res = await fetch(API_BASE + `/api/dashboard/codes/${id}/toggle`, {
         method: "PATCH", headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) fetchDashboardData();
@@ -415,7 +416,7 @@ export default function AdminDashboard() {
   const handleDeleteCode = async (id: number) => {
     if (!confirm("هل أنت متأكد من حذف هذا الكود؟")) return;
     try {
-      const res = await fetch(`/api/dashboard/codes/${id}`, {
+      const res = await fetch(API_BASE + `/api/dashboard/codes/${id}`, {
         method: "DELETE", headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) { toast({ title: "تم الحذف" }); fetchDashboardData(); }
@@ -429,7 +430,7 @@ export default function AdminDashboard() {
     try {
       if (modalConfig.type === 'addClient') {
         if (!val) return toast({ title: "يرجى إدخال اسم العميل", variant: "destructive" });
-        const res = await fetch("/api/dashboard/clients", {
+        const res = await fetch(API_BASE + "/api/dashboard/clients", {
           method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({ name: val })
         });
@@ -438,14 +439,14 @@ export default function AdminDashboard() {
       else if (modalConfig.type === 'addWork' && modalConfig.clientId) {
         const pics = parseInt(val);
         if (isNaN(pics) || pics <= 0) return toast({ title: "قيمة غير صالحة", variant: "destructive" });
-        const res = await fetch(`/api/dashboard/clients/${modalConfig.clientId}/work`, {
+        const res = await fetch(API_BASE + `/api/dashboard/clients/${modalConfig.clientId}/work`, {
           method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({ items: pics, amount: 10 }) 
         });
         if (res.ok) { toast({ title: "تم إضافة السجل للعميل" }); fetchDashboardData(); }
       }
       else if (modalConfig.type === 'clearBalance' && modalConfig.clientId) {
-        const res = await fetch(`/api/dashboard/clients/${modalConfig.clientId}/clear`, {
+        const res = await fetch(API_BASE + `/api/dashboard/clients/${modalConfig.clientId}/clear`, {
           method: "PATCH", headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) { toast({ title: "تم تصفير الحساب بنجاح" }); fetchDashboardData(); }
@@ -453,35 +454,35 @@ export default function AdminDashboard() {
       else if (modalConfig.type === 'editOrder' && modalConfig.clientId) {
         const newCount = parseInt(val);
         if (isNaN(newCount) || newCount < 0) return toast({ title: "قيمة غير صالحة", variant: "destructive" });
-        const res = await fetch(`/api/dashboard/clients/${modalConfig.clientId}/set-orders`, {
+        const res = await fetch(API_BASE + `/api/dashboard/clients/${modalConfig.clientId}/set-orders`, {
           method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({ ordersCompleted: newCount })
         });
         if (res.ok) { toast({ title: "تم التعديل بنجاح" }); fetchDashboardData(); }
       }
       else if (modalConfig.type === 'deleteClient' && modalConfig.clientId) {
-        const res = await fetch(`/api/dashboard/clients/${modalConfig.clientId}`, {
+        const res = await fetch(API_BASE + `/api/dashboard/clients/${modalConfig.clientId}`, {
           method: "DELETE", headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) { toast({ title: "تم حذف العميل" }); fetchDashboardData(); }
       }
       else if (modalConfig.type === 'banUser' && modalConfig.clientId) {
         const isBanned = modalConfig.initialValue !== "unban";
-        const res = await fetch(`/api/dashboard/users/${modalConfig.clientId}/ban`, {
+        const res = await fetch(API_BASE + `/api/dashboard/users/${modalConfig.clientId}/ban`, {
           method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({ isBanned, banReason: isBanned ? val : null })
         });
         if (res.ok) { toast({ title: isBanned ? "تم حظر المستخدم" : "تم إلغاء الحظر" }); fetchDashboardData(); }
       }
       else if (modalConfig.type === 'deletePlatformUser' && modalConfig.clientId) {
-        const res = await fetch(`/api/dashboard/users/${modalConfig.clientId}`, {
+        const res = await fetch(API_BASE + `/api/dashboard/users/${modalConfig.clientId}`, {
           method: "DELETE", headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) { toast({ title: "تم حذف المستخدم" }); fetchDashboardData(); }
       }
       else if (modalConfig.type === 'addCode') {
         if (!val) return toast({ title: "يرجى إدخال الكود", variant: "destructive" });
-        const res = await fetch("/api/dashboard/codes", {
+        const res = await fetch(API_BASE + "/api/dashboard/codes", {
           method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({ code: val })
         });
@@ -986,7 +987,7 @@ export default function AdminDashboard() {
                     <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
                       const file = e.target.files?.[0]; if (!file) return;
                       const fd = new FormData(); fd.append("image", file);
-                      const res = await fetch("/api/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
+                      const res = await fetch(API_BASE + "/api/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
                       if (res.ok) {
                         const data = await res.json();
                         setSections((prev) => ({ ...prev, brand: { ...prev.brand, logoImage: data.url } }));
@@ -1131,7 +1132,7 @@ export default function AdminDashboard() {
                         <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
                           const file = e.target.files?.[0]; if (!file) return;
                           const fd = new FormData(); fd.append("image", file);
-                          const res = await fetch("/api/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
+                          const res = await fetch(API_BASE + "/api/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
                           if (res.ok) {
                             const data = await res.json();
                             updateCaseStudy(idx, 'avatarImage', data.url);

@@ -1,3 +1,4 @@
+import { API_BASE } from "@/lib/api";
 import { useState } from "react";
 import { useLocation, Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";

@@ -1,3 +1,4 @@
+import { API_BASE } from "@/lib/api";
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 export type UserRole = "user" | "guest";
@@ -39,7 +40,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   const fetchUser = async (authToken: string) => {
     try {
-      const res = await fetch("/api/users/auth/me", {
+      const res = await fetch(API_BASE + "/api/users/auth/me", {
         headers: { Authorization: `Bearer ${authToken}` },
       });
       if (res.ok) {

@@ -1,3 +1,4 @@
+import { API_BASE } from "@/lib/api";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useUser } from "@/contexts/UserContext";
@@ -16,7 +17,7 @@ export default function Thumbnails() {
     const fetchThumbnails = async () => {
       try {
         const token = localStorage.getItem("user_token");
-        const res = await fetch("/api/users/dashboard/thumbnails", {
+        const res = await fetch(API_BASE + "/api/users/dashboard/thumbnails", {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) {
