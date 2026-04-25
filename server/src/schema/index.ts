@@ -130,13 +130,23 @@ export const notifications = pgTable("notifications", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const publicRatings = pgTable("public_ratings", {
+  id: serial("id").primaryKey(),
+  portfolioItemId: integer("portfolio_item_id").notNull(),
+  rating: integer("rating").notNull(),
+  visitorId: text("visitor_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
 export const insertThumbnailSchema = createInsertSchema(thumbnails).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertTransactionSchema = createInsertSchema(transactions).omit({ id: true, createdAt: true });
 export const insertCommentSchema = createInsertSchema(comments).omit({ id: true, createdAt: true });
 export const insertRatingSchema = createInsertSchema(ratings).omit({ id: true, createdAt: true });
 export const insertNotificationSchema = createInsertSchema(notifications).omit({ id: true, createdAt: true });
+export const insertPublicRatingSchema = createInsertSchema(publicRatings).omit({ id: true, createdAt: true });
 
+export type PublicRating = typeof publicRatings.$inferSelect;
 export type AdminUser = typeof adminUsers.$inferSelect;
 export type SiteContent = typeof siteContent.$inferSelect;
 export type ContactMessage = typeof contactMessages.$inferSelect;

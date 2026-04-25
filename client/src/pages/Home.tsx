@@ -718,10 +718,115 @@ function extractColorsFromImage(imgSrc: string): Promise<string[]> {
   });
 }
 
+const getVisitorId = () => {
+  let vid = localStorage.getItem("visitor_id");
+  if (!vid) {
+    vid = "v_" + Math.random().toString(36).substring(2, 15);
+    localStorage.setItem("visitor_id", vid);
+  }
+  return vid;
+};
+
+function RatingModal({ isOpen, onClose, images, items }: { isOpen: boolean, onClose: () => void, images: any, items: any[] }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+
+  if (!isOpen) return null;
+
+  const currentItem = items[currentIndex];
+  const src = (images && images[currentItem.id - 1]) || `${import.meta.env.BASE_URL}images/thumb-${(currentItem.id % 3) + 1}.png`;
+
+  const handleRate = async (rating: number) => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      await fetch(`${API_BASE}/api/public-ratings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          portfolioItemId: currentItem.id,
+          rating,
+          visitorId: getVisitorId(),
+        }),
+      });
+      
+      if (currentIndex < items.length - 1) {
+        setCurrentIndex(prev => prev + 1);
+      } else {
+        toast({ title: "شكراً لتقييمك جميع الصور!", variant: "default" });
+        onClose();
+        setCurrentIndex(0);
+      }
+    } catch (err) {
+      toast({ title: "حدث خطأ أثناء التقييم", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/95 backdrop-blur-xl p-4"
+      >
+        <div className="absolute inset-0" onClick={onClose} />
+        
+        <motion.div
+          initial={{ scale: 0.9, y: 20 }}
+          animate={{ scale: 1, y: 0 }}
+          exit={{ scale: 0.9, y: 20 }}
+          className="relative max-w-4xl w-full flex flex-col items-center gap-6"
+        >
+          <div className="text-white/70 text-sm font-bold bg-white/10 px-4 py-1.5 rounded-full">
+            صورة {currentIndex + 1} من {items.length}
+          </div>
+
+          <div className="w-full max-h-[65vh] flex justify-center items-center relative group">
+            <img 
+              src={src} 
+              className="max-w-full max-h-[65vh] object-contain rounded-2xl shadow-2xl border border-white/10" 
+              alt="Rating Image"
+            />
+          </div>
+
+          <div className="flex flex-col items-center gap-4 bg-card/40 p-6 rounded-3xl border border-white/10 shadow-2xl w-full max-w-sm backdrop-blur-md">
+            <p className="text-white font-bold text-lg">ما تقييمك لهذه الصورة؟</p>
+            <div className="flex items-center gap-2" dir="ltr">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <button
+                  key={star}
+                  disabled={isSubmitting}
+                  onClick={() => handleRate(star)}
+                  className="text-gray-500 hover:text-yellow-400 hover:scale-125 transition-all focus:outline-none"
+                >
+                  <Star size={36} className="fill-current" />
+                </button>
+              ))}
+            </div>
+            
+            <Button 
+              variant="outline" 
+              onClick={() => { onClose(); setCurrentIndex(0); }}
+              className="mt-2 w-full rounded-xl border-white/20 text-white/80 hover:text-white hover:bg-white/10"
+            >
+              الانتهاء من التقييم
+            </Button>
+          </div>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
 function PortfolioGrid() {
   const images = useImages();
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [extractedColors, setExtractedColors] = useState<string[]>([]);
+  const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
   const [hoveredColor, setHoveredColor] = useState<string | null>(null);
   const [copiedColor, setCopiedColor] = useState<string | null>(null);
 
@@ -776,7 +881,24 @@ function PortfolioGrid() {
             );
           })}
         </div>
+
+        <div className="mt-16 text-center">
+          <Button 
+            onClick={() => setIsRatingModalOpen(true)}
+            className="rounded-2xl px-8 py-6 text-lg font-bold shadow-[0_0_30px_rgba(59,130,246,0.3)] hover:shadow-[0_0_40px_rgba(59,130,246,0.5)] hover:scale-105 transition-all text-white bg-primary"
+          >
+            <Star className="ml-2 fill-current" size={20} />
+            تقييم الصور
+          </Button>
+        </div>
       </div>
+      
+      <RatingModal 
+        isOpen={isRatingModalOpen} 
+        onClose={() => setIsRatingModalOpen(false)} 
+        images={images.portfolio || {}} 
+        items={portfolioItems.slice(0, 12)}
+      />
 
       {/* Lightbox with Color Palette */}
       <AnimatePresence>

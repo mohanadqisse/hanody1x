@@ -11,6 +11,7 @@ import messagesRouter from "./routes/messages.js";
 import dashboardRouter from "./routes/dashboard.js";
 import userAuthRouter from "./routes/userAuth.js";
 import userDashboardRouter from "./routes/userDashboard.js";
+import publicRatingsRouter from "./routes/publicRatings.js";
 import rateLimit from "express-rate-limit";
 import { db } from "./lib/db.js";
 import { sql } from "drizzle-orm";
@@ -31,6 +32,7 @@ async function ensureTables() {
     await db.execute(sql`CREATE TABLE IF NOT EXISTS comments (id SERIAL PRIMARY KEY, thumbnail_id INTEGER REFERENCES thumbnails(id) NOT NULL, author_name TEXT NOT NULL, is_admin BOOLEAN NOT NULL DEFAULT FALSE, content TEXT NOT NULL, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
     await db.execute(sql`CREATE TABLE IF NOT EXISTS ratings (id SERIAL PRIMARY KEY, thumbnail_id INTEGER REFERENCES thumbnails(id) NOT NULL, user_id INTEGER REFERENCES users(id) NOT NULL, rating INTEGER NOT NULL, comment TEXT, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
     await db.execute(sql`CREATE TABLE IF NOT EXISTS notifications (id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id) NOT NULL, message TEXT NOT NULL, read BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
+    await db.execute(sql`CREATE TABLE IF NOT EXISTS public_ratings (id SERIAL PRIMARY KEY, portfolio_item_id INTEGER NOT NULL, rating INTEGER NOT NULL, visitor_id TEXT NOT NULL, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
     console.log("Database tables verified (safe migration - no data loss)");
 
     // Auto-seed admin if it doesn't exist
@@ -91,6 +93,7 @@ app.use("/api/upload", uploadRouter);
 app.use("/api/dashboard", dashboardRouter);
 app.use("/api/users/auth", userAuthRouter);
 app.use("/api/users/dashboard", userDashboardRouter);
+app.use("/api/public-ratings", publicRatingsRouter);
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes

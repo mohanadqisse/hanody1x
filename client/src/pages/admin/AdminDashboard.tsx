@@ -10,7 +10,7 @@ import {
   LogOut, Save, Upload, Trash2, Settings, Mail, MailOpen, 
   ChevronDown, ChevronUp, Package, User, AtSign, Clock, 
   Inbox, Shield, ShieldCheck, ShieldX, Globe, Smartphone, 
-  Monitor, LayoutDashboard, Users, Database, Play, Square, FileText, CheckCircle, Edit
+  Monitor, LayoutDashboard, Users, Database, Play, Square, FileText, CheckCircle, Edit, Star
 } from "lucide-react";
 import { caseStudies as defaultCaseStudies } from "@/lib/data";
 import UserContentManager from "./UserContentManager";
@@ -63,8 +63,8 @@ export default function AdminDashboard() {
   const { isAuthenticated, logout, token } = useAdmin();
   const { toast } = useToast();
   
-  // Tabs: 'home' | 'clients' | 'content' | 'inbox' | 'logs' | 'users' | 'codes' | 'creators'
-  const [activeTab, setActiveTab] = useState<'home' | 'clients' | 'users' | 'content' | 'codes' | 'creators'>('home');
+  // Tabs: 'home' | 'clients' | 'content' | 'inbox' | 'logs' | 'users' | 'codes' | 'creators' | 'public_ratings'
+  const [activeTab, setActiveTab] = useState<'home' | 'clients' | 'users' | 'content' | 'codes' | 'creators' | 'public_ratings'>('home');
 
   // Existing states
   const [sections, setSections] = useState<Record<string, any>>({});
@@ -84,6 +84,7 @@ export default function AdminDashboard() {
   const [codesData, setCodesData] = useState<any[]>([]);
   const [expandedUser, setExpandedUser] = useState<number | null>(null);
   const [managingUser, setManagingUser] = useState<any>(null);
+  const [publicRatingsData, setPublicRatingsData] = useState<any[]>([]);
   
   // Timer State
   const [isTracking, setIsTracking] = useState(false);
@@ -113,6 +114,7 @@ export default function AdminDashboard() {
     fetchMessages();
     fetchLoginLogs();
     fetchDashboardData();
+    fetchPublicRatings();
   }, [isAuthenticated]);
 
   // Handle timer
@@ -204,6 +206,13 @@ export default function AdminDashboard() {
       const res = await fetch(API_BASE + "/api/auth/logs", { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) setLoginLogs(await res.json());
     } catch (err) { console.error(err); } finally { setLogsLoading(false); }
+  }
+
+  async function fetchPublicRatings() {
+    try {
+      const res = await fetch(API_BASE + "/api/public-ratings", { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) setPublicRatingsData(await res.json());
+    } catch (err) { console.error(err); }
   }
 
   // --- ACTIONS ---
@@ -540,6 +549,10 @@ export default function AdminDashboard() {
             <User className="w-5 h-5 flex-shrink-0" />
             <span>إدارة صناع المحتوى</span>
           </button>
+          <button onClick={() => setActiveTab('public_ratings')} className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${activeTab === 'public_ratings' ? 'bg-primary/20 text-primary font-bold' : 'text-muted-foreground hover:bg-white/5 hover:text-foreground'}`}>
+            <Star className="w-5 h-5 flex-shrink-0" />
+            <span>تقييم العملاء للصور</span>
+          </button>
         </nav>
 
         <div className="pt-8 border-t border-white/10 mt-auto">
@@ -745,6 +758,48 @@ export default function AdminDashboard() {
             )}
           </div>
         )}
+
+        {activeTab === 'public_ratings' && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="bg-card/40 border border-white/5 rounded-3xl p-6 sm:p-10">
+              <div className="mb-8 border-b border-white/10 pb-6">
+                <h2 className="text-2xl font-black text-foreground mb-2">تقييم العملاء للصور</h2>
+                <p className="text-sm text-muted-foreground">عرض تقييمات الزوار للصور في قسم الأعمال المختارة.</p>
+              </div>
+              
+              {publicRatingsData.length === 0 ? (
+                <div className="text-center py-20">
+                  <Star className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
+                  <p className="text-muted-foreground">لا يوجد تقييمات حتى الآن.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-right" dir="rtl">
+                    <thead>
+                      <tr className="border-b border-white/10 text-muted-foreground text-sm">
+                        <th className="pb-3 px-4 font-bold">صورة العمل المختارة</th>
+                        <th className="pb-3 px-4 font-bold">التقييم</th>
+                        <th className="pb-3 px-4 font-bold">الزائر</th>
+                        <th className="pb-3 px-4 font-bold">تاريخ التقييم</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {publicRatingsData.map(rating => (
+                        <tr key={rating.id} className="border-b border-white/5 hover:bg-white/5">
+                          <td className="py-4 px-4">رقم {rating.portfolioItemId}</td>
+                          <td className="py-4 px-4 text-yellow-400 font-bold">{rating.rating} / 5</td>
+                          <td className="py-4 px-4 text-sm font-mono text-muted-foreground">{rating.visitorId}</td>
+                          <td className="py-4 px-4 text-xs text-muted-foreground">{new Date(rating.createdAt).toLocaleDateString('ar-JO')}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {activeTab === 'users' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="bg-card/40 border border-white/5 rounded-3xl p-6 sm:p-10">
