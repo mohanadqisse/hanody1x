@@ -3,6 +3,7 @@ import { db } from "../lib/db.js";
 import { clients, timeSessions, users, thumbnails, transactions, comments, ratings, notifications, creatorCodes } from "../schema/index.js";
 import { eq, desc, sum, count } from "drizzle-orm";
 import { requireAuth } from "../lib/auth.js";
+import bcrypt from "bcryptjs";
 
 const router = Router();
 
@@ -440,7 +441,6 @@ router.delete("/notifications/:id", async (req, res) => {
 });
 
 // Settings Management
-import { hash } from "bcrypt";
 router.patch("/users/:id/settings", async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
@@ -450,7 +450,7 @@ router.patch("/users/:id/settings", async (req, res) => {
     if (fullName !== undefined) updateData.fullName = fullName;
     if (avatar !== undefined) updateData.avatar = avatar;
     if (password) {
-      updateData.password = await hash(password, 10);
+      updateData.passwordHash = await bcrypt.hash(password, 10);
     }
     
     const [updated] = await db.update(users).set(updateData).where(eq(users.id, userId)).returning();
