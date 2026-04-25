@@ -12,6 +12,30 @@ import dashboardRouter from "./routes/dashboard.js";
 import userAuthRouter from "./routes/userAuth.js";
 import userDashboardRouter from "./routes/userDashboard.js";
 import rateLimit from "express-rate-limit";
+import { db } from "./lib/db.js";
+import { sql } from "drizzle-orm";
+
+// Safe migration: CREATE TABLE IF NOT EXISTS - never drops data
+async function ensureTables() {
+  try {
+    await db.execute(sql`CREATE TABLE IF NOT EXISTS admin_users (id SERIAL PRIMARY KEY, username TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
+    await db.execute(sql`CREATE TABLE IF NOT EXISTS site_content (id SERIAL PRIMARY KEY, section TEXT NOT NULL, content TEXT NOT NULL DEFAULT '{}', updated_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
+    await db.execute(sql`CREATE TABLE IF NOT EXISTS contact_messages (id SERIAL PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL, service TEXT, message TEXT NOT NULL, read BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
+    await db.execute(sql`CREATE TABLE IF NOT EXISTS login_logs (id SERIAL PRIMARY KEY, username TEXT NOT NULL, ip_address TEXT, device_info TEXT, success BOOLEAN NOT NULL, attempted_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
+    await db.execute(sql`CREATE TABLE IF NOT EXISTS clients (id SERIAL PRIMARY KEY, name TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'new', balance INTEGER NOT NULL DEFAULT 0, orders_completed INTEGER NOT NULL DEFAULT 0, created_at TIMESTAMP DEFAULT NOW() NOT NULL, updated_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
+    await db.execute(sql`CREATE TABLE IF NOT EXISTS time_sessions (id SERIAL PRIMARY KEY, title TEXT NOT NULL DEFAULT 'session', duration_seconds INTEGER NOT NULL DEFAULT 0, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
+    await db.execute(sql`CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, username TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL, full_name TEXT NOT NULL, email TEXT, avatar TEXT, role TEXT NOT NULL DEFAULT 'user', created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
+    await db.execute(sql`CREATE TABLE IF NOT EXISTS thumbnails (id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id), title TEXT NOT NULL, image TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', download_url TEXT, notes TEXT, price INTEGER, created_at TIMESTAMP DEFAULT NOW() NOT NULL, updated_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
+    await db.execute(sql`CREATE TABLE IF NOT EXISTS transactions (id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id) NOT NULL, description TEXT NOT NULL, amount INTEGER NOT NULL, status TEXT NOT NULL DEFAULT 'pending', date TIMESTAMP DEFAULT NOW(), created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
+    await db.execute(sql`CREATE TABLE IF NOT EXISTS creator_codes (id SERIAL PRIMARY KEY, code TEXT NOT NULL UNIQUE, full_name TEXT NOT NULL, email TEXT, used BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
+    await db.execute(sql`CREATE TABLE IF NOT EXISTS comments (id SERIAL PRIMARY KEY, thumbnail_id INTEGER REFERENCES thumbnails(id) NOT NULL, author_name TEXT NOT NULL, is_admin BOOLEAN NOT NULL DEFAULT FALSE, content TEXT NOT NULL, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
+    await db.execute(sql`CREATE TABLE IF NOT EXISTS ratings (id SERIAL PRIMARY KEY, thumbnail_id INTEGER REFERENCES thumbnails(id) NOT NULL, user_id INTEGER REFERENCES users(id) NOT NULL, rating INTEGER NOT NULL, comment TEXT, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
+    await db.execute(sql`CREATE TABLE IF NOT EXISTS notifications (id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id) NOT NULL, message TEXT NOT NULL, read BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
+    console.log("Database tables verified (safe migration - no data loss)");
+  } catch (err) {
+    console.error("Database table check error:", err);
+  }
+}
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -65,8 +89,10 @@ app.get("/", (_req, res) => {
   res.send("API Server is running");
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+// Start server with safe migration
+ensureTables().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
 
   // Set up an automatic self-ping mechanism to keep the server awake on Render free tier
   const RENDER_EXTERNAL_URL = process.env.RENDER_EXTERNAL_URL;
@@ -89,6 +115,7 @@ app.listen(PORT, () => {
       }
     }, 8 * 60 * 1000); // Trigger every 8 minutes (Render sleeps after 15 mins)
   }
+  });
 });
 
 export default app;

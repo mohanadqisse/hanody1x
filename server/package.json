@@ -8,6 +8,8 @@
     "start": "node --enable-source-maps dist/index.mjs",
     "build": "esbuild src/index.ts --bundle --platform=node --format=esm --outfile=dist/index.mjs --packages=external",
     "db:push": "drizzle-kit push --config drizzle.config.ts",
+    "db:migrate": "drizzle-kit migrate --config drizzle.config.ts",
+    "db:generate": "drizzle-kit generate --config drizzle.config.ts",
     "db:seed": "tsx src/seed.ts",
     "typecheck": "tsc --noEmit"
   },
