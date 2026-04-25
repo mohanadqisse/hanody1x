@@ -275,12 +275,12 @@ export default function Login() {
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
-              className="bg-card p-8 rounded-3xl border-2 border-red-500/30 shadow-[0_0_50px_-12px_rgba(239,68,68,0.4)] max-w-md w-full text-center"
+              className="bg-card p-8 rounded-3xl border-2 border-primary/30 shadow-[0_0_50px_-12px_rgba(59,130,246,0.4)] max-w-md w-full text-center"
             >
-              <div className="w-20 h-20 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 mx-auto mb-6 border border-red-500/20">
+              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-primary mx-auto mb-6 border border-primary/20">
                 <AlertCircle size={40} />
               </div>
-              <h2 className="text-3xl font-black mb-4 text-red-500">تم تسجيل حسابك في المكان الخطأ</h2>
+              <h2 className="text-3xl font-black mb-4 text-primary">تم تسجيل حسابك في المكان الخطأ</h2>
               
               <div className="text-muted-foreground mb-8 text-base leading-relaxed whitespace-pre-wrap px-2">
                 {banData.message}
