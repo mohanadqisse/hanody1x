@@ -133,21 +133,16 @@ export default function Login() {
               <ArrowRight className="text-muted-foreground group-hover:-translate-x-1 transition-transform" />
             </button>
 
-            <button
-              onClick={() => setLocation("/register")}
-              className="group flex items-center justify-between p-5 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center text-green-500">
-                  <UserPlus size={24} />
-                </div>
-                <div className="text-right">
-                  <h3 className="font-bold text-lg">إنشاء حساب</h3>
-                  <p className="text-sm text-muted-foreground">عميل جديد؟ ابدأ من هنا</p>
-                </div>
-              </div>
-              <ArrowRight className="text-muted-foreground group-hover:-translate-x-1 transition-transform" />
-            </button>
+            <div className="mt-4 pt-6 border-t border-white/5 text-center">
+              <p className="text-muted-foreground mb-3 text-sm">ليس لديك حساب؟</p>
+              <Button 
+                variant="outline" 
+                className="w-full rounded-xl h-12 font-bold border-white/10 hover:bg-white/5 transition-all text-primary/90 hover:text-primary"
+                onClick={() => setLocation("/register")}
+              >
+                إنشاء حساب جديد
+              </Button>
+            </div>
           </div>
         )}
 

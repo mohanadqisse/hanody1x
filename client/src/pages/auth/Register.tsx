@@ -13,7 +13,7 @@ export default function Register() {
   const { toast } = useToast();
   const { login } = useUser();
   
-  const [popup, setPopup] = useState<boolean>(true);
+
   
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
@@ -80,7 +80,7 @@ export default function Register() {
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: popup ? 0 : 1, y: popup ? 20 : 0 }}
+        animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md relative z-10"
       >
         <div className="text-center mb-8">
@@ -208,47 +208,7 @@ export default function Register() {
         </motion.form>
       </motion.div>
 
-      {/* Popup */}
       <AnimatePresence>
-        {popup && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md"
-          >
-            <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              className="bg-card p-8 rounded-3xl border border-white/10 shadow-2xl max-w-sm w-full text-center"
-            >
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mx-auto mb-6">
-                <AlertCircle size={32} />
-              </div>
-              <h2 className="text-2xl font-black mb-3">تنبيه</h2>
-              <p className="text-muted-foreground mb-8 text-lg">
-                هذه الصفحة مخصصة لصناع المحتوى لإنشاء حساب جديد.
-              </p>
-              
-              <div className="flex gap-3">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setLocation("/")}
-                  className="flex-1 rounded-xl h-12"
-                >
-                  رجوع
-                </Button>
-                <Button 
-                  onClick={() => setPopup(false)}
-                  className="flex-1 rounded-xl h-12 font-bold"
-                >
-                  متابعة
-                </Button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
 
         {showInviteModal && (
           <motion.div
