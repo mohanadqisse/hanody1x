@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "../lib/db.js";
-import { users, thumbnails, transactions, notifications, siteContent } from "../schema/index.js";
+import { users, thumbnails, transactions, notifications, siteContent, comments, ratings } from "../schema/index.js";
 import { requireUserAuth } from "../lib/auth.js";
 import { eq, desc, and } from "drizzle-orm";
 
@@ -113,6 +113,79 @@ router.get("/settings-content", async (req, res) => {
       inProgressMessage: "الصورة قيد التنفيذ"
     };
     res.json(content);
+  } catch (err) {
+    res.status(500).json({ message: "خطأ في الخادم" });
+  }
+});
+
+// --- Comments ---
+router.get("/thumbnails/:id/comments", requireUserAuth, async (req, res) => {
+  try {
+    const thumbnailId = parseInt(req.params.id);
+    const thumbComments = await db.select().from(comments).where(eq(comments.thumbnailId, thumbnailId)).orderBy(desc(comments.createdAt));
+    res.json(thumbComments);
+  } catch (err) {
+    res.status(500).json({ message: "خطأ في الخادم" });
+  }
+});
+
+router.post("/thumbnails/:id/comments", requireUserAuth, async (req, res) => {
+  const payload = (req as typeof req & { user: { id: number; role: string } }).user;
+  if (payload.role === "guest") { res.status(403).json({ message: "غير مسموح للزوار" }); return; }
+  try {
+    const thumbnailId = parseInt(req.params.id);
+    const { content } = req.body;
+    const userRecord = await db.select().from(users).where(eq(users.id, payload.id));
+    const authorName = userRecord[0]?.fullName || "مستخدم";
+    const [newComment] = await db.insert(comments).values({
+      thumbnailId,
+      authorName,
+      isAdmin: false,
+      content
+    }).returning();
+    res.status(201).json(newComment);
+  } catch (err) {
+    res.status(500).json({ message: "خطأ في الخادم" });
+  }
+});
+
+// --- Ratings ---
+router.get("/thumbnails/:id/rating", requireUserAuth, async (req, res) => {
+  const payload = (req as typeof req & { user: { id: number; role: string } }).user;
+  try {
+    const thumbnailId = parseInt(req.params.id);
+    const existing = await db.select().from(ratings).where(and(eq(ratings.thumbnailId, thumbnailId), eq(ratings.userId, payload.id)));
+    res.json(existing[0] || null);
+  } catch (err) {
+    res.status(500).json({ message: "خطأ في الخادم" });
+  }
+});
+
+router.post("/thumbnails/:id/rating", requireUserAuth, async (req, res) => {
+  const payload = (req as typeof req & { user: { id: number; role: string } }).user;
+  if (payload.role === "guest") { res.status(403).json({ message: "غير مسموح للزوار" }); return; }
+  try {
+    const thumbnailId = parseInt(req.params.id);
+    const { rating } = req.body;
+    // Upsert: delete old rating then insert new one
+    await db.delete(ratings).where(and(eq(ratings.thumbnailId, thumbnailId), eq(ratings.userId, payload.id)));
+    const [newRating] = await db.insert(ratings).values({
+      thumbnailId,
+      userId: payload.id,
+      rating: parseInt(rating)
+    }).returning();
+    res.status(201).json(newRating);
+  } catch (err) {
+    res.status(500).json({ message: "خطأ في الخادم" });
+  }
+});
+
+// Mark notification as read
+router.patch("/notifications/:id/read", requireUserAuth, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await db.update(notifications).set({ read: true }).where(eq(notifications.id, id));
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ message: "خطأ في الخادم" });
   }

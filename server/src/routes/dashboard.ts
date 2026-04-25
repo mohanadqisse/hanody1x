@@ -460,5 +460,60 @@ router.patch("/users/:id/settings", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+// --- Admin: View Comments & Ratings for a user ---
+router.get("/users/:id/comments", async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    const userThumbs = await db.select().from(thumbnails).where(eq(thumbnails.userId, userId));
+    const thumbIds = userThumbs.map(t => t.id);
+    if (thumbIds.length === 0) { res.json([]); return; }
+    
+    const allComments: any[] = [];
+    for (const tid of thumbIds) {
+      const tc = await db.select().from(comments).where(eq(comments.thumbnailId, tid)).orderBy(desc(comments.createdAt));
+      const thumb = userThumbs.find(t => t.id === tid);
+      tc.forEach(c => allComments.push({ ...c, thumbnailTitle: thumb?.title || "" }));
+    }
+    res.json(allComments);
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.get("/users/:id/ratings", async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    const userThumbs = await db.select().from(thumbnails).where(eq(thumbnails.userId, userId));
+    const thumbIds = userThumbs.map(t => t.id);
+    if (thumbIds.length === 0) { res.json([]); return; }
+    
+    const allRatings: any[] = [];
+    for (const tid of thumbIds) {
+      const tr = await db.select().from(ratings).where(eq(ratings.thumbnailId, tid));
+      const thumb = userThumbs.find(t => t.id === tid);
+      tr.forEach(r => allRatings.push({ ...r, thumbnailTitle: thumb?.title || "" }));
+    }
+    res.json(allRatings);
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Admin reply to a comment on a thumbnail
+router.post("/thumbnails/:id/comments", async (req, res) => {
+  try {
+    const thumbnailId = parseInt(req.params.id);
+    const { content } = req.body;
+    const [newComment] = await db.insert(comments).values({
+      thumbnailId,
+      authorName: "المدير",
+      isAdmin: true,
+      content
+    }).returning();
+    res.status(201).json(newComment);
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 
 export default router;
