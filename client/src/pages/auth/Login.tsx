@@ -22,7 +22,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loginRole, setLoginRole] = useState<"guest" | "user" | null>(null);
-  const [banData, setBanData] = useState<{ message: string } | null>(null);
+  const [errorData, setErrorData] = useState<{ type: "banned" | "wrong_role", message: string } | null>(null);
   const [isUnbanRequested, setIsUnbanRequested] = useState(false);
 
   const handleGuestLogin = async () => {
@@ -61,8 +61,13 @@ export default function Login() {
         window.location.href = "/dashboard";
       } else {
         if (res.status === 403) {
+          const isBanned = data.type === "banned" || (data.message && data.message.includes("حظر"));
           const defaultBanMsg = "عذراً، لقد تم حظر حسابك من استخدام المنصة بشكل مؤقت أو دائم.\nنظراً لاكتشاف نشاط يتعارض مع سياسات وشروط الاستخدام الخاصة بنا، أو بسبب سوء الاستخدام لخدماتنا.\nنحن نحرص على توفير بيئة آمنة لجميع عملائنا.";
-          setBanData({ message: data.message && data.message.length > 5 ? data.message : defaultBanMsg });
+          
+          setErrorData({ 
+            type: isBanned ? "banned" : "wrong_role", 
+            message: data.message && data.message.length > 5 ? data.message : (isBanned ? defaultBanMsg : "يرجى الانتقال إلى التسجيل الصحيح للدخول بحسابك الشخصي.")
+          });
         } else {
           toast({ title: data.message || "فشل تسجيل الدخول", variant: "destructive" });
         }
@@ -259,7 +264,7 @@ export default function Login() {
           </motion.div>
         )}
 
-        {banData && (
+        {errorData && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -270,15 +275,23 @@ export default function Login() {
               initial={{ scale: 0.9, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.9, y: 20 }}
-              className="bg-card p-8 rounded-3xl border-2 border-primary/30 shadow-[0_0_50px_-12px_rgba(59,130,246,0.4)] max-w-md w-full text-center"
+              className={`bg-card p-8 rounded-3xl border-2 shadow-[0_0_50px_-12px_rgba(0,0,0,0.4)] max-w-md w-full text-center ${
+                errorData.type === "banned" ? "border-red-500/30 shadow-red-500/20" : "border-primary/30 shadow-blue-500/20"
+              }`}
             >
-              <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-primary mx-auto mb-6 border border-primary/20">
+              <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 border ${
+                errorData.type === "banned" ? "bg-red-500/10 text-red-500 border-red-500/20" : "bg-primary/10 text-primary border-primary/20"
+              }`}>
                 <AlertCircle size={40} />
               </div>
-              <h2 className="text-3xl font-black mb-4 text-primary">تم تسجيل حسابك في المكان الخطأ</h2>
+              <h2 className={`text-3xl font-black mb-4 ${
+                errorData.type === "banned" ? "text-red-500" : "text-primary"
+              }`}>
+                {errorData.type === "banned" ? "تم حظر حسابك من قبل الإدارة" : "تم تسجيل حسابك في المكان الخطأ"}
+              </h2>
               
               <div className="text-muted-foreground mb-8 text-base leading-relaxed whitespace-pre-wrap px-2">
-                {banData.message}
+                {errorData.message}
               </div>
               
               <div className="flex flex-col sm:flex-row gap-3">
@@ -287,16 +300,30 @@ export default function Login() {
                     الرجوع إلى الموقع
                   </Button>
                 </a>
-                <Button 
-                  onClick={() => {
-                    setBanData(null);
-                    setPopup("guest");
-                    setView("options");
-                  }}
-                  className="flex-1 w-full rounded-xl h-12 font-bold shadow-lg shadow-blue-500/20 bg-blue-600 hover:bg-blue-700"
-                >
-                  التسجيل كزائر
-                </Button>
+                
+                {errorData.type === "banned" ? (
+                  <Button 
+                    onClick={() => {
+                      // Request unban logic can go here
+                      setErrorData(null);
+                      toast({ title: "تم إرسال طلب إزالة الحظر للإدارة", variant: "default" });
+                    }}
+                    className="flex-1 w-full rounded-xl h-12 font-bold shadow-lg shadow-red-500/20 bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    طلب إزالة الحظر
+                  </Button>
+                ) : (
+                  <Button 
+                    onClick={() => {
+                      setErrorData(null);
+                      setPopup("guest");
+                      setView("options");
+                    }}
+                    className="flex-1 w-full rounded-xl h-12 font-bold shadow-lg shadow-blue-500/20 bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    التسجيل كزائر
+                  </Button>
+                )}
               </div>
             </motion.div>
           </motion.div>

@@ -103,15 +103,15 @@ router.post("/login", loginLimiter, async (req, res) => {
     }
 
     if (user.isBanned) {
-      res.status(403).json({ message: user.banReason || "عذراً، لقد تم حظر حسابك من قبل الإدارة." });
+      res.status(403).json({ type: "banned", message: user.banReason || "عذراً، لقد تم حظر حسابك من قبل الإدارة." });
       return;
     }
 
     if (role && user.role !== role) {
       if (role === "guest") {
-        res.status(403).json({ message: "بيانات الدخول الخاصة بك هي لصانع محتوى وليس كزائر، يرجى تسجيل الدخول من بوابة صناع المحتوى" });
+        res.status(403).json({ type: "wrong_role", message: "بيانات الدخول الخاصة بك هي لصانع محتوى وليس كزائر، يرجى تسجيل الدخول من بوابة صناع المحتوى" });
       } else {
-        res.status(403).json({ message: "بيانات الدخول الخاصة بك هي لزائر وليست كصانع محتوى، يرجى تسجيل الدخول من بوابة الزوار" });
+        res.status(403).json({ type: "wrong_role", message: "يرجى الانتقال إلى التسجيل كزائر للتسجيل بحسابك الشخصي" });
       }
       return;
     }
