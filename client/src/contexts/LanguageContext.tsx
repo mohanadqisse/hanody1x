@@ -273,29 +273,51 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     return browserLang.startsWith("ar") ? "ar" : "ar"; // Default to Arabic for this Arabic-first site
   });
 
+  const unlockScroll = () => {
+    // Nuclear scroll unlock — clears ALL possible scroll-locking styles
+    const b = document.body;
+    const h = document.documentElement;
+    b.style.overflow = '';
+    b.style.overflowY = '';
+    b.style.overflowX = '';
+    b.style.position = '';
+    b.style.top = '';
+    b.style.left = '';
+    b.style.right = '';
+    b.style.width = '';
+    b.style.height = '';
+    b.style.touchAction = '';
+    b.style.pointerEvents = '';
+    h.style.overflow = '';
+    h.style.overflowY = '';
+    h.style.position = '';
+    h.style.touchAction = '';
+    b.classList.remove('overflow-hidden', 'modal-open', 'menu-open', 'no-scroll');
+    h.classList.remove('overflow-hidden', 'modal-active');
+    // Force reflow to apply changes
+    void b.offsetHeight;
+  };
+
   const setLang = (newLang: Lang) => {
-    // Clean up any stuck body states before switching language
-    // This prevents scroll lock from overlays/modals/transitions
-    document.body.style.overflow = '';
-    document.body.style.position = '';
-    document.body.style.top = '';
-    document.body.style.left = '';
-    document.body.style.right = '';
-    document.body.style.width = '';
-    document.body.style.height = '';
-    document.body.classList.remove('overflow-hidden', 'modal-open', 'menu-open');
-    // Also reset html element overflow
-    document.documentElement.style.overflow = '';
+    // Pre-cleanup
+    unlockScroll();
     
     setLangState(newLang);
     localStorage.setItem("site_lang", newLang);
 
-    // Ensure scroll is restored after React re-renders
+    // Post-cleanup: multiple waves to catch any React re-render side effects
     requestAnimationFrame(() => {
-      document.body.style.overflow = '';
-      document.documentElement.style.overflow = '';
-      window.scrollTo({ top: window.scrollY });
+      unlockScroll();
+      // Second wave after paint
+      requestAnimationFrame(() => {
+        unlockScroll();
+      });
     });
+    // Delayed waves for mobile Safari/Chrome which can be slower
+    setTimeout(unlockScroll, 50);
+    setTimeout(unlockScroll, 150);
+    setTimeout(unlockScroll, 300);
+    setTimeout(unlockScroll, 500);
   };
 
   const t = (key: string): string => {
@@ -308,13 +330,13 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     document.documentElement.dir = dir;
     document.documentElement.lang = lang;
-    // Add class for CSS-level targeting
     document.documentElement.classList.toggle("rtl", isRTL);
     document.documentElement.classList.toggle("ltr", !isRTL);
     
-    // Ensure body is always scrollable after language change
-    document.body.style.overflow = '';
-    document.documentElement.style.overflow = '';
+    // Always unlock scroll after language change
+    unlockScroll();
+    setTimeout(unlockScroll, 100);
+    setTimeout(unlockScroll, 300);
   }, [lang, dir, isRTL]);
 
   return (

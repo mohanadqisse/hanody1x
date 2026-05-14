@@ -36,12 +36,13 @@ export function Navbar() {
     if (element) element.scrollIntoView({ behavior: "smooth" });
   };
 
-  const navLinks = [
-    { name: t("nav.services"), id: "services", mobileHidden: false },
-    { name: t("nav.showcase"), id: "showcase", mobileHidden: true },
-    { name: t("nav.portfolio"), id: "portfolio", mobileHidden: false },
-    { name: t("nav.login"), href: "/login", mobileHidden: false },
-    { name: t("nav.admin"), href: "/admin", mobileHidden: false },
+  // Desktop: all links | Mobile: only login + admin
+  const allNavLinks = [
+    { name: t("nav.services"), id: "services", desktopOnly: true },
+    { name: t("nav.showcase"), id: "showcase", desktopOnly: true },
+    { name: t("nav.portfolio"), id: "portfolio", desktopOnly: true },
+    { name: t("nav.login"), href: "/login", desktopOnly: false },
+    { name: t("nav.admin"), href: "/admin", desktopOnly: false },
   ];
 
   return (
@@ -55,20 +56,20 @@ export function Navbar() {
         className="flex pointer-events-auto items-center p-1.5 md:p-1.5 rounded-full bg-[#1c1c1e]/95 border border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.4)] backdrop-blur-xl w-auto sm:w-max max-w-[96%] sm:max-w-full mx-auto"
         dir={dir}
       >
-        <div className="flex items-center justify-between w-full sm:w-auto gap-0 sm:gap-1 px-0.5">
-          {/* Logo */}
+        <div className="flex items-center justify-between w-full sm:w-auto gap-1 sm:gap-1 px-0.5">
+          {/* Logo — desktop only */}
           <Link href="/">
-            <div className={`w-7 h-7 sm:w-10 sm:h-10 shrink-0 rounded-full bg-[#2c2c2e] border border-white/5 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors cursor-pointer ${isRTL ? 'ml-0 sm:ml-1' : 'mr-0 sm:mr-1'} overflow-hidden`}>
+            <div className={`w-10 h-10 shrink-0 rounded-full bg-[#2c2c2e] border border-white/5 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors cursor-pointer hidden sm:flex ${isRTL ? 'ml-1' : 'mr-1'} overflow-hidden`}>
               {brand?.logoImage ? (
                 <img src={brand.logoImage} alt="Logo" className="w-full h-full object-cover" />
               ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
               )}
             </div>
           </Link>
 
-          <div className="flex items-center gap-0 sm:gap-1 mx-0.5 sm:mx-2 relative" onMouseLeave={() => setHoveredIdx(null)}>
-            {navLinks.map((link, idx) => (
+          <div className="flex items-center gap-0 sm:gap-1 mx-1 sm:mx-2 relative" onMouseLeave={() => setHoveredIdx(null)}>
+            {allNavLinks.map((link, idx) => (
               <div 
                 key={link.name}
                 onMouseEnter={() => setHoveredIdx(idx)}
@@ -76,7 +77,7 @@ export function Navbar() {
                   if (link.href) window.location.href = link.href;
                   else scrollTo(link.id!);
                 }}
-                className={`relative px-1.5 sm:px-5 py-1 sm:py-2.5 rounded-full cursor-pointer z-10 shrink-0 transition-all ${link.mobileHidden ? "hidden sm:block" : "block"}`}
+                className={`relative px-3 sm:px-5 py-2 sm:py-2.5 rounded-full cursor-pointer z-10 shrink-0 transition-all ${link.desktopOnly ? "hidden sm:block" : "block"}`}
               >
                 {hoveredIdx === idx && (
                   <motion.div
@@ -88,7 +89,7 @@ export function Navbar() {
                     transition={{ duration: 0.25, ease: "easeInOut" }}
                   />
                 )}
-                <span className={`relative z-10 text-[10px] sm:text-[14px] font-semibold transition-colors duration-200 whitespace-nowrap ${hoveredIdx === idx ? 'text-white' : 'text-gray-400'}`}>
+                <span className={`relative z-10 text-[13px] sm:text-[14px] font-semibold transition-colors duration-200 whitespace-nowrap ${hoveredIdx === idx ? 'text-white' : 'text-gray-400'}`}>
                   {link.name}
                 </span>
               </div>
@@ -98,7 +99,7 @@ export function Navbar() {
           {/* Language Switcher */}
           <button
             onClick={() => setLang(lang === "ar" ? "en" : "ar")}
-            className="shrink-0 flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/5 hover:bg-white/12 border border-white/8 hover:border-white/20 transition-all duration-300 group relative overflow-hidden"
+            className="shrink-0 flex items-center justify-center w-8 h-8 sm:w-8 sm:h-8 rounded-full bg-white/5 hover:bg-white/12 border border-white/8 hover:border-white/20 transition-all duration-300 group relative overflow-hidden"
             aria-label="Switch Language"
             title={lang === "ar" ? "Switch to English" : "التبديل للعربية"}
           >
@@ -109,14 +110,14 @@ export function Navbar() {
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: -8, opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                className="text-[9px] sm:text-[11px] font-bold text-gray-300 group-hover:text-white transition-colors uppercase tracking-wider"
+                className="text-[11px] sm:text-[11px] font-bold text-gray-300 group-hover:text-white transition-colors uppercase tracking-wider"
               >
                 {lang === "ar" ? "EN" : "ع"}
               </motion.span>
             </AnimatePresence>
           </button>
 
-          <label className={`theme-toggle cursor-pointer m-0 ${isRTL ? 'mr-1.5 sm:mr-3 -ml-[18px] sm:ml-0' : 'ml-1.5 sm:ml-3 -mr-[18px] sm:mr-0'} transform scale-[0.5] sm:scale-[0.8] ${isRTL ? 'origin-right sm:origin-left' : 'origin-left sm:origin-right'} shrink-0`} aria-label="تبديل المظهر">
+          <label className={`theme-toggle cursor-pointer m-0 ${isRTL ? 'mr-1 sm:mr-3' : 'ml-1 sm:ml-3'} transform scale-[0.55] sm:scale-[0.8] ${isRTL ? 'origin-right sm:origin-left' : 'origin-left sm:origin-right'} shrink-0`} aria-label="تبديل المظهر">
             <span className="sun"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="#ffd43b"><circle r="5" cy="12" cx="12"></circle><path d="m21 13h-1a1 1 0 0 1 0-2h1a1 1 0 0 1 0 2zm-17 0h-1a1 1 0 0 1 0-2h1a1 1 0 0 1 0 2zm13.66-5.66a1 1 0 0 1 -.66-.29 1 1 0 0 1 0-1.41l.71-.71a1 1 0 1 1 1.41 1.41l-.71.71a1 1 0 0 1 -.75.29zm-12.02 12.02a1 1 0 0 1 -.71-.29 1 1 0 0 1 0-1.41l.71-.66a1 1 0 0 1 1.41 1.41l-.71.71a1 1 0 0 1 -.7.24zm6.36-14.36a1 1 0 0 1 -1-1v-1a1 1 0 0 1 2 0v1a1 1 0 0 1 -1 1zm0 17a1 1 0 0 1 -1-1v-1a1 1 0 0 1 2 0v1a1 1 0 0 1 -1 1zm-5.66-14.66a1 1 0 0 1 -.7-.29l-.71-.71a1 1 0 0 1 1.41-1.41l.71.71a1 1 0 0 1 0 1.41 1 1 0 0 1 -.71.29zm12.02 12.02a1 1 0 0 1 -.7-.29l-.66-.71a1 1 0 0 1 1.36-1.36l.71.71a1 1 0 0 1 0 1.41 1 1 0 0 1 -.71.24z"></path></g></svg></span>
             <span className="moon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="m223.5 32c-123.5 0-223.5 100.3-223.5 224s100 224 223.5 224c60.6 0 115.5-24.2 155.8-63.4 5-4.9 6.3-12.5 3.1-18.7s-10.1-9.7-17-8.5c-9.8 1.7-19.8 2.6-30.1 2.6-96.9 0-175.5-78.8-175.5-176 0-65.8 36-123.1 89.3-153.3 6.1-3.5 9.2-10.5 7.7-17.3s-7.3-11.9-14.3-12.5c-6.3-.5-12.6-.8-19-.8z"></path></svg></span>
             <input type="checkbox" className="theme-toggle-input" checked={isDark} onChange={toggleTheme} />
@@ -124,7 +125,7 @@ export function Navbar() {
           </label>
           <button 
             onClick={() => scrollTo("order")} 
-            className={`hidden sm:block shrink-0 bg-white text-black px-4 sm:px-6 py-1.5 sm:py-2.5 rounded-full text-[11px] sm:text-sm font-bold shadow-lg hover:scale-105 transition-transform duration-200 ${isRTL ? 'mr-0 sm:mr-1' : 'ml-0 sm:ml-1'} whitespace-nowrap`}
+            className={`hidden sm:block shrink-0 bg-white text-black px-6 py-2.5 rounded-full text-sm font-bold shadow-lg hover:scale-105 transition-transform duration-200 ${isRTL ? 'mr-1' : 'ml-1'} whitespace-nowrap`}
           >
             {t("nav.order")}
           </button>
