@@ -50,6 +50,10 @@ export const featureTranslationMap: Record<string, string> = {
   "استخدام أسلوب بصري متناسق": "Consistent Visual Style",
   "تحسين قابلية النقر (CTR)": "CTR Optimization",
   "تعديلات 2–3": "2–3 Revisions",
+  "تعديلات 2-3": "2-3 Revisions",
+  "تعديلات 2—3": "2-3 Revisions",
+  "تعديلات ٢-٣": "2-3 Revisions",
+  "تعديلات ٢–٣": "2-3 Revisions",
   "أولوية في التنفيذ": "Priority Execution",
   // Elite package features
   "معالجة احترافية جداً للألوان والتفاصيل": "Professional Color & Detail Processing",

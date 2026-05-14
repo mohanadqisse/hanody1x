@@ -422,11 +422,11 @@ function Pricing({ isDiscountActive }: { isDiscountActive?: boolean }) {
 
                     <ul className="space-y-4 mb-10 flex-grow">
                       {pkg.features.map((feat: string) => (
-                        <li key={feat} className={`flex items-center gap-3 text-sm ${isRTL ? 'justify-end' : 'justify-start flex-row-reverse'}`}>
-                          <span className="font-medium text-white/90">{feat}</span>
+                        <li key={feat} className={`flex items-center gap-3 text-sm ${isRTL ? 'flex-row-reverse text-right' : 'flex-row text-left'}`}>
                           <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 bg-white/20">
                             <CheckCircle2 size={14} className="text-white" />
                           </div>
+                          <span className="font-medium text-white/90">{feat}</span>
                         </li>
                       ))}
                     </ul>
