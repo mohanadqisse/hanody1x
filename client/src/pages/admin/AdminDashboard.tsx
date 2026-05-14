@@ -1307,10 +1307,54 @@ export default function AdminDashboard() {
 
             {/* CASE STUDIES */}
             <div className="glass-panel rounded-3xl p-8 bg-card/40 border border-white/5">
-              <h2 className="text-xl font-bold text-foreground mb-6">قصص نجاح صناع محتوى</h2>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-foreground">قصص نجاح صناع محتوى</h2>
+                <Button 
+                  onClick={() => {
+                    setSections(prev => {
+                      const current = Array.isArray(prev.caseStudies) && prev.caseStudies.length > 0 ? [...prev.caseStudies] : [...defaultCaseStudies];
+                      current.push({
+                        id: `case-${Date.now()}`,
+                        name: "اسم صانع المحتوى",
+                        niche: "المجال",
+                        avatarInitials: "JD",
+                        shortBio: "وصف مختصر للنجاح",
+                        youtubeUrl: "",
+                        story: "القصة الكاملة للنجاح...",
+                        metrics: [
+                          { label: "إحصائية 1", value: "+100%" },
+                          { label: "إحصائية 2", value: "2x" },
+                          { label: "إحصائية 3", value: "50k" }
+                        ]
+                      });
+                      return { ...prev, caseStudies: current };
+                    });
+                    toast({ title: "تمت إضافة قصة نجاح جديدة، يرجى التعديل والحفظ" });
+                  }}
+                  className="bg-primary/20 text-primary hover:bg-primary/30 rounded-xl font-bold border border-primary/30"
+                >
+                  + إضافة قصة نجاح جديدة
+                </Button>
+              </div>
               {((Array.isArray(sections.caseStudies) && sections.caseStudies.length > 0) ? sections.caseStudies : defaultCaseStudies).map((study: any, idx: number) => (
-                <div key={study.id || idx} className="mb-8 border border-white/10 rounded-2xl p-6 bg-black/20 text-right">
-                  <h3 className="text-lg font-bold text-primary mb-4">قصة حالة {idx + 1}</h3>
+                <div key={study.id || idx} className="mb-8 border border-white/10 rounded-2xl p-6 bg-black/20 text-right relative">
+                  <div className="flex justify-between items-center mb-4">
+                    <button 
+                      onClick={() => {
+                        if(!confirm("هل أنت متأكد من حذف قصة النجاح هذه؟")) return;
+                        setSections(prev => {
+                          const current = [...(Array.isArray(prev.caseStudies) && prev.caseStudies.length > 0 ? prev.caseStudies : defaultCaseStudies)];
+                          current.splice(idx, 1);
+                          return { ...prev, caseStudies: current };
+                        });
+                      }}
+                      className="bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white p-2 rounded-lg transition-colors flex items-center justify-center"
+                      title="حذف قصة النجاح"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                    <h3 className="text-lg font-bold text-primary">قصة حالة {idx + 1}</h3>
+                  </div>
                   <div className="mb-4">
                     <label className="block text-sm text-gray-400 mb-2">اسم اليوتيوبر / القناة</label>
                     <Input value={study.name || ""} onChange={(e) => updateCaseStudy(idx, 'name', e.target.value)} dir="rtl" className="bg-card/50" />
@@ -1378,6 +1422,63 @@ export default function AdminDashboard() {
               ))}
               <Button onClick={() => saveSection("caseStudies")} disabled={loading} className="bg-primary hover:bg-primary/90 text-white rounded-xl">
                 <Save className="w-4 h-4 ml-2" /> حفظ القصص
+              </Button>
+            </div>
+
+            {/* BEFORE / AFTER SLIDER */}
+            <div className="glass-panel rounded-3xl p-8 bg-card/40 border border-white/5">
+              <h2 className="text-xl font-bold text-foreground mb-6">قسم مقارنة الصور (قبل وبعد)</h2>
+              <p className="text-sm text-gray-400 mb-6 text-right">سيظهر هذا القسم في الصفحة الرئيسية للموقع بين قسمي "أعمال مختارة" و"لماذا تختارني؟". يُرجى رفع صور بجودة عالية ونفس الأبعاد.</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-right">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">صورة قبل (التصميم العادي)</label>
+                  <div className="flex flex-col gap-4">
+                    <label className="flex items-center justify-center gap-2 cursor-pointer bg-primary/10 text-primary px-4 py-8 rounded-xl text-sm font-bold hover:bg-primary/20 transition border border-primary/30 border-dashed">
+                      <Upload className="w-6 h-6" /> اختر صورة قبل
+                      <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                        const file = e.target.files?.[0]; if (!file) return;
+                        const fd = new FormData(); fd.append("image", file);
+                        const res = await fetch(API_BASE + "/api/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
+                        if (res.ok) {
+                          const data = await res.json();
+                          setSections((prev) => ({ ...prev, beforeAfter: { ...prev.beforeAfter, beforeImage: data.url } }));
+                          toast({ title: "تم رفع صورة قبل بنجاح!" });
+                        }
+                      }} />
+                    </label>
+                    {sections.beforeAfter?.beforeImage && (
+                      <div className="relative aspect-video rounded-xl overflow-hidden border border-white/10">
+                        <img src={sections.beforeAfter.beforeImage} className="w-full h-full object-cover" alt="Before" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">صورة بعد (التصميم الاحترافي)</label>
+                  <div className="flex flex-col gap-4">
+                    <label className="flex items-center justify-center gap-2 cursor-pointer bg-green-500/10 text-green-500 px-4 py-8 rounded-xl text-sm font-bold hover:bg-green-500/20 transition border border-green-500/30 border-dashed">
+                      <Upload className="w-6 h-6" /> اختر صورة بعد
+                      <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                        const file = e.target.files?.[0]; if (!file) return;
+                        const fd = new FormData(); fd.append("image", file);
+                        const res = await fetch(API_BASE + "/api/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
+                        if (res.ok) {
+                          const data = await res.json();
+                          setSections((prev) => ({ ...prev, beforeAfter: { ...prev.beforeAfter, afterImage: data.url } }));
+                          toast({ title: "تم رفع صورة بعد بنجاح!" });
+                        }
+                      }} />
+                    </label>
+                    {sections.beforeAfter?.afterImage && (
+                      <div className="relative aspect-video rounded-xl overflow-hidden border border-white/10">
+                        <img src={sections.beforeAfter.afterImage} className="w-full h-full object-cover" alt="After" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <Button onClick={() => saveSection("beforeAfter")} disabled={loading} className="mt-8 bg-primary hover:bg-primary/90 text-white rounded-xl">
+                <Save className="w-4 h-4 ml-2" /> حفظ المقارنة
               </Button>
             </div>
 

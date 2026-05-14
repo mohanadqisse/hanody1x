@@ -2,6 +2,7 @@ import { API_BASE } from "@/lib/api";
 import { useEffect, useState, useRef } from "react";
 import { motion, useInView, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { ParticleField } from "@/components/ParticleField";
+import { BeforeAfterSlider } from "@/components/BeforeAfterSlider";
 import { Link } from "wouter";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -1819,6 +1820,7 @@ function FinalCTA() {
 
 export default function Home() {
   const [isDiscountActive, setIsDiscountActive] = useState(false);
+  const beforeAfter = useSection("beforeAfter", {} as any);
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans">
@@ -1836,6 +1838,12 @@ export default function Home() {
       <Urgency />
       <ClientShowcase />
       <PortfolioGrid />
+      {beforeAfter.beforeImage && beforeAfter.afterImage && (
+        <BeforeAfterSlider 
+          beforeImage={beforeAfter.beforeImage} 
+          afterImage={beforeAfter.afterImage} 
+        />
+      )}
       <WhyChooseMe />
       <Contact isDiscountActive={isDiscountActive} />
       <FinalCTA />
