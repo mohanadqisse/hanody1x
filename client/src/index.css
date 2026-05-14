@@ -851,16 +851,9 @@ html {
   background: hsl(var(--primary) / 0.5);
 }
 
-/* Scroll Safety — prevent language switch from locking scroll */
+/* Scroll handling - simplified to allow native scroll behavior */
 html, body {
   -webkit-overflow-scrolling: touch;
-  touch-action: manipulation;
-  overscroll-behavior: auto;
-}
-
-body {
-  overflow-y: scroll;
-  overflow-x: hidden;
 }
 
 /* RTL / LTR layout helpers */
@@ -908,6 +901,20 @@ html {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+  
+  /* Ensure the loading screen still animates */
+  .loader-screen,
+  .loader-screen *,
+  .loader-screen::before,
+  .loader-screen::after,
+  .uiverse-loader,
+  .uiverse-loader *,
+  .uiverse-loader::before,
+  .uiverse-loader::after {
+    animation-duration: revert !important;
+    animation-iteration-count: revert !important;
+    transition-duration: revert !important;
   }
 }
 
