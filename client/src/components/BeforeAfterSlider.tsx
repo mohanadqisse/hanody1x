@@ -19,16 +19,29 @@ function SliderCore({ beforeImage, afterImage }: { beforeImage: string; afterIma
   const { t } = useLanguage();
   const dragging = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const beforeRef = useRef<HTMLImageElement>(null);
+  const dividerRef = useRef<HTMLDivElement>(null);
+  const labelRef = useRef<HTMLDivElement>(null);
 
   const updatePos = useCallback((clientX: number) => {
     const el = containerRef.current;
+    const beforeEl = beforeRef.current;
+    const dividerEl = dividerRef.current;
+    const labelEl = labelRef.current;
     if (!el) return;
     const { left, width } = el.getBoundingClientRect();
     const raw = ((clientX - left) / width) * 100;
-    let clamped = Math.max(0, Math.min(raw, 100));
-    if (clamped < 2) clamped = 0;
-    if (clamped > 98) clamped = 100;
-    el.style.setProperty('--pos', `${clamped}`);
+    let pos = Math.max(0, Math.min(raw, 100));
+    if (pos < 2) pos = 0;
+    if (pos > 98) pos = 100;
+
+    // Direct DOM updates — zero React re-renders, GPU-smooth
+    if (beforeEl) beforeEl.style.clipPath = `inset(0 ${100 - pos}% 0 0)`;
+    if (dividerEl) {
+      dividerEl.style.left = `${pos}%`;
+      dividerEl.style.opacity = (pos === 0 || pos === 100) ? '0' : '1';
+    }
+    if (labelEl) labelEl.style.opacity = pos < 10 ? '0' : '1';
   }, []);
 
   useEffect(() => {
@@ -64,12 +77,12 @@ function SliderCore({ beforeImage, afterImage }: { beforeImage: string; afterIma
   return (
     <div
       ref={containerRef}
-      className="ba-slider relative w-full aspect-[16/9] overflow-hidden select-none touch-none"
-      style={{ cursor: 'ew-resize', '--pos': '50' } as React.CSSProperties}
+      className="relative w-full aspect-[16/9] overflow-hidden select-none touch-none"
+      style={{ cursor: 'ew-resize' }}
       onMouseDown={(e) => { e.preventDefault(); startDrag(e.clientX); }}
       onTouchStart={(e) => startDrag(e.touches[0].clientX)}
     >
-      {/* After image (full) */}
+      {/* After image (full background) */}
       <img
         src={afterImage}
         alt={t("ba.after")}
@@ -78,11 +91,13 @@ function SliderCore({ beforeImage, afterImage }: { beforeImage: string; afterIma
         loading="lazy"
       />
 
-      {/* Before image (clipped via CSS var for GPU-smooth updates) */}
+      {/* Before image (clipped — direct DOM manipulation for pixel-perfect sync) */}
       <img
+        ref={beforeRef}
         src={beforeImage}
         alt={t("ba.before")}
-        className="ba-before absolute inset-0 w-full h-full object-cover"
+        className="absolute inset-0 w-full h-full object-cover"
+        style={{ clipPath: 'inset(0 50% 0 0)', willChange: 'clip-path' }}
         draggable={false}
         loading="lazy"
       />
@@ -101,21 +116,27 @@ function SliderCore({ beforeImage, afterImage }: { beforeImage: string; afterIma
         {t("ba.after")}
       </div>
       <div
-        className="ba-label-before absolute top-3 md:top-5 px-3 py-1 md:px-3.5 md:py-1.5 rounded-lg text-white/90 text-[10px] md:text-xs font-semibold pointer-events-none tracking-wide uppercase"
+        ref={labelRef}
+        className="absolute top-3 md:top-5 px-3 py-1 md:px-3.5 md:py-1.5 rounded-lg text-white/90 text-[10px] md:text-xs font-semibold pointer-events-none tracking-wide uppercase"
         style={{
           left: '12px',
           background: 'rgba(0,0,0,0.45)',
           backdropFilter: 'blur(10px)',
           WebkitBackdropFilter: 'blur(10px)',
           border: '1px solid rgba(255,255,255,0.08)',
+          transition: 'opacity 0.2s ease',
         }}
       >
         {t("ba.before")}
       </div>
 
       {/* ── Divider line + handle ── */}
-      <div className="ba-divider absolute top-0 bottom-0 z-10 pointer-events-none">
-        {/* Thin line */}
+      <div
+        ref={dividerRef}
+        className="absolute top-0 bottom-0 z-10 pointer-events-none"
+        style={{ left: '50%', transform: 'translateX(-50%)', transition: 'opacity 0.15s ease', willChange: 'left' }}
+      >
+        {/* Thin glowing line */}
         <div
           className="absolute inset-0"
           style={{
