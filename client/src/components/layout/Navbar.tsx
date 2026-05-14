@@ -1,14 +1,15 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X } from "lucide-react";
 import { useSection } from "@/hooks/useContent";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export function Navbar() {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const [isDark, setIsDark] = useState(true);
   const [location] = useLocation();
   const brand = useSection("brand", { logoLetter: "H", logoImage: "" } as any);
+  const { lang, setLang, t, dir } = useLanguage();
 
   useEffect(() => {
     setIsDark(document.documentElement.classList.contains("dark"));
@@ -36,11 +37,11 @@ export function Navbar() {
   };
 
   const navLinks = [
-    { name: "الخدمات", id: "services", mobileHidden: false },
-    { name: "قصص النجاح", id: "showcase", mobileHidden: true },
-    { name: "معرض الأعمال", id: "portfolio", mobileHidden: false },
-    { name: "تسجيل الدخول", href: "/login", mobileHidden: false },
-    { name: "لوحة التحكم", href: "/admin", mobileHidden: false },
+    { name: t("nav.services"), id: "services", mobileHidden: false },
+    { name: t("nav.showcase"), id: "showcase", mobileHidden: true },
+    { name: t("nav.portfolio"), id: "portfolio", mobileHidden: false },
+    { name: t("nav.login"), href: "/login", mobileHidden: false },
+    { name: t("nav.admin"), href: "/admin", mobileHidden: false },
   ];
 
   return (
@@ -52,10 +53,10 @@ export function Navbar() {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, ease: "easeOut" }}
         className="flex pointer-events-auto items-center p-1.5 md:p-1.5 rounded-full bg-[#1c1c1e]/95 border border-white/10 shadow-[0_8px_30px_rgb(0,0,0,0.4)] backdrop-blur-xl w-auto sm:w-max max-w-[96%] sm:max-w-full mx-auto"
-        dir="rtl"
+        dir={dir}
       >
         <div className="flex items-center justify-between w-full sm:w-auto gap-0 sm:gap-1 px-0.5">
-          {/* Close/Icon on the right side in RTL (start) */}
+          {/* Logo */}
           <Link href="/">
             <div className="w-7 h-7 sm:w-10 sm:h-10 shrink-0 rounded-full bg-[#2c2c2e] border border-white/5 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors cursor-pointer mr-0 sm:mr-1 overflow-hidden">
               {brand?.logoImage ? (
@@ -94,6 +95,27 @@ export function Navbar() {
             ))}
           </div>
 
+          {/* Language Switcher */}
+          <button
+            onClick={() => setLang(lang === "ar" ? "en" : "ar")}
+            className="shrink-0 flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/5 hover:bg-white/12 border border-white/8 hover:border-white/20 transition-all duration-300 group relative overflow-hidden"
+            aria-label="Switch Language"
+            title={lang === "ar" ? "Switch to English" : "التبديل للعربية"}
+          >
+            <AnimatePresence mode="wait">
+              <motion.span
+                key={lang}
+                initial={{ y: 8, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: -8, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="text-[9px] sm:text-[11px] font-bold text-gray-300 group-hover:text-white transition-colors uppercase tracking-wider"
+              >
+                {lang === "ar" ? "EN" : "ع"}
+              </motion.span>
+            </AnimatePresence>
+          </button>
+
           <label className="theme-toggle cursor-pointer m-0 ml-1.5 sm:ml-3 transform scale-[0.5] sm:scale-[0.8] origin-left sm:origin-right shrink-0 -mr-[18px] sm:mr-0" aria-label="تبديل المظهر">
             <span className="sun"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="#ffd43b"><circle r="5" cy="12" cx="12"></circle><path d="m21 13h-1a1 1 0 0 1 0-2h1a1 1 0 0 1 0 2zm-17 0h-1a1 1 0 0 1 0-2h1a1 1 0 0 1 0 2zm13.66-5.66a1 1 0 0 1 -.66-.29 1 1 0 0 1 0-1.41l.71-.71a1 1 0 1 1 1.41 1.41l-.71.71a1 1 0 0 1 -.75.29zm-12.02 12.02a1 1 0 0 1 -.71-.29 1 1 0 0 1 0-1.41l.71-.66a1 1 0 0 1 1.41 1.41l-.71.71a1 1 0 0 1 -.7.24zm6.36-14.36a1 1 0 0 1 -1-1v-1a1 1 0 0 1 2 0v1a1 1 0 0 1 -1 1zm0 17a1 1 0 0 1 -1-1v-1a1 1 0 0 1 2 0v1a1 1 0 0 1 -1 1zm-5.66-14.66a1 1 0 0 1 -.7-.29l-.71-.71a1 1 0 0 1 1.41-1.41l.71.71a1 1 0 0 1 0 1.41 1 1 0 0 1 -.71.29zm12.02 12.02a1 1 0 0 1 -.7-.29l-.66-.71a1 1 0 0 1 1.36-1.36l.71.71a1 1 0 0 1 0 1.41 1 1 0 0 1 -.71.24z"></path></g></svg></span>
             <span className="moon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="m223.5 32c-123.5 0-223.5 100.3-223.5 224s100 224 223.5 224c60.6 0 115.5-24.2 155.8-63.4 5-4.9 6.3-12.5 3.1-18.7s-10.1-9.7-17-8.5c-9.8 1.7-19.8 2.6-30.1 2.6-96.9 0-175.5-78.8-175.5-176 0-65.8 36-123.1 89.3-153.3 6.1-3.5 9.2-10.5 7.7-17.3s-7.3-11.9-14.3-12.5c-6.3-.5-12.6-.8-19-.8z"></path></svg></span>
@@ -104,7 +126,7 @@ export function Navbar() {
             onClick={() => scrollTo("order")} 
             className="hidden sm:block shrink-0 bg-white text-black px-4 sm:px-6 py-1.5 sm:py-2.5 rounded-full text-[11px] sm:text-sm font-bold shadow-lg hover:scale-105 transition-transform duration-200 ml-0 sm:ml-1 whitespace-nowrap"
           >
-            اطلب الآن
+            {t("nav.order")}
           </button>
         </div>
       </motion.nav>

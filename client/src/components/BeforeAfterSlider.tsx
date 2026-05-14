@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 /* ─── types ─── */
 export interface ComparisonItem {
@@ -13,20 +14,18 @@ interface BeforeAfterSliderProps {
   comparisons: ComparisonItem[];
 }
 
-/* ─── constants ─── */
-const INITIAL_POS = 50;
-
-/* ─── single slider core ─── */
+/* ─── slider core ─── */
 function SliderCore({ beforeImage, afterImage }: { beforeImage: string; afterImage: string }) {
-  const [pos, setPos] = useState(INITIAL_POS);
+  const { t } = useLanguage();
+  const [pos, setPos] = useState(50);
   const dragging = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const rafId = useRef<number>(0);
 
   const calcPercent = useCallback((clientX: number) => {
-    if (!containerRef.current) return INITIAL_POS;
+    if (!containerRef.current) return 50;
     const { left, width } = containerRef.current.getBoundingClientRect();
-    return Math.max(0, Math.min(((clientX - left) / width) * 100, 100));
+    return Math.max(2, Math.min(((clientX - left) / width) * 100, 98));
   }, []);
 
   const onPointerMove = useCallback((clientX: number) => {
@@ -36,18 +35,17 @@ function SliderCore({ beforeImage, afterImage }: { beforeImage: string; afterIma
   }, [calcPercent]);
 
   useEffect(() => {
-    const onMouseMove = (e: MouseEvent) => onPointerMove(e.clientX);
-    const onTouchMove = (e: TouchEvent) => { e.preventDefault(); onPointerMove(e.touches[0].clientX); };
+    const mm = (e: MouseEvent) => onPointerMove(e.clientX);
+    const tm = (e: TouchEvent) => { e.preventDefault(); onPointerMove(e.touches[0].clientX); };
     const stop = () => { dragging.current = false; document.body.style.cursor = ''; };
 
-    window.addEventListener('mousemove', onMouseMove, { passive: true });
-    window.addEventListener('touchmove', onTouchMove, { passive: false });
+    window.addEventListener('mousemove', mm, { passive: true });
+    window.addEventListener('touchmove', tm, { passive: false });
     window.addEventListener('mouseup', stop);
     window.addEventListener('touchend', stop);
-
     return () => {
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('mousemove', mm);
+      window.removeEventListener('touchmove', tm);
       window.removeEventListener('mouseup', stop);
       window.removeEventListener('touchend', stop);
       cancelAnimationFrame(rafId.current);
@@ -63,24 +61,24 @@ function SliderCore({ beforeImage, afterImage }: { beforeImage: string; afterIma
   return (
     <div
       ref={containerRef}
-      className="relative w-full aspect-[16/9] rounded-2xl md:rounded-3xl overflow-hidden select-none touch-none"
-      style={{ cursor: dragging.current ? 'ew-resize' : 'ew-resize', willChange: 'transform' }}
+      className="relative w-full aspect-[16/9] overflow-hidden select-none touch-none"
+      style={{ cursor: 'ew-resize', willChange: 'transform' }}
       onMouseDown={(e) => { e.preventDefault(); startDrag(e.clientX); }}
       onTouchStart={(e) => startDrag(e.touches[0].clientX)}
     >
-      {/* After (full background) */}
+      {/* After image (full) */}
       <img
         src={afterImage}
-        alt="بعد التعديل"
+        alt={t("ba.after")}
         className="absolute inset-0 w-full h-full object-cover"
         draggable={false}
         loading="lazy"
       />
 
-      {/* Before (clipped via clip-path — pixel-perfect sync) */}
+      {/* Before image (clipped — pixel-perfect with divider) */}
       <img
         src={beforeImage}
-        alt="قبل التعديل"
+        alt={t("ba.before")}
         className="absolute inset-0 w-full h-full object-cover"
         style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}
         draggable={false}
@@ -89,58 +87,72 @@ function SliderCore({ beforeImage, afterImage }: { beforeImage: string; afterIma
 
       {/* Labels */}
       <div
-        className="absolute top-4 right-4 md:top-6 md:right-6 px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl text-white text-[11px] md:text-sm font-bold pointer-events-none border border-white/15 select-none"
-        style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}
-      >
-        بعد التعديل ✨
-      </div>
-      <div
-        className="absolute top-4 left-4 md:top-6 md:left-6 px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl text-white text-[11px] md:text-sm font-bold pointer-events-none border border-white/15 select-none"
+        className="absolute top-3 md:top-5 px-3 py-1 md:px-3.5 md:py-1.5 rounded-lg text-white/90 text-[10px] md:text-xs font-semibold pointer-events-none tracking-wide uppercase"
         style={{
-          background: 'rgba(0,0,0,0.55)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          opacity: pos < 12 ? 0 : 1,
-          transition: 'opacity 0.25s ease',
+          right: '12px',
+          background: 'rgba(0,0,0,0.45)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          border: '1px solid rgba(255,255,255,0.08)',
         }}
       >
-        قبل التعديل
+        {t("ba.after")}
+      </div>
+      <div
+        className="absolute top-3 md:top-5 px-3 py-1 md:px-3.5 md:py-1.5 rounded-lg text-white/90 text-[10px] md:text-xs font-semibold pointer-events-none tracking-wide uppercase"
+        style={{
+          left: '12px',
+          background: 'rgba(0,0,0,0.45)',
+          backdropFilter: 'blur(10px)',
+          WebkitBackdropFilter: 'blur(10px)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          opacity: pos < 15 ? 0 : 1,
+          transition: 'opacity 0.2s ease',
+        }}
+      >
+        {t("ba.before")}
       </div>
 
-      {/* ── Divider line ── */}
+      {/* ── Divider line + handle ── */}
       <div
         className="absolute top-0 bottom-0 z-10 pointer-events-none"
-        style={{ left: `${pos}%`, transform: 'translateX(-50%)', width: '2px' }}
+        style={{ left: `${pos}%`, transform: 'translateX(-50%)' }}
       >
-        {/* Thin glowing line */}
-        <div className="absolute inset-0 w-full" style={{
-          background: 'rgba(255,255,255,0.85)',
-          boxShadow: '0 0 8px rgba(255,255,255,0.4), 0 0 20px rgba(59,130,246,0.15)',
-        }} />
-
-        {/* Handle */}
+        {/* Thin line */}
         <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-          style={{ width: 44, height: 44 }}
-        >
-          {/* Outer glow ring */}
-          <div className="absolute inset-0 rounded-full" style={{
-            background: 'radial-gradient(circle, rgba(59,130,246,0.25) 0%, transparent 70%)',
-            transform: 'scale(1.8)',
-          }} />
-          {/* Glass handle */}
+          className="absolute inset-0"
+          style={{
+            width: '1.5px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'rgba(255,255,255,0.7)',
+            boxShadow: '0 0 6px rgba(255,255,255,0.2)',
+          }}
+        />
+
+        {/* Floating glass pill handle */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
           <div
-            className="absolute inset-0 rounded-full flex items-center justify-center"
+            className="flex items-center justify-center gap-[3px]"
             style={{
-              background: 'rgba(255,255,255,0.95)',
-              backdropFilter: 'blur(16px)',
-              WebkitBackdropFilter: 'blur(16px)',
-              boxShadow: '0 4px 24px rgba(0,0,0,0.35), 0 0 0 2px rgba(59,130,246,0.5), inset 0 1px 0 rgba(255,255,255,0.6)',
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              background: 'rgba(255,255,255,0.12)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255,255,255,0.25)',
+              boxShadow: '0 2px 16px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.05) inset',
+              transition: 'transform 0.2s ease, box-shadow 0.2s ease',
             }}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#3b82f6' }}>
-              <path d="m9 18-6-6 6-6" />
-              <path d="m15 18 6-6-6-6" />
+            {/* Left arrow */}
+            <svg width="8" height="12" viewBox="0 0 8 12" fill="none" style={{ opacity: 0.9 }}>
+              <path d="M6 2L2 6L6 10" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            {/* Right arrow */}
+            <svg width="8" height="12" viewBox="0 0 8 12" fill="none" style={{ opacity: 0.9 }}>
+              <path d="M2 2L6 6L2 10" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
         </div>
@@ -151,81 +163,80 @@ function SliderCore({ beforeImage, afterImage }: { beforeImage: string; afterIma
 
 /* ─── main section ─── */
 export function BeforeAfterSlider({ comparisons }: BeforeAfterSliderProps) {
+  const { t } = useLanguage();
   const [activeIdx, setActiveIdx] = useState(0);
-  const scrollRef = useRef<HTMLDivElement>(null);
 
   if (!comparisons || comparisons.length === 0) return null;
   const active = comparisons[activeIdx] || comparisons[0];
 
   return (
-    <section className="py-24 md:py-32 bg-background relative overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[80vw] h-[50vw] max-w-[900px] max-h-[500px] bg-gradient-to-b from-primary/5 to-transparent rounded-full blur-[120px] pointer-events-none" />
+    <section className="py-20 md:py-28 bg-background relative overflow-hidden">
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[70vw] h-[40vw] max-w-[800px] max-h-[400px] bg-gradient-to-b from-primary/4 to-transparent rounded-full blur-[100px] pointer-events-none" />
 
-      <div className="container mx-auto px-4 md:px-6 max-w-6xl relative z-10">
+      <div className="container mx-auto px-4 md:px-6 max-w-5xl relative z-10">
         {/* Header */}
-        <div className="text-center mb-12 md:mb-16">
+        <div className="text-center mb-10 md:mb-14">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.6 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6"
+            transition={{ duration: 0.5 }}
+            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-foreground/5 border border-foreground/10 mb-5"
           >
-            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span className="text-sm font-semibold text-primary">مقارنة احترافية</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+            <span className="text-xs font-medium text-foreground/70 tracking-wide">{t("ba.badge")}</span>
           </motion.div>
 
           <motion.h2
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.7, delay: 0.05 }}
-            className="text-3xl md:text-5xl lg:text-6xl font-black mb-4 md:mb-6 tracking-tighter"
+            transition={{ duration: 0.6, delay: 0.05 }}
+            className="text-3xl md:text-5xl font-black mb-3 md:mb-4 tracking-tighter"
           >
-            شاهد الفرق بنفسك
+            {t("ba.title")}
           </motion.h2>
           <motion.p
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.7, delay: 0.1 }}
-            className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto"
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="text-sm md:text-base text-muted-foreground max-w-xl mx-auto"
           >
-            اسحب الخط لليمين واليسار لتشاهد كيف يمكن لتصميم احترافي أن يغير جذرياً انطباع المشاهد.
+            {t("ba.subtitle")}
           </motion.p>
         </div>
 
-        {/* Active title & tag */}
+        {/* Active info */}
         <AnimatePresence mode="wait">
           {(active.title || active.tag) && (
             <motion.div
               key={`info-${activeIdx}`}
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3 }}
-              className="flex items-center justify-center gap-3 mb-6"
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.25 }}
+              className="flex items-center justify-center gap-2.5 mb-5"
             >
               {active.tag && (
-                <span className="px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold">
+                <span className="px-2.5 py-0.5 rounded-full bg-foreground/5 border border-foreground/10 text-foreground/60 text-[11px] font-medium">
                   {active.tag}
                 </span>
               )}
               {active.title && (
-                <h3 className="text-lg md:text-xl font-bold text-foreground">{active.title}</h3>
+                <h3 className="text-sm md:text-base font-semibold text-foreground/80">{active.title}</h3>
               )}
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Slider */}
+        {/* Slider container */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.97 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true, margin: "-80px" }}
-          transition={{ duration: 0.7, delay: 0.15 }}
-          className="relative rounded-2xl md:rounded-3xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.5)] border border-white/10"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.6, delay: 0.15 }}
+          className="rounded-2xl md:rounded-3xl overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.35)] border border-white/8"
         >
           <AnimatePresence mode="wait">
             <motion.div
@@ -233,7 +244,7 @@ export function BeforeAfterSlider({ comparisons }: BeforeAfterSliderProps) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.4, ease: 'easeInOut' }}
+              transition={{ duration: 0.35 }}
             >
               <SliderCore
                 beforeImage={active.beforeImage}
@@ -243,18 +254,17 @@ export function BeforeAfterSlider({ comparisons }: BeforeAfterSliderProps) {
           </AnimatePresence>
         </motion.div>
 
-        {/* Thumbnails — only show when multiple comparisons */}
+        {/* Thumbnails */}
         {comparisons.length > 1 && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.6, delay: 0.25 }}
-            className="mt-8 md:mt-10"
+            viewport={{ once: true, margin: "-40px" }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="mt-6 md:mt-8"
           >
             <div
-              ref={scrollRef}
-              className="flex gap-3 md:gap-4 overflow-x-auto pb-4 px-1 snap-x snap-mandatory scrollbar-hide"
+              className="flex gap-2.5 md:gap-3 overflow-x-auto pb-3 px-0.5 snap-x snap-mandatory"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
               {comparisons.map((item, idx) => {
@@ -263,51 +273,22 @@ export function BeforeAfterSlider({ comparisons }: BeforeAfterSliderProps) {
                   <button
                     key={idx}
                     onClick={() => setActiveIdx(idx)}
-                    className={`relative flex-shrink-0 snap-start rounded-xl md:rounded-2xl overflow-hidden transition-all duration-400 group focus:outline-none ${
+                    className={`relative flex-shrink-0 snap-start rounded-xl overflow-hidden transition-all duration-300 focus:outline-none ${
                       isActive
-                        ? 'ring-2 ring-primary ring-offset-2 ring-offset-background scale-[1.02] shadow-[0_8px_30px_rgba(59,130,246,0.3)]'
-                        : 'opacity-60 hover:opacity-90 hover:scale-[1.01]'
+                        ? 'ring-[1.5px] ring-white/40 ring-offset-1 ring-offset-background shadow-[0_4px_20px_rgba(0,0,0,0.25)]'
+                        : 'opacity-50 hover:opacity-80'
                     }`}
-                    style={{ width: 'clamp(140px, 20vw, 200px)', aspectRatio: '16/9' }}
+                    style={{ width: 'clamp(120px, 18vw, 170px)', aspectRatio: '16/9' }}
                   >
-                    {/* Split thumbnail preview */}
                     <div className="absolute inset-0">
-                      <img
-                        src={item.afterImage}
-                        alt=""
-                        className="absolute inset-0 w-full h-full object-cover"
-                        loading="lazy"
-                        draggable={false}
-                      />
-                      <img
-                        src={item.beforeImage}
-                        alt=""
-                        className="absolute inset-0 w-full h-full object-cover"
-                        style={{ clipPath: 'inset(0 50% 0 0)' }}
-                        loading="lazy"
-                        draggable={false}
-                      />
-                      {/* Center divider line on thumbnail */}
-                      <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-[1.5px] bg-white/70" />
+                      <img src={item.afterImage} alt="" className="absolute inset-0 w-full h-full object-cover" loading="lazy" draggable={false} />
+                      <img src={item.beforeImage} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ clipPath: 'inset(0 50% 0 0)' }} loading="lazy" draggable={false} />
+                      <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-white/50" />
                     </div>
-
-                    {/* Overlay */}
-                    <div className={`absolute inset-0 transition-colors duration-300 ${
-                      isActive ? 'bg-primary/10' : 'bg-black/20 group-hover:bg-black/10'
-                    }`} />
-
-                    {/* Title label */}
                     {item.title && (
-                      <div className="absolute bottom-0 left-0 right-0 px-2 py-1.5 text-[10px] md:text-xs font-bold text-white text-center truncate" style={{
-                        background: 'linear-gradient(to top, rgba(0,0,0,0.7), transparent)',
-                      }}>
+                      <div className="absolute bottom-0 left-0 right-0 px-1.5 py-1 text-[9px] md:text-[10px] font-medium text-white/90 text-center truncate" style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 100%)' }}>
                         {item.title}
                       </div>
-                    )}
-
-                    {/* Active indicator dot */}
-                    {isActive && (
-                      <div className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-primary shadow-[0_0_8px_rgba(59,130,246,0.6)]" />
                     )}
                   </button>
                 );
@@ -317,8 +298,10 @@ export function BeforeAfterSlider({ comparisons }: BeforeAfterSliderProps) {
         )}
       </div>
 
-      {/* Hide scrollbar CSS */}
-      <style>{`.scrollbar-hide::-webkit-scrollbar{display:none}`}</style>
+      <style>{`
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        [style*="scrollbar-width"]::-webkit-scrollbar { display: none; }
+      `}</style>
     </section>
   );
 }
