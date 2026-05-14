@@ -167,6 +167,32 @@
     radial-gradient(at 0% 50%, hsl(var(--primary) / 0.1) 0px, transparent 50%);
 }
 
+/* ─── Before/After Slider — GPU-accelerated via CSS custom property ─── */
+.ba-slider {
+  --pos: 50;
+}
+
+.ba-slider .ba-before {
+  clip-path: inset(0 calc((100 - var(--pos)) * 1%) 0 0);
+  will-change: clip-path;
+}
+
+.ba-slider .ba-divider {
+  left: calc(var(--pos) * 1%);
+  transform: translateX(-50%);
+  will-change: left;
+  transition: opacity 0.15s ease;
+}
+
+.ba-slider .ba-label-before {
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+/* Hide before label when slider is near edge */
+.ba-slider:has(.ba-divider) .ba-label-before {
+  opacity: 1;
+}
 
 html {
   scroll-behavior: smooth;
@@ -409,6 +435,8 @@ html {
 :root:not(.dark) .pricing-wave-card {
   background: rgba(30, 41, 59, 0.95);
 }
+
+
 
 /* UIverse Components */
 .continue-application {
