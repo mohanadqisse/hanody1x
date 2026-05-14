@@ -3,16 +3,17 @@ import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { caseStudies as defaultCaseStudies } from "@/lib/data";
-import { useLocalizedSection } from "@/hooks/useContent";
+import { useSection } from "@/hooks/useContent";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { caseStudiesEn } from "@/lib/i18n-defaults";
 
 const easeApple = "easeOut";
 
 export default function CaseStudy() {
   const { id } = useParams<{ id: string }>();
   const { lang, t } = useLanguage();
-  const allStudies = useLocalizedSection("caseStudies", defaultCaseStudies, caseStudiesEn, lang) as typeof defaultCaseStudies;
+  // Always use Arabic/original data for case study content — never swap to English defaults
+  // Only UI labels (buttons, headers) are translated via t()
+  const allStudies = useSection("caseStudies", defaultCaseStudies) as typeof defaultCaseStudies;
   const study = allStudies.find((c) => c.id === id);
 
   if (!study) {
@@ -37,7 +38,7 @@ export default function CaseStudy() {
           <Link href="/#showcase">
             <button className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8">
               <ArrowRight className="w-4 h-4" />
-              <span>{lang === "en" ? "Back to Success Stories" : "العودة لقصص النجاح"}</span>
+              <span>{t("caseStudy.back")}</span>
             </button>
           </Link>
 

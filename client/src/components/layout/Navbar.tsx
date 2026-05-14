@@ -9,7 +9,7 @@ export function Navbar() {
   const [isDark, setIsDark] = useState(true);
   const [location] = useLocation();
   const brand = useSection("brand", { logoLetter: "H", logoImage: "" } as any);
-  const { lang, setLang, t, dir } = useLanguage();
+  const { lang, setLang, t, dir, isRTL } = useLanguage();
 
   useEffect(() => {
     setIsDark(document.documentElement.classList.contains("dark"));
@@ -58,7 +58,7 @@ export function Navbar() {
         <div className="flex items-center justify-between w-full sm:w-auto gap-0 sm:gap-1 px-0.5">
           {/* Logo */}
           <Link href="/">
-            <div className="w-7 h-7 sm:w-10 sm:h-10 shrink-0 rounded-full bg-[#2c2c2e] border border-white/5 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors cursor-pointer mr-0 sm:mr-1 overflow-hidden">
+            <div className={`w-7 h-7 sm:w-10 sm:h-10 shrink-0 rounded-full bg-[#2c2c2e] border border-white/5 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors cursor-pointer ${isRTL ? 'ml-0 sm:ml-1' : 'mr-0 sm:mr-1'} overflow-hidden`}>
               {brand?.logoImage ? (
                 <img src={brand.logoImage} alt="Logo" className="w-full h-full object-cover" />
               ) : (
@@ -88,7 +88,7 @@ export function Navbar() {
                     transition={{ duration: 0.25, ease: "easeInOut" }}
                   />
                 )}
-                <span className={`relative z-10 text-[9px] sm:text-[14px] font-semibold transition-colors duration-200 whitespace-nowrap ${hoveredIdx === idx ? 'text-white' : 'text-gray-400'}`}>
+                <span className={`relative z-10 text-[10px] sm:text-[14px] font-semibold transition-colors duration-200 whitespace-nowrap ${hoveredIdx === idx ? 'text-white' : 'text-gray-400'}`}>
                   {link.name}
                 </span>
               </div>
@@ -116,7 +116,7 @@ export function Navbar() {
             </AnimatePresence>
           </button>
 
-          <label className="theme-toggle cursor-pointer m-0 ml-1.5 sm:ml-3 transform scale-[0.5] sm:scale-[0.8] origin-left sm:origin-right shrink-0 -mr-[18px] sm:mr-0" aria-label="تبديل المظهر">
+          <label className={`theme-toggle cursor-pointer m-0 ${isRTL ? 'mr-1.5 sm:mr-3 -ml-[18px] sm:ml-0' : 'ml-1.5 sm:ml-3 -mr-[18px] sm:mr-0'} transform scale-[0.5] sm:scale-[0.8] ${isRTL ? 'origin-right sm:origin-left' : 'origin-left sm:origin-right'} shrink-0`} aria-label="تبديل المظهر">
             <span className="sun"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="#ffd43b"><circle r="5" cy="12" cx="12"></circle><path d="m21 13h-1a1 1 0 0 1 0-2h1a1 1 0 0 1 0 2zm-17 0h-1a1 1 0 0 1 0-2h1a1 1 0 0 1 0 2zm13.66-5.66a1 1 0 0 1 -.66-.29 1 1 0 0 1 0-1.41l.71-.71a1 1 0 1 1 1.41 1.41l-.71.71a1 1 0 0 1 -.75.29zm-12.02 12.02a1 1 0 0 1 -.71-.29 1 1 0 0 1 0-1.41l.71-.66a1 1 0 0 1 1.41 1.41l-.71.71a1 1 0 0 1 -.7.24zm6.36-14.36a1 1 0 0 1 -1-1v-1a1 1 0 0 1 2 0v1a1 1 0 0 1 -1 1zm0 17a1 1 0 0 1 -1-1v-1a1 1 0 0 1 2 0v1a1 1 0 0 1 -1 1zm-5.66-14.66a1 1 0 0 1 -.7-.29l-.71-.71a1 1 0 0 1 1.41-1.41l.71.71a1 1 0 0 1 0 1.41 1 1 0 0 1 -.71.29zm12.02 12.02a1 1 0 0 1 -.7-.29l-.66-.71a1 1 0 0 1 1.36-1.36l.71.71a1 1 0 0 1 0 1.41 1 1 0 0 1 -.71.24z"></path></g></svg></span>
             <span className="moon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="m223.5 32c-123.5 0-223.5 100.3-223.5 224s100 224 223.5 224c60.6 0 115.5-24.2 155.8-63.4 5-4.9 6.3-12.5 3.1-18.7s-10.1-9.7-17-8.5c-9.8 1.7-19.8 2.6-30.1 2.6-96.9 0-175.5-78.8-175.5-176 0-65.8 36-123.1 89.3-153.3 6.1-3.5 9.2-10.5 7.7-17.3s-7.3-11.9-14.3-12.5c-6.3-.5-12.6-.8-19-.8z"></path></svg></span>
             <input type="checkbox" className="theme-toggle-input" checked={isDark} onChange={toggleTheme} />
@@ -124,7 +124,7 @@ export function Navbar() {
           </label>
           <button 
             onClick={() => scrollTo("order")} 
-            className="hidden sm:block shrink-0 bg-white text-black px-4 sm:px-6 py-1.5 sm:py-2.5 rounded-full text-[11px] sm:text-sm font-bold shadow-lg hover:scale-105 transition-transform duration-200 ml-0 sm:ml-1 whitespace-nowrap"
+            className={`hidden sm:block shrink-0 bg-white text-black px-4 sm:px-6 py-1.5 sm:py-2.5 rounded-full text-[11px] sm:text-sm font-bold shadow-lg hover:scale-105 transition-transform duration-200 ${isRTL ? 'mr-0 sm:mr-1' : 'ml-0 sm:ml-1'} whitespace-nowrap`}
           >
             {t("nav.order")}
           </button>

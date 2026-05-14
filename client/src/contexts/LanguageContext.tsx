@@ -274,8 +274,28 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   });
 
   const setLang = (newLang: Lang) => {
+    // Clean up any stuck body states before switching language
+    // This prevents scroll lock from overlays/modals/transitions
+    document.body.style.overflow = '';
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.left = '';
+    document.body.style.right = '';
+    document.body.style.width = '';
+    document.body.style.height = '';
+    document.body.classList.remove('overflow-hidden', 'modal-open', 'menu-open');
+    // Also reset html element overflow
+    document.documentElement.style.overflow = '';
+    
     setLangState(newLang);
     localStorage.setItem("site_lang", newLang);
+
+    // Ensure scroll is restored after React re-renders
+    requestAnimationFrame(() => {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+      window.scrollTo({ top: window.scrollY });
+    });
   };
 
   const t = (key: string): string => {
@@ -291,6 +311,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     // Add class for CSS-level targeting
     document.documentElement.classList.toggle("rtl", isRTL);
     document.documentElement.classList.toggle("ltr", !isRTL);
+    
+    // Ensure body is always scrollable after language change
+    document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
   }, [lang, dir, isRTL]);
 
   return (

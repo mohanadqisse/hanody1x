@@ -326,11 +326,18 @@ function Pricing({ isDiscountActive }: { isDiscountActive?: boolean }) {
     if (idx === 0 && customPricing.basicPrice) price = customPricing.basicPrice;
     if (idx === 1 && customPricing.proPrice) price = customPricing.proPrice;
     if (idx === 2 && customPricing.elitePrice) price = customPricing.elitePrice;
-    // Only apply admin feature overrides when lang=ar (admin features are in Arabic)
-    if (lang === "ar") {
-      if (idx === 0 && customPricing.basicFeatures) features = customPricing.basicFeatures.split('\n').map((s: string) => s.trim()).filter(Boolean);
-      if (idx === 1 && customPricing.proFeatures) features = customPricing.proFeatures.split('\n').map((s: string) => s.trim()).filter(Boolean);
-      if (idx === 2 && customPricing.eliteFeatures) features = customPricing.eliteFeatures.split('\n').map((s: string) => s.trim()).filter(Boolean);
+    // Apply admin feature overrides for both languages
+    let adminFeatures: string[] | null = null;
+    if (idx === 0 && customPricing.basicFeatures) adminFeatures = customPricing.basicFeatures.split('\n').map((s: string) => s.trim()).filter(Boolean);
+    if (idx === 1 && customPricing.proFeatures) adminFeatures = customPricing.proFeatures.split('\n').map((s: string) => s.trim()).filter(Boolean);
+    if (idx === 2 && customPricing.eliteFeatures) adminFeatures = customPricing.eliteFeatures.split('\n').map((s: string) => s.trim()).filter(Boolean);
+    if (adminFeatures) {
+      if (lang === "ar") {
+        features = adminFeatures;
+      } else {
+        // Translate admin Arabic features to English using the translation map
+        features = adminFeatures.map((f: string) => EN.featureTranslationMap[f] || f);
+      }
     }
     return { ...pkg, price, features };
   });
@@ -611,13 +618,13 @@ function Urgency() {
 function ClientShowcase() {
   const { lang, t, isRTL } = useLanguage();
   const brand = useSection("brand", { youtubeChannelUrl: "" } as any);
-  const arData = useSection("caseStudies", defaultCaseStudies) as any[];
-  const caseStudiesRaw = useLocalizedSection("caseStudies", defaultCaseStudies, EN.caseStudiesEn, lang) as typeof defaultCaseStudies;
-  // Merge avatar images and YouTube URLs from Arabic API data into EN defaults
-  const caseStudiesData = caseStudiesRaw.map((study, idx) => ({
+  // Always use Arabic data for case study content (names, bios, metrics stay original)
+  const caseStudiesRaw = useSection("caseStudies", defaultCaseStudies) as any[];
+  // Merge avatar images and YouTube URLs
+  const caseStudiesData = caseStudiesRaw.map((study: any) => ({
     ...study,
-    avatarImage: (arData[idx] as any)?.avatarImage || (study as any).avatarImage || "",
-    youtubeUrl: (arData[idx] as any)?.youtubeUrl || (study as any).youtubeUrl || "",
+    avatarImage: study.avatarImage || "",
+    youtubeUrl: study.youtubeUrl || "",
   }));
   return (
     <section id="showcase" className="py-32 bg-background relative">
@@ -644,7 +651,7 @@ function ClientShowcase() {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {caseStudiesData.map((client, idx) => (
+          {caseStudiesData.map((client: any, idx: number) => (
             <motion.div
               key={client.id}
               initial={{ opacity: 0, y: 30 }}
@@ -657,8 +664,8 @@ function ClientShowcase() {
               
               <div className={`flex items-center gap-5 mb-6 ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-primary to-secondary flex items-center justify-center text-white font-bold text-xl group-hover:scale-110 transition-transform duration-500 group-hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] overflow-hidden">
-                  {(client as any).avatarImage ? (
-                    <img src={(client as any).avatarImage} alt={client.name} className="w-full h-full object-cover" />
+                  {client.avatarImage ? (
+                    <img src={client.avatarImage} alt={client.name} className="w-full h-full object-cover" />
                   ) : (
                     client.avatarInitials
                   )}
@@ -678,9 +685,9 @@ function ClientShowcase() {
                   <ArrowLeft size={18} className="group-hover:-translate-x-2 transition-transform duration-300" />
                   {t("showcase.viewCase")}
                 </Link>
-                {((client as any).youtubeUrl || brand.youtubeChannelUrl) && (
+                {(client.youtubeUrl || brand.youtubeChannelUrl) && (
                   <a
-                    href={(client as any).youtubeUrl || brand.youtubeChannelUrl}
+                    href={client.youtubeUrl || brand.youtubeChannelUrl}
                     target="_blank"
                     rel="noreferrer"
                     className="inline-flex items-center gap-2 text-xs font-bold px-3.5 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 hover:text-red-300 hover:border-red-500/40 hover:scale-105 transition-all duration-300"
@@ -1113,7 +1120,7 @@ function PortfolioGrid() {
                   onClick={() => { closeLightbox(); setTimeout(() => document.getElementById("order")?.scrollIntoView({ behavior: "smooth" }), 300); }}
                   className="px-4 py-2 rounded-xl bg-primary text-white text-xs font-bold"
                 >
-                  {lang === "en" ? "Order Similar" : "اطلب صورة مماثلة"}
+                  {t("lightbox.orderSimilar")}
                 </button>
               </div>
             </motion.div>

@@ -816,3 +816,27 @@ html {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--primary) / 0.5);
 }
+
+/* Scroll Safety — prevent language switch from locking scroll */
+html, body {
+  -webkit-overflow-scrolling: touch;
+}
+
+body {
+  overflow-y: auto !important;
+  overflow-x: hidden;
+}
+
+/* Only allow overflow hidden when explicitly set by modals */
+body.modal-open {
+  overflow: hidden !important;
+}
+
+/* RTL / LTR layout helpers */
+html.rtl {
+  direction: rtl;
+}
+
+html.ltr {
+  direction: ltr;
+}

@@ -27,6 +27,62 @@ export const packagesEn = [
   { name: "Elite", price: "99", features: ["Unlimited Revisions", "24-Hour Delivery", "4K Quality", "Premium Design", "CTR Analysis", "Priority Support"], popular: false },
 ];
 
+// English translations map for Arabic admin-entered features
+// Used to translate admin features from Arabic to English
+export const featureTranslationMap: Record<string, string> = {
+  // Basic package features
+  "تحسين الألوان والإضاءة": "Color & Lighting Enhancement",
+  "ضبط التباين والوضوح": "Contrast & Clarity Adjustment",
+  "قص وترتيب العناصر داخل الصورة": "Cropping & Element Arrangement",
+  "استخدام خطوط مناسبة لليوتيوب": "YouTube-Optimized Typography",
+  "إضافة نصوص واضحة ومقروءة": "Clear & Readable Text Overlay",
+  "دمج الصور بشكل نظيف": "Clean Image Compositing",
+  "إخراج بجودة عالية": "High Quality Export",
+  "تسليم خلال 48 ساعة": "48-Hour Delivery",
+  "الحفاظ على بساطة الفكرة": "Keeping the Concept Simple",
+  // Pro package features
+  "تحسين متقدم للألوان والإضاءة": "Advanced Color & Lighting Enhancement",
+  "معالجة البشرة والتفاصيل (Retouch)": "Skin & Detail Retouching",
+  "إضافة تأثيرات بصرية خفيفة": "Subtle Visual Effects",
+  "اختيار عناصر تدعم الفكرة": "Supporting Elements Selection",
+  "تحسين توزيع العناصر داخل التصميم": "Optimized Element Layout",
+  "إبراز العنصر الأساسي (Focus)": "Main Element Focus Enhancement",
+  "استخدام أسلوب بصري متناسق": "Consistent Visual Style",
+  "تحسين قابلية النقر (CTR)": "CTR Optimization",
+  "تعديلات 2–3": "2–3 Revisions",
+  "أولوية في التنفيذ": "Priority Execution",
+  // Elite package features
+  "معالجة احترافية جداً للألوان والتفاصيل": "Professional Color & Detail Processing",
+  "تعديل كامل على الصورة (Advanced Retouch)": "Full Image Advanced Retouching",
+  "إضافة تأثيرات بصرية متقدمة": "Advanced Visual Effects",
+  "بناء فكرة بصرية للثمنيل": "Visual Concept Building",
+  "اقتراح أكثر من Concept": "Multiple Concept Proposals",
+  "إبراز قوي للعنصر الأساسي": "Strong Main Element Emphasis",
+  "ضبط دقيق للإضاءة والظلال": "Precise Lighting & Shadow Tuning",
+  "تحسين عالي للـ CTR": "Maximum CTR Optimization",
+  "الحفاظ على هوية بصرية ثابتة": "Consistent Brand Visual Identity",
+  "تعديلات مفتوحة": "Unlimited Revisions",
+  "تسليم سريع جداً": "Ultra-Fast Delivery",
+  "أولوية قصوى بالتنفيذ": "Top Priority Execution",
+  "دعم مستمر وتطوير أسلوب القناة": "Ongoing Support & Channel Style Development",
+  "اقتراح A/B بديل للتصميم": "A/B Design Alternative Proposal",
+  // Legacy/default features (fallback)
+  "تعديل واحد": "1 Revision",
+  "تسليم خلال 3 أيام": "3-Day Delivery",
+  "جودة HD": "HD Quality",
+  "تصميم أساسي": "Basic Design",
+  "3 تعديلات": "3 Revisions",
+  "تسليم خلال يومين": "2-Day Delivery",
+  "جودة 4K": "4K Quality",
+  "تصميم متقدم": "Advanced Design",
+  "نسختان A/B للاختبار": "A/B Test Versions",
+  "تعديلات غير محدودة": "Unlimited Revisions",
+  "تسليم خلال 24 ساعة": "24-Hour Delivery",
+  "تصميم ممتاز": "Premium Design",
+  "تحليل معدل النقر": "CTR Analysis",
+  "أولوية الدعم": "Priority Support",
+};
+
 export const ctrEn = {
   title: "Designed to Get Clicks — Not Just Look Pretty.",
   subtitle: "Most thumbnails look nice. My work is built on human psychology to deliver real performance. Higher CTR = More Views = Faster Growth.",
