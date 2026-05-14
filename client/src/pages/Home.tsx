@@ -1,5 +1,6 @@
 import { API_BASE } from "@/lib/api";
 import { useEffect, useState, useRef } from "react";
+import { createPortal } from "react-dom";
 import { motion, useInView, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { ParticleField } from "@/components/ParticleField";
 import { BeforeAfterSlider } from "@/components/BeforeAfterSlider";
@@ -767,10 +768,10 @@ function RatingModal({ isOpen, onClose, images, items }: { isOpen: boolean, onCl
   const [nameSubmitted, setNameSubmitted] = useState(false);
   const { toast } = useToast();
 
-  if (!isOpen) return null;
+  // Removed early return to allow AnimatePresence to handle exit animations
 
-  const currentItem = items[currentIndex];
-  const src = (images && images[currentItem.id - 1]) || `${import.meta.env.BASE_URL}images/thumb-${(currentItem.id % 3) + 1}.png`;
+  const currentItem = items[currentIndex] || items[0];
+  const src = currentItem ? ((images && images[currentItem.id - 1]) || `${import.meta.env.BASE_URL}images/thumb-${(currentItem.id % 3) + 1}.png`) : "";
 
   const handleSubmitRating = async () => {
     if (isSubmitting || !selectedRating) return;
@@ -819,14 +820,17 @@ function RatingModal({ isOpen, onClose, images, items }: { isOpen: boolean, onCl
   // Determine which stars should be highlighted
   const activeStars = hoveredStar || selectedRating;
 
-  return (
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/95 backdrop-blur-xl p-4"
-      >
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/95 backdrop-blur-xl p-4"
+        >
         <div className="absolute inset-0" onClick={handleClose} />
         
         <motion.div
@@ -937,8 +941,10 @@ function RatingModal({ isOpen, onClose, images, items }: { isOpen: boolean, onCl
             </>
           )}
         </motion.div>
-      </motion.div>
-    </AnimatePresence>
+        </motion.div>
+      )}
+    </AnimatePresence>,
+    document.body
   );
 }
 
@@ -1350,7 +1356,7 @@ function About() {
               <motion.div
                 animate={{ y: [0, -8, 0] }}
                 transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
-                className="absolute -top-4 -right-4 glass-card rounded-2xl px-4 py-3 border border-white/10 shadow-xl"
+                className="absolute -top-3 -right-2 sm:-top-4 sm:-right-4 glass-card rounded-2xl px-4 py-3 border border-white/10 shadow-xl z-20"
               >
                 <div className="flex items-center gap-2">
                   <Award size={16} className="text-yellow-400" />
@@ -1361,7 +1367,7 @@ function About() {
               <motion.div
                 animate={{ y: [0, 8, 0] }}
                 transition={{ repeat: Infinity, duration: 3.5, ease: "easeInOut", delay: 0.5 }}
-                className="absolute -bottom-4 -left-4 glass-card rounded-2xl px-4 py-3 border border-white/10 shadow-xl"
+                className="absolute -bottom-3 -left-2 sm:-bottom-4 sm:-left-4 glass-card rounded-2xl px-4 py-3 border border-white/10 shadow-xl z-20"
               >
                 <div className="flex items-center gap-2">
                   <TrendingUp size={16} className="text-green-400" />
