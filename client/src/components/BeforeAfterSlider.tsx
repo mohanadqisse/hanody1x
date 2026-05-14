@@ -41,7 +41,12 @@ function SliderCore({ beforeImage, afterImage }: { beforeImage: string; afterIma
 
   useEffect(() => {
     const mm = (e: MouseEvent) => onPointerMove(e.clientX);
-    const tm = (e: TouchEvent) => { e.preventDefault(); onPointerMove(e.touches[0].clientX); };
+    const tm = (e: TouchEvent) => {
+      // Only prevent scroll when actively dragging the slider
+      if (!dragging.current) return;
+      e.preventDefault();
+      onPointerMove(e.touches[0].clientX);
+    };
     const stop = () => { dragging.current = false; document.body.style.cursor = ''; };
 
     window.addEventListener('mousemove', mm, { passive: true });
