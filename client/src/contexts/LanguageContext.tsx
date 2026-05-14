@@ -7,6 +7,7 @@ interface LanguageContextType {
   setLang: (lang: Lang) => void;
   t: (key: string) => string;
   dir: "rtl" | "ltr";
+  isRTL: boolean;
 }
 
 const translations: Record<Lang, Record<string, string>> = {
@@ -19,13 +20,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "nav.admin": "لوحة التحكم",
     "nav.order": "اطلب الآن",
 
-    // Hero defaults
-    "hero.badge": "متاح لمشاريع جديدة",
-    "hero.headline": "صورتك المصغرة هي سبب النقر.",
-    "hero.subheadline": "أصمم صوراً مصغرة احترافية عالية معدل النقر تُوقف التمرير وتجذب الانتباه وتزيد مشاهدات قناتك بشكل ملحوظ.",
-    "hero.ctaPrimary": "احصل على صورتك المصغرة",
-    "hero.ctaSecondary": "شاهد أعمالي",
-    "hero.trustText": "موثوق من أكثر من 50 يوتيوبر",
+    // Hero
     "hero.instagram": "تابعني على إنستجرام",
 
     // Stats
@@ -34,44 +29,19 @@ const translations: Record<Lang, Record<string, string>> = {
     "stats.delivery": "ساعة متوسط التسليم",
     "stats.clients": "عميل راضٍ",
 
-    // How it works
-    "hiw.title": "كيف نعمل معاً؟",
-    "hiw.subtitle": "ثلاث خطوات بسيطة تفصلك عن صورة مصغرة تضاعف مشاهداتك",
-    "hiw.badge": "العملية بسيطة",
-    "hiw.step1Title": "أرسل تفاصيلك",
-    "hiw.step1Desc": "أخبرني عن قناتك وموضوع الفيديو والجمهور المستهدف. كلما زادت التفاصيل كان التصميم أدق.",
-    "hiw.step2Title": "تصميم وتعديل",
-    "hiw.step2Desc": "أصمم لك صورة مصغرة احترافية وأرسلها للمراجعة. يمكنك طلب تعديلات حسب الباقة المختارة.",
-    "hiw.step3Title": "استلم ملفاتك",
-    "hiw.step3Desc": "بعد اعتمادك تصل إليك الملفات بجودة عالية جاهزة للرفع خلال 24-48 ساعة كحد أقصى.",
+    // Pricing
+    "pricing.title": "باقات الخدمة",
+    "pricing.subtitle": "اختر الباقة المناسبة لقناتك. جميع الباقات تقدم تصاميم عالية الجودة ومُحسَّنة للنقر.",
+    "pricing.popular": "الأكثر طلباً",
+    "pricing.bestFor": "الخيار الأمثل للمحترفين",
+    "pricing.perImage": "/لكل صورة",
+    "pricing.choose": "اختر",
 
-    // Why choose me
-    "wcm.title": "لماذا تختارني؟",
-    "wcm.feat1Title": "تسليم سريع",
-    "wcm.feat1Desc": "لا تفوّت جدول رفع الفيديوهات. معظم المسودات تُسلَّم خلال 24-48 ساعة.",
-    "wcm.feat2Title": "تركيز على معدل النقر",
-    "wcm.feat2Desc": "قرارات مبنية على تحليلات يوتيوب ومبادئ التسلسل البصري وليس التخمين.",
-    "wcm.feat3Title": "أسلوب فريد ومميز",
-    "wcm.feat3Desc": "عناصر مخصصة وتدرجات لونية متقدمة وتكوين يميّزك عن الجميع.",
-    "wcm.feat4Title": "خبرة مع يوتيوبرز",
-    "wcm.feat4Desc": "أفهم سير عمل القنوات وخطافات الاستبقاء وعلم نفس الجمهور.",
-
-    // Portfolio
-    "portfolio.title": "أعمال مختارة",
-    "portfolio.subtitle": "معرض مختار من الصور المصغرة المُحسَّنة للنقر عبر مختلف التخصصات.",
-    "portfolio.rateBtn": "تقييم الصور",
-    "portfolio.imgAlt": "معرض أعمال",
-
-    // Case Studies
-    "showcase.title": "قصص نجاح صناع محتوى",
-    "showcase.subtitle": "اكتشف كيف غيّرت الصور المصغرة المخصصة هذه القنوات وأطلقت نموها بشكل صاروخي.",
-    "showcase.viewCase": "عرض دراسة الحالة",
-    "showcase.youtube": "انتقال إلى قناة اليوتيوب",
-
-    // About
-    "about.title": "مصمم متخصص في يوتيوب",
-    "about.badge": "من أنا",
-    "about.designer": "مصمم صور مصغرة",
+    // Urgency
+    "urgency.day": "يوم",
+    "urgency.hour": "ساعة",
+    "urgency.minute": "دقيقة",
+    "urgency.second": "ثانية",
 
     // Before/After
     "ba.badge": "مقارنة احترافية",
@@ -80,44 +50,17 @@ const translations: Record<Lang, Record<string, string>> = {
     "ba.before": "قبل",
     "ba.after": "بعد",
 
-    // Pricing
-    "pricing.title": "اختر خطتك",
-    "pricing.popular": "الأكثر طلباً",
+    // Showcase
+    "showcase.viewCase": "عرض دراسة الحالة",
+    "showcase.youtube": "انتقال إلى قناة اليوتيوب",
 
-    // Contact
-    "contact.title": "ابدأ طلبك",
-    "contact.subtitle": "املأ النموذج أدناه أو راسلني مباشرة على إنستغرام للبدء.",
-    "contact.name": "الاسم",
-    "contact.email": "البريد الإلكتروني",
-    "contact.package": "الباقة المطلوبة",
-    "contact.details": "تفاصيل المشروع",
-    "contact.submit": "إرسال الرسالة",
-    "contact.sending": "جارٍ الإرسال...",
-    "contact.directTitle": "تفضل التواصل المباشر؟",
-    "contact.directDesc": "أرسل لي رسالة مباشرة على إنستغرام للرد الأسرع.",
-    "contact.instagram": "اطلب عبر إنستغرام",
-    "contact.whatsapp": "اطلب عبر واتساب",
-    "contact.whatsappFloat": "تواصل عبر واتساب",
+    // Portfolio
+    "portfolio.title": "أعمال مختارة",
+    "portfolio.subtitle": "معرض مختار من الصور المصغرة المُحسَّنة للنقر عبر مختلف التخصصات.",
+    "portfolio.rateBtn": "تقييم الصور",
+    "portfolio.all": "الكل",
 
-    // Offer
-    "offer.limited": "عرض محدود الوقت",
-    "offer.discount": "على أول طلب",
-    "offer.activate": "تفعيل الخصم 20% الآن",
-    "offer.activated": "تم تفعيل الخصم بنجاح ✓",
-    "offer.useNow": "استخدم العرض الآن",
-    "offer.day": "يوم",
-    "offer.hour": "ساعة",
-    "offer.minute": "دقيقة",
-    "offer.second": "ثانية",
-
-    // Final CTA
-    "finalCta.headline": "مستعد للانتشار الواسع؟",
-    "finalCta.cta": "اطلب صورتك المصغرة الآن",
-
-    // Urgency
-    "urgency.title": "الأماكن تنفذ بسرعة!",
-
-    // Rating
+    // Rating Modal
     "rating.title": "مرحباً بك في تقييم الصور",
     "rating.namePrompt": "يرجى إدخال اسمك قبل البدء بالتقييم",
     "rating.namePlaceholder": "أدخل اسمك هنا...",
@@ -128,7 +71,44 @@ const translations: Record<Lang, Record<string, string>> = {
     "rating.question": "ما تقييمك لهذه الصورة؟",
     "rating.confirm": "تأكيد التقييم",
     "rating.submitting": "جاري الإرسال...",
-    "rating.done": "الانتهاء من التقييم",
+    "rating.done": "تم تقييم جميع الصور!",
+
+    // Why Choose Me
+    "wcm.badge": "لماذا أنا",
+
+    // How It Works
+    "hiw.badge": "العملية بسيطة",
+    "hiw.step": "الخطوة",
+
+    // About
+    "about.badge": "من أنا",
+    "about.designer": "مصمم صور مصغرة",
+    "about.skillsLabel": "المهارات والخبرات",
+
+    // Special Offer
+    "offer.limited": "عرض محدود الوقت",
+    "offer.discount": "على أول طلب",
+    "offer.code": "كود الخصم",
+    "offer.activate": "تفعيل الخصم 20% الآن",
+    "offer.activated": "تم تفعيل الخصم بنجاح ✓",
+    "offer.useNow": "استخدم العرض الآن",
+
+    // Sticky buttons
+    "sticky.whatsapp": "تواصل عبر واتساب",
+    "sticky.orderNow": "اطلب الآن",
+
+    // Contact
+    "contact.name": "الاسم",
+    "contact.email": "البريد الإلكتروني",
+    "contact.package": "الباقة المطلوبة",
+    "contact.selectPkg": "اختر باقة...",
+    "contact.details": "تفاصيل المشروع",
+    "contact.submit": "إرسال الرسالة",
+    "contact.sending": "جارٍ الإرسال...",
+    "contact.directTitle": "تفضل التواصل المباشر؟",
+    "contact.directDesc": "أرسل لي رسالة مباشرة على إنستغرام للرد الأسرع.",
+    "contact.instagram": "اطلب عبر إنستغرام",
+    "contact.whatsapp": "اطلب عبر واتساب",
 
     // Footer
     "footer.rights": "جميع الحقوق محفوظة.",
@@ -136,26 +116,19 @@ const translations: Record<Lang, Record<string, string>> = {
     "footer.portfolio": "معرض الأعمال",
     "footer.order": "اطلب الآن",
 
-    // CaseStudy page
-    "caseStudy.notFound": "قصة النجاح غير موجودة",
-    "caseStudy.back": "العودة للرئيسية",
-    "caseStudy.backShowcase": "العودة لقصص النجاح",
-    "caseStudy.fullStory": "القصة الكاملة",
-    "caseStudy.getResults": "احصل على نتائج مماثلة",
-
-    // CTR
-    "ctr.title": "كيف تعمل الصورة المصغرة المحسّنة؟",
-    "ctr.subtitle": "العلم وراء معدل النقر المرتفع",
-
     // Lightbox
     "lightbox.colors": "الألوان",
     "lightbox.copied": "✓ تم النسخ!",
     "lightbox.orderSimilar": "اطلب صورة مماثلة الآن",
-    "lightbox.orderSimilarShort": "اطلب صورة مماثلة",
+    "lightbox.download": "تحميل بجودة عالية",
 
-    // Sticky
-    "sticky.whatsapp": "تواصل عبر واتساب",
-    "sticky.orderNow": "اطلب الآن",
+    // Case Study page
+    "caseStudy.back": "العودة للرئيسية",
+    "caseStudy.notFound": "قصة النجاح غير موجودة",
+    "caseStudy.fullStory": "القصة الكاملة",
+    "caseStudy.getResults": "احصل على نتائج مماثلة",
+    "caseStudy.viewYoutube": "زيارة القناة على يوتيوب",
+    "caseStudy.contactNow": "تواصل معي الآن",
   },
 
   en: {
@@ -167,13 +140,7 @@ const translations: Record<Lang, Record<string, string>> = {
     "nav.admin": "Admin",
     "nav.order": "Order Now",
 
-    // Hero defaults
-    "hero.badge": "Available for new projects",
-    "hero.headline": "Your thumbnail is the reason they click.",
-    "hero.subheadline": "I design professional, high-CTR thumbnails that stop the scroll, grab attention, and significantly boost your channel views.",
-    "hero.ctaPrimary": "Get Your Thumbnail",
-    "hero.ctaSecondary": "View My Work",
-    "hero.trustText": "Trusted by 50+ YouTubers",
+    // Hero
     "hero.instagram": "Follow me on Instagram",
 
     // Stats
@@ -182,44 +149,19 @@ const translations: Record<Lang, Record<string, string>> = {
     "stats.delivery": "Hours Avg. Delivery",
     "stats.clients": "Happy Clients",
 
-    // How it works
-    "hiw.title": "How We Work Together",
-    "hiw.subtitle": "Three simple steps between you and a thumbnail that doubles your views",
-    "hiw.badge": "Simple Process",
-    "hiw.step1Title": "Send Your Details",
-    "hiw.step1Desc": "Tell me about your channel, video topic, and target audience. The more details, the better the design.",
-    "hiw.step2Title": "Design & Revise",
-    "hiw.step2Desc": "I design a professional thumbnail and send it for review. You can request revisions based on your package.",
-    "hiw.step3Title": "Receive Your Files",
-    "hiw.step3Desc": "After your approval, high-quality files are delivered ready to upload within 24-48 hours max.",
+    // Pricing
+    "pricing.title": "Service Packages",
+    "pricing.subtitle": "Choose the package that fits your channel. All packages deliver high-quality, click-optimized designs.",
+    "pricing.popular": "Most Popular",
+    "pricing.bestFor": "Best choice for professionals",
+    "pricing.perImage": "/per image",
+    "pricing.choose": "Choose",
 
-    // Why choose me
-    "wcm.title": "Why Choose Me?",
-    "wcm.feat1Title": "Fast Delivery",
-    "wcm.feat1Desc": "Never miss your upload schedule. Most drafts are delivered within 24-48 hours.",
-    "wcm.feat2Title": "CTR Focused",
-    "wcm.feat2Desc": "Decisions based on YouTube analytics and visual hierarchy principles, not guesswork.",
-    "wcm.feat3Title": "Unique Style",
-    "wcm.feat3Desc": "Custom elements, advanced color gradients, and composition that sets you apart.",
-    "wcm.feat4Title": "YouTuber Experience",
-    "wcm.feat4Desc": "I understand channel workflows, retention hooks, and audience psychology.",
-
-    // Portfolio
-    "portfolio.title": "Selected Works",
-    "portfolio.subtitle": "A curated gallery of click-optimized thumbnails across various niches.",
-    "portfolio.rateBtn": "Rate Images",
-    "portfolio.imgAlt": "Portfolio item",
-
-    // Case Studies
-    "showcase.title": "Creator Success Stories",
-    "showcase.subtitle": "Discover how custom thumbnails transformed these channels and launched their growth.",
-    "showcase.viewCase": "View Case Study",
-    "showcase.youtube": "Visit YouTube Channel",
-
-    // About
-    "about.title": "YouTube Design Specialist",
-    "about.badge": "About Me",
-    "about.designer": "Thumbnail Designer",
+    // Urgency
+    "urgency.day": "Day",
+    "urgency.hour": "Hour",
+    "urgency.minute": "Min",
+    "urgency.second": "Sec",
 
     // Before/After
     "ba.badge": "Professional Comparison",
@@ -228,44 +170,17 @@ const translations: Record<Lang, Record<string, string>> = {
     "ba.before": "Before",
     "ba.after": "After",
 
-    // Pricing
-    "pricing.title": "Choose Your Plan",
-    "pricing.popular": "Most Popular",
+    // Showcase
+    "showcase.viewCase": "View Case Study",
+    "showcase.youtube": "Visit YouTube Channel",
 
-    // Contact
-    "contact.title": "Start Your Order",
-    "contact.subtitle": "Fill out the form below or message me directly on Instagram to get started.",
-    "contact.name": "Name",
-    "contact.email": "Email",
-    "contact.package": "Package",
-    "contact.details": "Project Details",
-    "contact.submit": "Send Message",
-    "contact.sending": "Sending...",
-    "contact.directTitle": "Prefer Direct Contact?",
-    "contact.directDesc": "Send me a direct message on Instagram for the fastest response.",
-    "contact.instagram": "Order via Instagram",
-    "contact.whatsapp": "Order via WhatsApp",
-    "contact.whatsappFloat": "Chat on WhatsApp",
+    // Portfolio
+    "portfolio.title": "Selected Works",
+    "portfolio.subtitle": "A curated gallery of click-optimized thumbnails across various niches.",
+    "portfolio.rateBtn": "Rate Images",
+    "portfolio.all": "All",
 
-    // Offer
-    "offer.limited": "Limited Time Offer",
-    "offer.discount": "on your first order",
-    "offer.activate": "Activate 20% Discount Now",
-    "offer.activated": "Discount Activated ✓",
-    "offer.useNow": "Use Offer Now",
-    "offer.day": "Day",
-    "offer.hour": "Hour",
-    "offer.minute": "Min",
-    "offer.second": "Sec",
-
-    // Final CTA
-    "finalCta.headline": "Ready to Go Viral?",
-    "finalCta.cta": "Get Your Thumbnail Now",
-
-    // Urgency
-    "urgency.title": "Spots Filling Up Fast!",
-
-    // Rating
+    // Rating Modal
     "rating.title": "Welcome to Image Rating",
     "rating.namePrompt": "Please enter your name before starting",
     "rating.namePlaceholder": "Enter your name...",
@@ -276,7 +191,44 @@ const translations: Record<Lang, Record<string, string>> = {
     "rating.question": "How do you rate this image?",
     "rating.confirm": "Confirm Rating",
     "rating.submitting": "Submitting...",
-    "rating.done": "Finish Rating",
+    "rating.done": "All images rated!",
+
+    // Why Choose Me
+    "wcm.badge": "Why Me",
+
+    // How It Works
+    "hiw.badge": "Simple Process",
+    "hiw.step": "Step",
+
+    // About
+    "about.badge": "About Me",
+    "about.designer": "Thumbnail Designer",
+    "about.skillsLabel": "Skills & Expertise",
+
+    // Special Offer
+    "offer.limited": "Limited Time Offer",
+    "offer.discount": "on your first order",
+    "offer.code": "Discount Code",
+    "offer.activate": "Activate 20% Discount Now",
+    "offer.activated": "Discount Activated ✓",
+    "offer.useNow": "Use Offer Now",
+
+    // Sticky buttons
+    "sticky.whatsapp": "Chat on WhatsApp",
+    "sticky.orderNow": "Order Now",
+
+    // Contact
+    "contact.name": "Name",
+    "contact.email": "Email",
+    "contact.package": "Package",
+    "contact.selectPkg": "Select a package...",
+    "contact.details": "Project Details",
+    "contact.submit": "Send Message",
+    "contact.sending": "Sending...",
+    "contact.directTitle": "Prefer Direct Contact?",
+    "contact.directDesc": "Send me a direct message on Instagram for the fastest response.",
+    "contact.instagram": "Order via Instagram",
+    "contact.whatsapp": "Order via WhatsApp",
 
     // Footer
     "footer.rights": "All rights reserved.",
@@ -284,26 +236,19 @@ const translations: Record<Lang, Record<string, string>> = {
     "footer.portfolio": "Portfolio",
     "footer.order": "Order Now",
 
-    // CaseStudy page
-    "caseStudy.notFound": "Case study not found",
-    "caseStudy.back": "Back to Home",
-    "caseStudy.backShowcase": "Back to Success Stories",
-    "caseStudy.fullStory": "Full Story",
-    "caseStudy.getResults": "Get Similar Results",
-
-    // CTR
-    "ctr.title": "How Optimized Thumbnails Work",
-    "ctr.subtitle": "The science behind high click-through rates",
-
     // Lightbox
     "lightbox.colors": "Colors",
     "lightbox.copied": "✓ Copied!",
     "lightbox.orderSimilar": "Order Similar Image Now",
-    "lightbox.orderSimilarShort": "Order Similar",
+    "lightbox.download": "Download High Quality",
 
-    // Sticky
-    "sticky.whatsapp": "Chat on WhatsApp",
-    "sticky.orderNow": "Order Now",
+    // Case Study page
+    "caseStudy.back": "Back to Home",
+    "caseStudy.notFound": "Case study not found",
+    "caseStudy.fullStory": "Full Story",
+    "caseStudy.getResults": "Get Similar Results",
+    "caseStudy.viewYoutube": "Visit YouTube Channel",
+    "caseStudy.contactNow": "Contact Me Now",
   },
 };
 
@@ -312,12 +257,16 @@ const LanguageContext = createContext<LanguageContextType>({
   setLang: () => {},
   t: (key: string) => key,
   dir: "rtl",
+  isRTL: true,
 });
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(() => {
     const stored = localStorage.getItem("site_lang");
-    return (stored === "en" || stored === "ar") ? stored : "ar";
+    if (stored === "en" || stored === "ar") return stored;
+    // Auto-detect: if browser language starts with "ar", default to Arabic
+    const browserLang = navigator.language || "";
+    return browserLang.startsWith("ar") ? "ar" : "ar"; // Default to Arabic for this Arabic-first site
   });
 
   const setLang = (newLang: Lang) => {
@@ -329,15 +278,19 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     return translations[lang]?.[key] || translations["ar"]?.[key] || key;
   };
 
-  const dir = lang === "ar" ? "rtl" : "ltr";
+  const dir = lang === "ar" ? "rtl" as const : "ltr" as const;
+  const isRTL = lang === "ar";
 
   useEffect(() => {
     document.documentElement.dir = dir;
     document.documentElement.lang = lang;
-  }, [lang, dir]);
+    // Add class for CSS-level targeting
+    document.documentElement.classList.toggle("rtl", isRTL);
+    document.documentElement.classList.toggle("ltr", !isRTL);
+  }, [lang, dir, isRTL]);
 
   return (
-    <LanguageContext.Provider value={{ lang, setLang, t, dir }}>
+    <LanguageContext.Provider value={{ lang, setLang, t, dir, isRTL }}>
       {children}
     </LanguageContext.Provider>
   );

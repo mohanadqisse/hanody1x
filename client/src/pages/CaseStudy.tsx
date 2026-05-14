@@ -1,23 +1,26 @@
 import { useParams, Link } from "wouter";
 import { motion } from "framer-motion";
-import { ArrowRight, TrendingUp } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { caseStudies as defaultCaseStudies } from "@/lib/data";
-import { useSection } from "@/hooks/useContent";
+import { useLocalizedSection } from "@/hooks/useContent";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { caseStudiesEn } from "@/lib/i18n-defaults";
 
 const easeApple = "easeOut";
 
 export default function CaseStudy() {
   const { id } = useParams<{ id: string }>();
-  const allStudies = useSection("caseStudies", defaultCaseStudies) as typeof defaultCaseStudies;
+  const { lang, t } = useLanguage();
+  const allStudies = useLocalizedSection("caseStudies", defaultCaseStudies, caseStudiesEn, lang) as typeof defaultCaseStudies;
   const study = allStudies.find((c) => c.id === id);
 
   if (!study) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center text-center px-6 pt-32">
-        <h1 className="text-4xl font-black mb-4">قصة النجاح غير موجودة</h1>
+        <h1 className="text-4xl font-black mb-4">{t("caseStudy.notFound")}</h1>
         <Link href="/">
-          <Button className="rounded-full">العودة للرئيسية</Button>
+          <Button className="rounded-full">{t("caseStudy.back")}</Button>
         </Link>
       </div>
     );
@@ -34,7 +37,7 @@ export default function CaseStudy() {
           <Link href="/#showcase">
             <button className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8">
               <ArrowRight className="w-4 h-4" />
-              <span>العودة لقصص النجاح</span>
+              <span>{lang === "en" ? "Back to Success Stories" : "العودة لقصص النجاح"}</span>
             </button>
           </Link>
 
@@ -67,7 +70,7 @@ export default function CaseStudy() {
             </div>
 
             <div className="prose prose-invert max-w-none">
-              <h2 className="text-xl font-bold text-foreground mb-4">القصة الكاملة</h2>
+              <h2 className="text-xl font-bold text-foreground mb-4">{t("caseStudy.fullStory")}</h2>
               <p className="text-muted-foreground leading-relaxed text-lg">{study.story}</p>
             </div>
           </div>
@@ -75,7 +78,7 @@ export default function CaseStudy() {
           <div className="text-center">
             <Link href="/#order">
               <Button className="bg-primary hover:bg-primary/90 text-white rounded-full px-10 py-6 text-lg font-bold">
-                احصل على نتائج مماثلة
+                {t("caseStudy.getResults")}
               </Button>
             </Link>
           </div>

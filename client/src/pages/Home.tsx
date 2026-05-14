@@ -3,6 +3,8 @@ import { useEffect, useState, useRef } from "react";
 import { motion, useInView, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import { ParticleField } from "@/components/ParticleField";
 import { BeforeAfterSlider } from "@/components/BeforeAfterSlider";
+import { useLanguage } from "@/contexts/LanguageContext";
+import * as EN from "@/lib/i18n-defaults";
 import { Link } from "wouter";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -38,7 +40,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { caseStudies as defaultCaseStudies, portfolioItems } from "@/lib/data";
-import { useImages, useSection } from "@/hooks/useContent";
+import { useImages, useSection, useLocalizedSection } from "@/hooks/useContent";
 
 const easeApple = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
 const defaultViewport = { once: true, margin: "-100px" };
@@ -102,8 +104,9 @@ const defaultHero = {
 };
 
 function Hero() {
+  const { lang, t, isRTL } = useLanguage();
   const images = useImages();
-  const h = useSection("hero", defaultHero);
+  const h = useLocalizedSection("hero", defaultHero, EN.heroEn, lang);
   const headline = h.headline.split(" ");
   const { scrollY } = useScroll();
   const orbY1 = useTransform(scrollY, [0, 800], [0, 160]);
@@ -133,7 +136,7 @@ function Hero() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1, ease: easeApple }}
-            className="text-right"
+            className={isRTL ? "text-right" : "text-left"}
           >
             {/* Instagram Button - Mobile Only */}
             <motion.a
@@ -161,7 +164,7 @@ function Hero() {
                 <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
                 <line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
               </svg>
-              <span className="text-sm font-bold text-foreground group-hover:opacity-80 transition-opacity">تابعني على إنستجرام</span>
+              <span className="text-sm font-bold text-foreground group-hover:opacity-80 transition-opacity">{t("hero.instagram")}</span>
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-50 text-foreground group-hover:opacity-80 group-hover:-translate-x-1 transition-all duration-300">
                 <path d="m15 18-6-6 6-6"/>
               </svg>
@@ -172,7 +175,7 @@ function Hero() {
               <span className="text-sm font-semibold text-foreground/90">{h.badge}</span>
             </div>
             
-            <h1 className="text-5xl md:text-7xl lg:text-[5rem] font-black text-foreground leading-[1.1] tracking-tighter mb-6 flex flex-wrap gap-x-4 gap-y-2 justify-end dir-rtl">
+            <h1 className={`text-5xl md:text-7xl lg:text-[5rem] font-black text-foreground leading-[1.1] tracking-tighter mb-6 flex flex-wrap gap-x-4 gap-y-2 ${isRTL ? 'justify-end' : 'justify-start'}`}>
               {headline.map((word, i) => (
                 <motion.span
                   key={i}
@@ -199,7 +202,7 @@ function Hero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.5, ease: easeApple }}
-              className="flex flex-col sm:flex-row gap-4 mb-12 justify-end will-change-transform"
+              className={`flex flex-col sm:flex-row gap-4 mb-12 ${isRTL ? 'justify-end' : 'justify-start'} will-change-transform`}
             >
               <Button 
                 onClick={(e) => { addRipple(e); document.getElementById("order")?.scrollIntoView({ behavior: "smooth" }); }}
@@ -222,7 +225,7 @@ function Hero() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 1, delay: 0.8 }}
-              className="flex items-center gap-4 text-sm text-muted-foreground justify-end"
+              className={`flex items-center gap-4 text-sm text-muted-foreground ${isRTL ? 'justify-end' : 'justify-start'}`}
             >
               <span className="font-medium">{h.trustText}</span>
               <div className="flex items-center gap-1 text-yellow-500 drop-shadow-[0_0_5px_rgba(234,179,8,0.5)]">
@@ -268,8 +271,15 @@ const defaultStats = [
   { label: "عميل سعيد", value: "50", suffix: "+" },
 ];
 
+const defaultStatsEn = [
+  { label: "Views Generated", value: "100", suffix: "M+" },
+  { label: "Thumbnails Designed", value: "650", suffix: "+" },
+  { label: "Happy Clients", value: "50", suffix: "+" },
+];
+
 function Stats() {
-  const stats = useSection("stats", defaultStats);
+  const { lang } = useLanguage();
+  const stats = useLocalizedSection("stats", defaultStats, defaultStatsEn, lang);
 
   return (
     <section className="py-16 border-y border-border bg-foreground/[0.01] relative">
@@ -305,8 +315,9 @@ const defaultPackages = [
 ];
 
 function Pricing({ isDiscountActive }: { isDiscountActive?: boolean }) {
+  const { lang, t, isRTL } = useLanguage();
   const customPricing = useSection("pricing", {} as any);
-  const packagesRaw = useSection("packages", defaultPackages);
+  const packagesRaw = useLocalizedSection("packages", defaultPackages, EN.packagesEn, lang);
   
   const packages = packagesRaw.map((pkg: any) => {
     let price = pkg.price;
@@ -338,7 +349,7 @@ function Pricing({ isDiscountActive }: { isDiscountActive?: boolean }) {
             transition={{ duration: 0.7, ease: easeApple }}
             className="text-4xl md:text-6xl font-black mb-6 tracking-tighter"
           >
-            باقات الخدمة
+            {t("pricing.title")}
           </motion.h2>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
@@ -347,7 +358,7 @@ function Pricing({ isDiscountActive }: { isDiscountActive?: boolean }) {
             transition={{ duration: 0.7, delay: 0.1, ease: easeApple }}
             className="text-lg text-muted-foreground max-w-2xl mx-auto"
           >
-            اختر الباقة المناسبة لقناتك. جميع الباقات تقدم تصاميم عالية الجودة ومُحسَّنة للنقر.
+            {t("pricing.subtitle")}
           </motion.p>
         </div>
 
@@ -371,7 +382,7 @@ function Pricing({ isDiscountActive }: { isDiscountActive?: boolean }) {
               {pkg.popular && (
                 <div className="absolute -top-5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-5 py-1.5 rounded-full bg-gradient-to-r from-primary to-secondary text-white text-xs font-black tracking-wider whitespace-nowrap shadow-[0_0_25px_rgba(59,130,246,0.6)] z-30">
                   <Sparkles size={12} className="fill-white" />
-                  الأكثر طلباً
+                  {t("pricing.popular")}
                   <Sparkles size={12} className="fill-white" />
                 </div>
               )}
@@ -385,19 +396,19 @@ function Pricing({ isDiscountActive }: { isDiscountActive?: boolean }) {
                 {/* Content */}
                 <div className="relative z-10 p-8 flex flex-col h-full w-full">
                   <div className="flex flex-col h-full">
-                    <div className="text-right mb-2">
+                    <div className={`${isRTL ? 'text-right' : 'text-left'} mb-2`}>
                       <h3 className="text-2xl font-bold tracking-tight text-white">{pkg.name}</h3>
-                      {pkg.popular && <p className="text-xs text-blue-200 font-semibold mt-0.5">الخيار الأمثل للمحترفين</p>}
+                      {pkg.popular && <p className="text-xs text-blue-200 font-semibold mt-0.5">{t("pricing.bestFor")}</p>}
                     </div>
 
-                    <div className="flex flex-col items-end gap-1 mb-8">
+                    <div className={`flex flex-col ${isRTL ? 'items-end' : 'items-start'} gap-1 mb-8`}>
                       {isDiscountActive && (
                         <span className="text-xl text-white/50 line-through decoration-red-400/70 font-semibold mb-[-4px]">
                           ${pkg.price}
                         </span>
                       )}
-                      <div className="flex items-baseline gap-1 justify-end">
-                        <span className="text-sm font-medium text-white/70">/لكل صورة</span>
+                      <div className={`flex items-baseline gap-1 ${isRTL ? 'justify-end' : 'justify-start'}`}>
+                        <span className="text-sm font-medium text-white/70">{t("pricing.perImage")}</span>
                         <span className="text-5xl font-black text-white drop-shadow-lg">
                           ${isDiscountActive ? (parseFloat(pkg.price) * 0.8).toFixed(0) : pkg.price}
                         </span>
@@ -406,7 +417,7 @@ function Pricing({ isDiscountActive }: { isDiscountActive?: boolean }) {
 
                     <ul className="space-y-4 mb-10 flex-grow">
                       {pkg.features.map((feat: string) => (
-                        <li key={feat} className="flex items-center gap-3 text-sm justify-end">
+                        <li key={feat} className={`flex items-center gap-3 text-sm ${isRTL ? 'justify-end' : 'justify-start flex-row-reverse'}`}>
                           <span className="font-medium text-white/90">{feat}</span>
                           <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 bg-white/20">
                             <CheckCircle2 size={14} className="text-white" />
@@ -423,8 +434,8 @@ function Pricing({ isDiscountActive }: { isDiscountActive?: boolean }) {
                           : "bg-white/20 backdrop-blur-sm text-white border border-white/30 hover:bg-white/30"
                       }`}
                     >
-                      {pkg.popular && <Sparkles size={16} className="ml-2 inline" />}
-                      اختر {pkg.name}
+                      {pkg.popular && <Sparkles size={16} className={`${isRTL ? 'ml-2' : 'mr-2'} inline`} />}
+                      {t("pricing.choose")} {pkg.name}
                     </Button>
                   </div>
                 </div>
@@ -446,14 +457,17 @@ const defaultCtr = {
 };
 
 function CTRSection() {
-  const ctr = useSection("ctr", defaultCtr);
-  const principles = [
+  const { lang, isRTL } = useLanguage();
+  const ctr = useLocalizedSection("ctr", defaultCtr, EN.ctrEn, lang);
+  const principlesAr = [
     { icon: <Palette size={24} />, title: "ألوان عالية التباين", desc: "ألوان تبرز على يوتيوب في الوضع الليلي والنهاري." },
     { icon: <Smile size={24} />, title: "تعبيرات عاطفية", desc: "وجوه تنقل مشاعر الفيديو فوراً للمشاهد." },
     { icon: <Eye size={24} />, title: "تكوين يثير الفضول", desc: "تخطيطات بصرية تخلق حلقة مفتوحة في الذهن." },
     { icon: <Target size={24} />, title: "نقطة تركيز واضحة", desc: "لا فوضى. موضوع واحد واضح يشد العين." },
     { icon: <Zap size={24} />, title: "يُوقف التمرير", desc: "أنماط بصرية مدروسة تجعل المشاهد يتوقف للنظر." }
   ];
+  const principlesEn = EN.ctrPrinciplesEn.map((p, i) => ({ ...p, icon: principlesAr[i].icon }));
+  const principles = lang === "ar" ? principlesAr : principlesEn;
 
   return (
     <section className="py-32 bg-background relative overflow-hidden border-t border-border">
@@ -467,7 +481,7 @@ function CTRSection() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={defaultViewport}
               transition={{ duration: 0.7, ease: easeApple }}
-              className="text-4xl md:text-6xl font-black mb-8 leading-[1.1] text-right tracking-tighter"
+              className={`text-4xl md:text-6xl font-black mb-8 leading-[1.1] ${isRTL ? 'text-right' : 'text-left'} tracking-tighter`}
             >
               {ctr.title}
             </motion.h2>
@@ -476,7 +490,7 @@ function CTRSection() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={defaultViewport}
               transition={{ duration: 0.7, delay: 0.1, ease: easeApple }}
-              className="text-lg text-gray-400 mb-10 text-right leading-relaxed"
+              className={`text-lg text-gray-400 mb-10 ${isRTL ? 'text-right' : 'text-left'} leading-relaxed`}
             >
               {ctr.subtitle}
             </motion.p>
@@ -492,7 +506,7 @@ function CTRSection() {
               <div className="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center text-primary shadow-[0_0_15px_rgba(59,130,246,0.3)]">
                 <TrendingUp size={28} />
               </div>
-              <div className="text-right z-10">
+              <div className={`${isRTL ? 'text-right' : 'text-left'} z-10`}>
                 <p className="text-foreground font-bold text-lg mb-1">{ctr.highlight}</p>
                 <p className="text-sm text-muted-foreground">{ctr.highlightDesc}</p>
               </div>
@@ -513,7 +527,7 @@ function CTRSection() {
                 <div className="w-14 h-14 rounded-2xl bg-card border border-border flex items-center justify-center text-foreground group-hover:scale-110 group-hover:bg-primary/10 group-hover:text-primary transition-all duration-500 shrink-0 shadow-lg">
                   {item.icon}
                 </div>
-                <div className="text-right flex-1">
+                <div className={`${isRTL ? 'text-right' : 'text-left'} flex-1`}>
                   <h4 className="text-xl font-bold text-foreground mb-2 tracking-tight">{item.title}</h4>
                   <p className="text-gray-400 leading-relaxed">{item.desc}</p>
                 </div>
@@ -529,7 +543,8 @@ function CTRSection() {
 const defaultUrgency = { text: "3 أماكن فقط متبقية هذا الأسبوع" };
 
 function Urgency() {
-  const urgency = useSection("urgency", defaultUrgency);
+  const { lang, t } = useLanguage();
+  const urgency = useLocalizedSection("urgency", defaultUrgency, EN.urgencyEn, lang);
   const [timeLeft, setTimeLeft] = useState({ d: 5, h: 23, m: 59, s: 59 });
 
   useEffect(() => {
@@ -571,22 +586,22 @@ function Urgency() {
           <div className="flex items-center gap-6 text-3xl md:text-4xl font-mono font-black text-foreground drop-shadow-md">
             <div className="flex flex-col items-center">
               <span>{String(timeLeft.d).padStart(2, '0')}</span>
-              <span className="text-xs text-muted-foreground uppercase tracking-wider font-sans mt-1">يوم</span>
+              <span className="text-xs text-muted-foreground uppercase tracking-wider font-sans mt-1">{t("urgency.day")}</span>
             </div>
             <span className="text-primary/50 mb-4">:</span>
             <div className="flex flex-col items-center">
               <span>{String(timeLeft.h).padStart(2, '0')}</span>
-              <span className="text-xs text-muted-foreground uppercase tracking-wider font-sans mt-1">ساعة</span>
+              <span className="text-xs text-muted-foreground uppercase tracking-wider font-sans mt-1">{t("urgency.hour")}</span>
             </div>
             <span className="text-primary/50 mb-4">:</span>
             <div className="flex flex-col items-center">
               <span>{String(timeLeft.m).padStart(2, '0')}</span>
-              <span className="text-xs text-muted-foreground uppercase tracking-wider font-sans mt-1">دقيقة</span>
+              <span className="text-xs text-muted-foreground uppercase tracking-wider font-sans mt-1">{t("urgency.minute")}</span>
             </div>
             <span className="text-primary/50 mb-4">:</span>
             <div className="flex flex-col items-center text-primary">
               <span>{String(timeLeft.s).padStart(2, '0')}</span>
-              <span className="text-xs text-muted-foreground uppercase tracking-wider font-sans mt-1">ثانية</span>
+              <span className="text-xs text-muted-foreground uppercase tracking-wider font-sans mt-1">{t("urgency.second")}</span>
             </div>
           </div>
         </div>
@@ -596,7 +611,9 @@ function Urgency() {
 }
 
 function ClientShowcase() {
+  const { lang, t, isRTL } = useLanguage();
   const brand = useSection("brand", { youtubeChannelUrl: "" } as any);
+  const caseStudiesData = useLocalizedSection("caseStudies", defaultCaseStudies, EN.caseStudiesEn, lang) as typeof defaultCaseStudies;
   return (
     <section id="showcase" className="py-32 bg-background relative">
       <div className="container mx-auto px-6">
@@ -608,7 +625,7 @@ function ClientShowcase() {
             transition={{ duration: 0.7, ease: easeApple }}
             className="text-4xl md:text-6xl font-black mb-6 tracking-tighter"
           >
-            قصص نجاح صناع محتوى
+            {t("showcase.viewCase") === "View Case Study" ? "Creator Success Stories" : "قصص نجاح صناع محتوى"}
           </motion.h2>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
@@ -617,12 +634,12 @@ function ClientShowcase() {
             transition={{ duration: 0.7, delay: 0.1, ease: easeApple }}
             className="text-lg text-muted-foreground max-w-2xl mx-auto"
           >
-            اكتشف كيف غيّرت الصور المصغرة المخصصة هذه القنوات وأطلقت نموها بشكل صاروخي.
+            {lang === "en" ? "Discover how custom thumbnails transformed these channels and launched their growth." : "اكتشف كيف غيّرت الصور المصغرة المخصصة هذه القنوات وأطلقت نموها بشكل صاروخي."}
           </motion.p>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {(useSection("caseStudies", defaultCaseStudies) as typeof defaultCaseStudies).map((client, idx) => (
+          {caseStudiesData.map((client, idx) => (
             <motion.div
               key={client.id}
               initial={{ opacity: 0, y: 30 }}
@@ -633,7 +650,7 @@ function ClientShowcase() {
             >
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               
-              <div className="flex items-center gap-5 mb-6 flex-row-reverse">
+              <div className={`flex items-center gap-5 mb-6 ${isRTL ? 'flex-row-reverse' : ''}`}>
                 <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-primary to-secondary flex items-center justify-center text-white font-bold text-xl group-hover:scale-110 transition-transform duration-500 group-hover:shadow-[0_0_20px_rgba(59,130,246,0.5)] overflow-hidden">
                   {(client as any).avatarImage ? (
                     <img src={(client as any).avatarImage} alt={client.name} className="w-full h-full object-cover" />
@@ -641,12 +658,12 @@ function ClientShowcase() {
                     client.avatarInitials
                   )}
                 </div>
-                <div className="text-right">
+                <div className={isRTL ? "text-right" : "text-left"}>
                   <h4 className="font-bold text-foreground text-xl tracking-tight">{client.name}</h4>
                   <span className="text-xs text-primary bg-primary/10 px-3 py-1 rounded-full font-semibold mt-1 inline-block">{client.niche}</span>
                 </div>
               </div>
-              <p className="text-gray-400 text-base mb-8 h-12 text-right leading-relaxed">{client.shortBio}</p>
+              <p className={`text-gray-400 text-base mb-8 h-12 ${isRTL ? 'text-right' : 'text-left'} leading-relaxed`}>{client.shortBio}</p>
               
               <div className="flex items-center justify-between">
                 <Link 
@@ -654,7 +671,7 @@ function ClientShowcase() {
                   className="inline-flex items-center gap-2 text-sm font-bold text-foreground group-hover:text-primary transition-colors"
                 >
                   <ArrowLeft size={18} className="group-hover:-translate-x-2 transition-transform duration-300" />
-                  عرض دراسة الحالة
+                  {t("showcase.viewCase")}
                 </Link>
                 {((client as any).youtubeUrl || brand.youtubeChannelUrl) && (
                   <a
@@ -667,7 +684,7 @@ function ClientShowcase() {
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" className="shrink-0">
                       <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
                     </svg>
-                    انتقال إلى قناة اليوتيوب
+                    {t("showcase.youtube")}
                   </a>
                 )}
               </div>
@@ -729,6 +746,7 @@ const getVisitorId = () => {
 };
 
 function RatingModal({ isOpen, onClose, images, items }: { isOpen: boolean, onClose: () => void, images: any, items: any[] }) {
+  const { lang, t } = useLanguage();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedRating, setSelectedRating] = useState(0);
@@ -762,7 +780,7 @@ function RatingModal({ isOpen, onClose, images, items }: { isOpen: boolean, onCl
         setSelectedRating(0);
         setHoveredStar(0);
       } else {
-        toast({ title: "شكراً لتقييمك جميع الصور!", variant: "default" });
+        toast({ title: lang === "en" ? "Thank you for rating all images!" : "شكراً لتقييمك جميع الصور!", variant: "default" });
         onClose();
         setCurrentIndex(0);
         setSelectedRating(0);
@@ -771,7 +789,7 @@ function RatingModal({ isOpen, onClose, images, items }: { isOpen: boolean, onCl
         setNameSubmitted(false);
       }
     } catch (err) {
-      toast({ title: "حدث خطأ أثناء التقييم", variant: "destructive" });
+      toast({ title: lang === "en" ? "An error occurred" : "حدث خطأ أثناء التقييم", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
@@ -815,13 +833,13 @@ function RatingModal({ isOpen, onClose, images, items }: { isOpen: boolean, onCl
               <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-2">
                 <Star size={32} className="text-primary fill-primary" />
               </div>
-              <h3 className="text-white font-bold text-xl text-center">مرحباً بك في تقييم الصور</h3>
-              <p className="text-white/60 text-sm text-center">يرجى إدخال اسمك قبل البدء بالتقييم</p>
+              <h3 className="text-white font-bold text-xl text-center">{t("rating.title")}</h3>
+              <p className="text-white/60 text-sm text-center">{t("rating.namePrompt")}</p>
               <input
                 type="text"
                 value={visitorName}
                 onChange={(e) => setVisitorName(e.target.value)}
-                placeholder="أدخل اسمك هنا..."
+                placeholder={t("rating.namePlaceholder")}
                 className="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-white/40 text-center text-lg focus:outline-none focus:border-primary/60 focus:ring-2 focus:ring-primary/20 transition-all"
                 dir="rtl"
                 onKeyDown={(e) => { if (e.key === 'Enter' && visitorName.trim()) setNameSubmitted(true); }}
@@ -832,14 +850,14 @@ function RatingModal({ isOpen, onClose, images, items }: { isOpen: boolean, onCl
                   disabled={!visitorName.trim()}
                   className="flex-1 rounded-xl py-3 bg-primary hover:bg-primary/90 text-white font-bold disabled:opacity-40"
                 >
-                  ابدأ التقييم
+                  {t("rating.start")}
                 </Button>
                 <Button 
                   variant="outline" 
                   onClick={handleClose}
                   className="rounded-xl border-white/20 text-white/80 hover:text-white hover:bg-white/10"
                 >
-                  إلغاء
+                  {t("rating.cancel")}
                 </Button>
               </div>
             </motion.div>
@@ -847,7 +865,7 @@ function RatingModal({ isOpen, onClose, images, items }: { isOpen: boolean, onCl
             /* Step 2: Rating UI */
             <>
               <div className="text-white/70 text-sm font-bold bg-white/10 px-4 py-1.5 rounded-full">
-                صورة {currentIndex + 1} من {items.length}
+                {t("rating.imageOf")} {currentIndex + 1} {t("rating.of")} {items.length}
               </div>
 
               <div className="w-full max-h-[55vh] flex justify-center items-center relative group">
@@ -859,7 +877,7 @@ function RatingModal({ isOpen, onClose, images, items }: { isOpen: boolean, onCl
               </div>
 
               <div className="flex flex-col items-center gap-4 bg-card/40 p-6 rounded-3xl border border-white/10 shadow-2xl w-full max-w-sm backdrop-blur-md">
-                <p className="text-white font-bold text-lg">ما تقييمك لهذه الصورة؟</p>
+                <p className="text-white font-bold text-lg">{t("rating.question")}</p>
                 <div className="flex items-center gap-2" dir="ltr">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
@@ -884,7 +902,7 @@ function RatingModal({ isOpen, onClose, images, items }: { isOpen: boolean, onCl
                     animate={{ opacity: 1, y: 0 }}
                     className="text-yellow-400 text-sm font-bold"
                   >
-                    تقييمك: {selectedRating} من 5 نجوم ⭐
+                    {lang === "en" ? `Your rating: ${selectedRating} of 5 stars ⭐` : `تقييمك: ${selectedRating} من 5 نجوم ⭐`}
                   </motion.p>
                 )}
                 
@@ -893,7 +911,7 @@ function RatingModal({ isOpen, onClose, images, items }: { isOpen: boolean, onCl
                   disabled={isSubmitting || !selectedRating}
                   className="w-full rounded-xl py-3 bg-primary hover:bg-primary/90 text-white font-bold disabled:opacity-40 shadow-lg shadow-primary/20"
                 >
-                  {isSubmitting ? "جاري الإرسال..." : "تأكيد التقييم"}
+                  {isSubmitting ? t("rating.submitting") : t("rating.confirm")}
                 </Button>
                 
                 <Button 
@@ -901,7 +919,7 @@ function RatingModal({ isOpen, onClose, images, items }: { isOpen: boolean, onCl
                   onClick={handleClose}
                   className="w-full rounded-xl border-white/20 text-white/80 hover:text-white hover:bg-white/10"
                 >
-                  الانتهاء من التقييم
+                  {t("rating.done")}
                 </Button>
               </div>
             </>
@@ -913,6 +931,7 @@ function RatingModal({ isOpen, onClose, images, items }: { isOpen: boolean, onCl
 }
 
 function PortfolioGrid() {
+  const { lang, t, isRTL } = useLanguage();
   const images = useImages();
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [extractedColors, setExtractedColors] = useState<string[]>([]);
@@ -939,9 +958,9 @@ function PortfolioGrid() {
   return (
     <section id="portfolio" className="py-32 bg-card/20 relative">
       <div className="container mx-auto px-6">
-        <div className="text-right mb-16">
-          <h2 className="text-4xl md:text-6xl font-black mb-6 tracking-tighter">أعمال مختارة</h2>
-          <p className="text-lg text-muted-foreground max-w-xl">معرض مختار من الصور المصغرة المُحسَّنة للنقر عبر مختلف التخصصات.</p>
+        <div className={`${isRTL ? 'text-right' : 'text-left'} mb-16`}>
+          <h2 className="text-4xl md:text-6xl font-black mb-6 tracking-tighter">{t("portfolio.title")}</h2>
+          <p className="text-lg text-muted-foreground max-w-xl">{t("portfolio.subtitle")}</p>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -1018,7 +1037,7 @@ function PortfolioGrid() {
                 transition={{ delay: 0.3, duration: 0.4 }}
                 className="hidden md:flex flex-col items-center gap-3 py-4"
               >
-                <span className="text-xs text-white/40 font-bold mb-1 tracking-wider">الألوان</span>
+                <span className="text-xs text-white/40 font-bold mb-1 tracking-wider">{t("lightbox.colors")}</span>
                 {extractedColors.length === 0 ? (
                   <div className="flex flex-col gap-3">
                     {[1,2,3,4,5].map(i => (
@@ -1042,7 +1061,7 @@ function PortfolioGrid() {
                           animate={{ opacity: 1, x: 0 }}
                           className="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-black/80 backdrop-blur-sm border border-white/20 text-white text-xs font-mono px-3 py-1.5 rounded-lg whitespace-nowrap shadow-xl z-50"
                         >
-                          {copiedColor === color ? "✓ تم النسخ!" : color.toUpperCase()}
+                          {copiedColor === color ? t("lightbox.copied") : color.toUpperCase()}
                         </motion.div>
                       )}
                     </div>
@@ -1054,7 +1073,7 @@ function PortfolioGrid() {
                   onClick={() => { closeLightbox(); setTimeout(() => document.getElementById("order")?.scrollIntoView({ behavior: "smooth" }), 300); }}
                   className="mt-4 px-4 py-3 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/90 hover:scale-105 transition-all duration-300 shadow-[0_0_20px_rgba(59,130,246,0.3)] whitespace-nowrap"
                 >
-                  اطلب صورة مماثلة الآن
+                  {t("lightbox.orderSimilar")}
                 </button>
               </motion.div>
 
@@ -1089,7 +1108,7 @@ function PortfolioGrid() {
                   onClick={() => { closeLightbox(); setTimeout(() => document.getElementById("order")?.scrollIntoView({ behavior: "smooth" }), 300); }}
                   className="px-4 py-2 rounded-xl bg-primary text-white text-xs font-bold"
                 >
-                  اطلب صورة مماثلة
+                  {lang === "en" ? "Order Similar" : "اطلب صورة مماثلة"}
                 </button>
               </div>
             </motion.div>
@@ -1114,7 +1133,8 @@ const defaultWhyChooseMe = {
 };
 
 function WhyChooseMe() {
-  const wcm = useSection("whyChooseMe", defaultWhyChooseMe);
+  const { lang } = useLanguage();
+  const wcm = useLocalizedSection("whyChooseMe", defaultWhyChooseMe, EN.whyChooseMeEn, lang);
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const features = [
     { icon: <Clock size={32} />, title: wcm.feat1Title, desc: wcm.feat1Desc },
@@ -1178,7 +1198,8 @@ const defaultHowItWorks = {
 };
 
 function HowItWorks() {
-  const hiw = useSection("howItWorks", defaultHowItWorks);
+  const { lang, t } = useLanguage();
+  const hiw = useLocalizedSection("howItWorks", defaultHowItWorks, EN.howItWorksEn, lang);
   const steps = [
     {
       num: "01",
@@ -1222,7 +1243,7 @@ function HowItWorks() {
         >
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card mb-6 border-white/10">
             <Sparkles size={14} className="text-primary" />
-            <span className="text-sm font-semibold text-foreground/80">العملية بسيطة</span>
+            <span className="text-sm font-semibold text-foreground/80">{t("hiw.badge")}</span>
           </div>
           <h2 className="text-4xl md:text-6xl font-black mb-6 tracking-tighter">{hiw.title}</h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">{hiw.subtitle}</p>
@@ -1276,12 +1297,13 @@ const defaultAbout = {
 };
 
 function About() {
-  const aboutRaw = useSection("about", defaultAbout);
+  const { lang, t, isRTL } = useLanguage();
+  const aboutRaw = useLocalizedSection("about", defaultAbout, EN.aboutEn, lang);
   const brand = useSection("brand", { logoLetter: "H", logoImage: "" } as any);
   const about = { ...aboutRaw, logoImage: brand.logoImage };
   const skills = (about.skills || "").split(",").map((s: string) => s.trim()).filter(Boolean);
   
-  const whatsappUrl = "https://wa.me/+962780691000?text=" + encodeURIComponent("مرحباً، أريد طلب صورة مصغرة لقناتي");
+  const whatsappUrl = "https://wa.me/+962780691000?text=" + encodeURIComponent(lang === "en" ? "Hello, I want to order a thumbnail" : "مرحباً، أريد طلب صورة مصغرة لقناتي");
 
   return (
     <section className="py-32 bg-card/20 relative overflow-hidden border-t border-border">
@@ -1307,8 +1329,8 @@ function About() {
                         "H"
                       )}
                     </div>
-                    <p className="text-foreground font-black text-2xl tracking-tighter">{brand.name || "مهند"}</p>
-                    <p className="text-primary text-sm font-semibold mt-1">مصمم صور مصغرة</p>
+                    <p className="text-foreground font-black text-2xl tracking-tighter">{brand.name || (lang === "en" ? "Muhannad" : "مهند")}</p>
+                    <p className="text-primary text-sm font-semibold mt-1">{t("about.designer")}</p>
                   </div>
                 </div>
               </div>
@@ -1361,11 +1383,11 @@ function About() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={defaultViewport}
             transition={{ duration: 0.8, ease: easeApple }}
-            className="text-right"
+            className={isRTL ? "text-right" : "text-left"}
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card mb-6 border-white/10">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-sm font-semibold text-foreground/80">من أنا</span>
+              <span className="text-sm font-semibold text-foreground/80">{t("about.badge")}</span>
             </div>
             <h2 className="text-4xl md:text-5xl font-black mb-6 tracking-tighter leading-[1.1]">
               {about.title}
@@ -1373,7 +1395,7 @@ function About() {
             <p className="text-gray-400 leading-relaxed text-lg mb-6 whitespace-pre-line">{(about.bio1 || '').replace(/<[^>]*>/g, '')}</p>
             <p className="text-gray-400 leading-relaxed mb-10">{about.bio2}</p>
             
-            <div className="flex flex-wrap gap-3 justify-end">
+            <div className={`flex flex-wrap gap-3 ${isRTL ? 'justify-end' : 'justify-start'}`}>
               {skills.map((skill, idx) => (
                 <motion.span
                   key={skill}
@@ -1407,7 +1429,8 @@ function SpecialOffer({
   isDiscountActive?: boolean;
   onActivateDiscount?: () => void;
 }) {
-  const offer = useSection("specialOffer", defaultSpecialOffer);
+  const { lang, t } = useLanguage();
+  const offer = useLocalizedSection("specialOffer", defaultSpecialOffer, EN.specialOfferEn, lang);
   const [seconds, setSeconds] = useState(() => {
     const stored = localStorage.getItem("offer_end");
     if (stored) {
@@ -1459,11 +1482,11 @@ function SpecialOffer({
             
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/30 text-primary text-sm font-bold mb-4">
               <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              عرض محدود الوقت
+              {t("offer.limited")}
             </div>
             
             <h2 className="text-4xl md:text-5xl font-black text-foreground mb-4 tracking-tighter">
-              خصم <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">{offer.discount}</span> على أول طلب
+              {lang === "en" ? <>{offer.discount} <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">OFF</span> {t("offer.discount")}</> : <>خصم <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">{offer.discount}</span> {t("offer.discount")}</>}
             </h2>
             <p className="text-gray-400 text-lg mb-8 max-w-xl mx-auto">
               {offer.description}
@@ -1478,11 +1501,11 @@ function SpecialOffer({
                   : "bg-primary text-white hover:bg-primary/90 hover:scale-105 shadow-[0_0_30px_rgba(59,130,246,0.5)] border-0"
               }`}
             >
-              {isDiscountActive ? "تم تفعيل الخصم بنجاح ✓" : "تفعيل الخصم 20% الآن"}
+              {isDiscountActive ? t("offer.activated") : t("offer.activate")}
             </button>
             
             <div className="flex flex-wrap items-center justify-center gap-1.5 md:gap-4 mb-8 md:mb-10 w-full max-w-full">
-              {[{ v: fmt(d), l: "يوم" }, { v: fmt(h), l: "ساعة" }, { v: fmt(m), l: "دقيقة" }, { v: fmt(s), l: "ثانية" }].map(({ v, l }, i) => (
+              {[{ v: fmt(d), l: t("urgency.day") }, { v: fmt(h), l: t("urgency.hour") }, { v: fmt(m), l: t("urgency.minute") }, { v: fmt(s), l: t("urgency.second") }].map(({ v, l }, i) => (
                 <div key={l} className="flex items-center gap-1.5 md:gap-4">
                   <div className="flex flex-col items-center">
                     <div className="text-lg md:text-3xl font-mono font-black text-foreground glass-card px-2.5 md:px-4 py-1 md:py-2 rounded-lg md:rounded-xl border border-border min-w-[2rem] md:min-w-[3rem] text-center">{v}</div>
@@ -1499,7 +1522,7 @@ function SpecialOffer({
               className="h-14 px-10 rounded-full bg-primary text-white text-lg font-black hover:scale-105 hover:-translate-y-1 hover:shadow-[0_10px_40px_rgba(59,130,246,0.35)] transition-all duration-300"
             >
               <Sparkles className="ml-2" size={20} />
-              استخدم العرض الآن
+              {t("offer.useNow")}
             </Button>
           </div>
         </motion.div>
@@ -1509,6 +1532,7 @@ function SpecialOffer({
 }
 
 function StickyOrderButton() {
+  const { lang, t } = useLanguage();
   const [visible, setVisible] = useState(false);
   const [bottomOffset, setBottomOffset] = useState(24);
 
@@ -1557,14 +1581,14 @@ function StickyOrderButton() {
             className="flex items-center gap-3 px-5 py-3.5 rounded-full bg-[#25D366] text-white font-bold text-sm shadow-[0_4px_30px_rgba(37,211,102,0.4)] hover:scale-105 hover:shadow-[0_4px_40px_rgba(37,211,102,0.6)] transition-all duration-300"
           >
             <MessageCircle size={20} fill="white" />
-            تواصل عبر واتساب
+            {t("sticky.whatsapp")}
           </a>
           <button
             onClick={() => document.getElementById("order")?.scrollIntoView({ behavior: "smooth" })}
             className="flex items-center gap-3 px-5 py-3.5 rounded-full bg-primary text-white font-bold text-sm shadow-[0_4px_30px_rgba(59,130,246,0.4)] hover:scale-105 hover:shadow-[0_4px_40px_rgba(59,130,246,0.6)] transition-all duration-300"
           >
             <Inbox size={18} />
-            اطلب الآن
+            {t("sticky.orderNow")}
           </button>
         </motion.div>
       )}
@@ -1585,7 +1609,8 @@ const defaultContact = {
 };
 
 function Contact({ isDiscountActive }: { isDiscountActive?: boolean }) {
-  const contact = useSection("contact", defaultContact);
+  const { lang, t, isRTL } = useLanguage();
+  const contact = useLocalizedSection("contact", defaultContact, EN.contactEn, lang);
   const customPricing = useSection("pricing", {} as any);
   const getPrice = (name: string, defaultP: string) => {
     let p = defaultP;
@@ -1617,15 +1642,15 @@ function Contact({ isDiscountActive }: { isDiscountActive?: boolean }) {
       });
       if (!res.ok) throw new Error("failed");
       toast({
-        title: "تم إرسال رسالتك بنجاح!",
-        description: "سأرد عليك خلال 24 ساعة.",
+        title: lang === "en" ? "Message sent successfully!" : "تم إرسال رسالتك بنجاح!",
+        description: lang === "en" ? "I'll respond within 24 hours." : "سأرد عليك خلال 24 ساعة.",
       });
       form.reset();
     } catch {
       toast({
         variant: "destructive",
-        title: "خطأ في الإرسال",
-        description: "يرجى المحاولة مجدداً أو التواصل عبر واتساب أو إنستغرام.",
+        title: lang === "en" ? "Sending failed" : "خطأ في الإرسال",
+        description: lang === "en" ? "Please try again or contact via WhatsApp or Instagram." : "يرجى المحاولة مجدداً أو التواصل عبر واتساب أو إنستغرام.",
       });
     } finally {
       setIsSubmitting(false);
@@ -1660,9 +1685,9 @@ function Contact({ isDiscountActive }: { isDiscountActive?: boolean }) {
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-gray-300 font-semibold">الاسم</FormLabel>
+                        <FormLabel className="text-gray-300 font-semibold">{t("contact.name")}</FormLabel>
                         <FormControl>
-                          <Input placeholder="اسمك الكامل" className="h-14 bg-background/50 border-border text-foreground text-right rounded-xl focus-visible:ring-primary focus-visible:border-primary transition-all" {...field} />
+                          <Input placeholder={lang === "en" ? "Your full name" : "اسمك الكامل"} className={`h-14 bg-background/50 border-border text-foreground rounded-xl focus-visible:ring-primary focus-visible:border-primary transition-all`} {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -1673,7 +1698,7 @@ function Contact({ isDiscountActive }: { isDiscountActive?: boolean }) {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-gray-300 font-semibold">البريد الإلكتروني</FormLabel>
+                        <FormLabel className="text-gray-300 font-semibold">{t("contact.email")}</FormLabel>
                         <FormControl>
                           <Input placeholder="example@email.com" className="h-14 bg-background/50 border-border text-foreground rounded-xl focus-visible:ring-primary focus-visible:border-primary transition-all" dir="ltr" {...field} />
                         </FormControl>
@@ -1688,18 +1713,18 @@ function Contact({ isDiscountActive }: { isDiscountActive?: boolean }) {
                   name="package"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-gray-300 font-semibold">الباقة المطلوبة</FormLabel>
+                      <FormLabel className="text-gray-300 font-semibold">{t("contact.package")}</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger className="h-14 bg-background/50 border-border text-foreground rounded-xl focus-visible:ring-primary focus-visible:border-primary transition-all">
-                            <SelectValue placeholder="اختر باقة" />
+                            <SelectValue placeholder={t("contact.selectPkg")} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent className="bg-card border-border rounded-xl">
-                          <SelectItem value="basic">أساسي (${getPrice("أساسي", "29")})</SelectItem>
-                          <SelectItem value="pro">احترافي (${getPrice("احترافي", "59")})</SelectItem>
-                          <SelectItem value="elite">النخبة (${getPrice("النخبة", "99")})</SelectItem>
-                          <SelectItem value="custom">احتياج مخصص</SelectItem>
+                          <SelectItem value="basic">{lang === "en" ? "Basic" : "أساسي"} (${getPrice("أساسي", "29")})</SelectItem>
+                          <SelectItem value="pro">{lang === "en" ? "Pro" : "احترافي"} (${getPrice("احترافي", "59")})</SelectItem>
+                          <SelectItem value="elite">{lang === "en" ? "Elite" : "النخبة"} (${getPrice("النخبة", "99")})</SelectItem>
+                          <SelectItem value="custom">{lang === "en" ? "Custom" : "احتياج مخصص"}</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -1712,11 +1737,11 @@ function Contact({ isDiscountActive }: { isDiscountActive?: boolean }) {
                   name="details"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-gray-300 font-semibold">تفاصيل المشروع</FormLabel>
+                      <FormLabel className="text-gray-300 font-semibold">{t("contact.details")}</FormLabel>
                       <FormControl>
                         <Textarea 
-                          placeholder="أخبرني عن قناتك وموضوع الفيديو وأي أفكار لديك..." 
-                          className="bg-background/50 border-border min-h-[150px] text-foreground resize-none text-right rounded-xl focus-visible:ring-primary focus-visible:border-primary transition-all p-4" 
+                          placeholder={lang === "en" ? "Tell me about your channel, video topic, and any ideas..." : "أخبرني عن قناتك وموضوع الفيديو وأي أفكار لديك..."} 
+                          className="bg-background/50 border-border min-h-[150px] text-foreground resize-none rounded-xl focus-visible:ring-primary focus-visible:border-primary transition-all p-4" 
                           {...field} 
                         />
                       </FormControl>
@@ -1730,7 +1755,7 @@ function Contact({ isDiscountActive }: { isDiscountActive?: boolean }) {
                   disabled={isSubmitting}
                   className="w-full h-16 bg-primary text-white hover:bg-primary/90 rounded-2xl font-black text-xl hover:scale-[1.02] transition-all shadow-[0_0_20px_rgba(59,130,246,0.2)]"
                 >
-                  {isSubmitting ? "جارٍ الإرسال..." : "إرسال الرسالة"}
+                  {isSubmitting ? t("contact.sending") : t("contact.submit")}
                 </Button>
               </form>
             </Form>
@@ -1738,8 +1763,8 @@ function Contact({ isDiscountActive }: { isDiscountActive?: boolean }) {
 
           <div className="md:col-span-2 flex flex-col justify-center gap-10 relative z-10 border-t md:border-t-0 md:border-l md:border-white/10 pt-10 md:pt-0 md:pl-10">
             <div className="text-center md:text-right">
-              <h4 className="text-2xl font-bold text-foreground mb-3">تفضل التواصل المباشر؟</h4>
-              <p className="text-base text-gray-400 mb-8">أرسل لي رسالة مباشرة على إنستغرام للرد الأسرع.</p>
+              <h4 className="text-2xl font-bold text-foreground mb-3">{t("contact.directTitle")}</h4>
+              <p className="text-base text-gray-400 mb-8">{t("contact.directDesc")}</p>
               <div className="flex flex-col gap-3">
                 <a 
                   href="https://instagram.com/hanody1x" 
@@ -1748,7 +1773,7 @@ function Contact({ isDiscountActive }: { isDiscountActive?: boolean }) {
                   className="inline-flex items-center justify-center gap-3 w-full h-14 rounded-2xl border border-border glass-card hover:bg-foreground/10 text-foreground font-bold transition-all hover:scale-105 group"
                 >
                   <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-                  اطلب عبر إنستغرام
+                  {t("contact.instagram")}
                 </a>
                 <a 
                   href={whatsappUrl}
@@ -1757,15 +1782,15 @@ function Contact({ isDiscountActive }: { isDiscountActive?: boolean }) {
                   className="inline-flex items-center justify-center gap-3 w-full h-14 rounded-2xl bg-[#25D366]/10 border border-[#25D366]/30 hover:bg-[#25D366]/20 text-[#25D366] font-bold transition-all hover:scale-105 group"
                 >
                   <MessageCircle size={18} fill="currentColor" className="group-hover:scale-110 transition-transform" />
-                  اطلب عبر واتساب
+                  {t("contact.whatsapp")}
                 </a>
               </div>
             </div>
             
             <div className="p-8 rounded-3xl bg-primary/10 border border-primary/20 relative">
               <div className="absolute -top-3 -right-3 text-4xl text-primary opacity-50">"</div>
-              <p className="text-base text-primary/90 font-medium italic mb-4 text-right leading-relaxed">رد خلال 10 دقائق وكانت الصورة جاهزة في اليوم التالي. سرعة مذهلة وعمل متقن.</p>
-              <p className="text-sm text-white/50 text-left font-bold">— عميل سعيد</p>
+              <p className={`text-base text-primary/90 font-medium italic mb-4 ${isRTL ? 'text-right' : 'text-left'} leading-relaxed`}>{lang === "en" ? "Responded within 10 minutes and the image was ready the next day. Amazing speed and quality work." : "رد خلال 10 دقائق وكانت الصورة جاهزة في اليوم التالي. سرعة مذهلة وعمل متقن."}</p>
+              <p className={`text-sm text-white/50 ${isRTL ? 'text-left' : 'text-right'} font-bold`}>— {lang === "en" ? "Happy Client" : "عميل سعيد"}</p>
             </div>
           </div>
         </div>
@@ -1780,7 +1805,8 @@ const defaultFinalCta = {
 };
 
 function FinalCTA() {
-  const finalCta = useSection("finalCta", defaultFinalCta);
+  const { lang } = useLanguage();
+  const finalCta = useLocalizedSection("finalCta", defaultFinalCta, EN.finalCtaEn, lang);
   return (
     <section className="py-40 relative overflow-hidden flex items-center justify-center text-center">
       <div className="absolute inset-0">

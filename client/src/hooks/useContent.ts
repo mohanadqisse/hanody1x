@@ -51,6 +51,21 @@ export function useSection<T>(
   return { ...defaults, ...data } as T;
 }
 
+/**
+ * Language-aware section hook.
+ * When lang=ar → returns API content (or arDefault).
+ * When lang=en → returns enDefault (ignores Arabic API data).
+ */
+export function useLocalizedSection<T>(
+  section: string,
+  arDefault: T,
+  enDefault: T,
+  lang: string,
+): T {
+  const apiData = useSection(section, arDefault);
+  return lang === "ar" ? apiData : enDefault;
+}
+
 export function useImages(): ImagesMap {
   const { data: allImages } = useQuery({
     queryKey: ["images"],
