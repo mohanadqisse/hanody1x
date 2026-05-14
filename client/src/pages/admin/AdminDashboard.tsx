@@ -1425,60 +1425,97 @@ export default function AdminDashboard() {
               </Button>
             </div>
 
-            {/* BEFORE / AFTER SLIDER */}
+            {/* BEFORE / AFTER — MULTI COMPARISON MANAGER */}
             <div className="glass-panel rounded-3xl p-8 bg-card/40 border border-white/5">
-              <h2 className="text-xl font-bold text-foreground mb-6">قسم مقارنة الصور (قبل وبعد)</h2>
-              <p className="text-sm text-gray-400 mb-6 text-right">سيظهر هذا القسم في الصفحة الرئيسية للموقع بين قسمي "أعمال مختارة" و"لماذا تختارني؟". يُرجى رفع صور بجودة عالية ونفس الأبعاد.</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-right">
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">صورة قبل (التصميم العادي)</label>
-                  <div className="flex flex-col gap-4">
-                    <label className="flex items-center justify-center gap-2 cursor-pointer bg-primary/10 text-primary px-4 py-8 rounded-xl text-sm font-bold hover:bg-primary/20 transition border border-primary/30 border-dashed">
-                      <Upload className="w-6 h-6" /> اختر صورة قبل
-                      <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
-                        const file = e.target.files?.[0]; if (!file) return;
-                        const fd = new FormData(); fd.append("image", file);
-                        const res = await fetch(API_BASE + "/api/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
-                        if (res.ok) {
-                          const data = await res.json();
-                          setSections((prev) => ({ ...prev, beforeAfter: { ...prev.beforeAfter, beforeImage: data.url } }));
-                          toast({ title: "تم رفع صورة قبل بنجاح!" });
-                        }
-                      }} />
-                    </label>
-                    {sections.beforeAfter?.beforeImage && (
-                      <div className="relative aspect-video rounded-xl overflow-hidden border border-white/10">
-                        <img src={sections.beforeAfter.beforeImage} className="w-full h-full object-cover" alt="Before" />
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-400 mb-2">صورة بعد (التصميم الاحترافي)</label>
-                  <div className="flex flex-col gap-4">
-                    <label className="flex items-center justify-center gap-2 cursor-pointer bg-green-500/10 text-green-500 px-4 py-8 rounded-xl text-sm font-bold hover:bg-green-500/20 transition border border-green-500/30 border-dashed">
-                      <Upload className="w-6 h-6" /> اختر صورة بعد
-                      <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
-                        const file = e.target.files?.[0]; if (!file) return;
-                        const fd = new FormData(); fd.append("image", file);
-                        const res = await fetch(API_BASE + "/api/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
-                        if (res.ok) {
-                          const data = await res.json();
-                          setSections((prev) => ({ ...prev, beforeAfter: { ...prev.beforeAfter, afterImage: data.url } }));
-                          toast({ title: "تم رفع صورة بعد بنجاح!" });
-                        }
-                      }} />
-                    </label>
-                    {sections.beforeAfter?.afterImage && (
-                      <div className="relative aspect-video rounded-xl overflow-hidden border border-white/10">
-                        <img src={sections.beforeAfter.afterImage} className="w-full h-full object-cover" alt="After" />
-                      </div>
-                    )}
-                  </div>
-                </div>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-foreground">قسم مقارنة الصور (قبل وبعد)</h2>
+                <Button
+                  onClick={() => {
+                    setSections((prev: any) => {
+                      const list = Array.isArray(prev.beforeAfter?.comparisons) ? [...prev.beforeAfter.comparisons] : [];
+                      if (list.length === 0 && prev.beforeAfter?.beforeImage && prev.beforeAfter?.afterImage) {
+                        list.push({ beforeImage: prev.beforeAfter.beforeImage, afterImage: prev.beforeAfter.afterImage, title: "", tag: "" });
+                      }
+                      list.push({ beforeImage: "", afterImage: "", title: "", tag: "" });
+                      return { ...prev, beforeAfter: { ...prev.beforeAfter, comparisons: list } };
+                    });
+                    toast({ title: "تمت إضافة مقارنة جديدة — يرجى رفع الصور والحفظ" });
+                  }}
+                  className="bg-primary/20 text-primary hover:bg-primary/30 rounded-xl font-bold border border-primary/30"
+                >
+                  + إضافة مقارنة جديدة
+                </Button>
               </div>
-              <Button onClick={() => saveSection("beforeAfter")} disabled={loading} className="mt-8 bg-primary hover:bg-primary/90 text-white rounded-xl">
-                <Save className="w-4 h-4 ml-2" /> حفظ المقارنة
+              <p className="text-sm text-gray-400 mb-6 text-right">سيظهر هذا القسم في الصفحة الرئيسية. يمكنك إضافة عدة مقارنات ستظهر مع thumbnails أسفل السلايدر. يُرجى رفع صور بجودة عالية ونفس الأبعاد.</p>
+
+              {sections.beforeAfter?.beforeImage && !Array.isArray(sections.beforeAfter?.comparisons) && (
+                <div className="mb-6 p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-sm text-right">
+                  ⚠️ لديك مقارنة قديمة محفوظة. اضغط &quot;إضافة مقارنة جديدة&quot; لتحويلها تلقائياً للنظام الجديد ثم اضغط حفظ.
+                </div>
+              )}
+
+              {(Array.isArray(sections.beforeAfter?.comparisons) ? sections.beforeAfter.comparisons : []).map((comp: any, idx: number) => (
+                <div key={idx} className="mb-8 border border-white/10 rounded-2xl p-6 bg-black/20 text-right relative">
+                  <div className="flex justify-between items-center mb-4">
+                    <button
+                      onClick={() => {
+                        if (!confirm("هل تريد حذف هذه المقارنة؟")) return;
+                        setSections((prev: any) => {
+                          const list = [...(prev.beforeAfter?.comparisons || [])];
+                          list.splice(idx, 1);
+                          return { ...prev, beforeAfter: { ...prev.beforeAfter, comparisons: list } };
+                        });
+                      }}
+                      className="bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white p-2 rounded-lg transition-colors"
+                      title="حذف المقارنة"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                    <h3 className="text-lg font-bold text-primary">مقارنة {idx + 1}</h3>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div>
+                      <label className="block text-sm text-gray-400 mb-2">العنوان (اختياري)</label>
+                      <Input value={comp.title || ""} placeholder="مثال: تصميم صورة مصغرة لقناة ألعاب" onChange={(e) => { setSections((prev: any) => { const list = [...(prev.beforeAfter?.comparisons || [])]; list[idx] = { ...list[idx], title: e.target.value }; return { ...prev, beforeAfter: { ...prev.beforeAfter, comparisons: list } }; }); }} dir="rtl" className="bg-card/50" />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-400 mb-2">التصنيف (اختياري)</label>
+                      <Input value={comp.tag || ""} placeholder="مثال: ألعاب، فلوقات، تعليمي" onChange={(e) => { setSections((prev: any) => { const list = [...(prev.beforeAfter?.comparisons || [])]; list[idx] = { ...list[idx], tag: e.target.value }; return { ...prev, beforeAfter: { ...prev.beforeAfter, comparisons: list } }; }); }} dir="rtl" className="bg-card/50" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm text-gray-400 mb-2">صورة قبل (التصميم العادي)</label>
+                      <label className="flex items-center justify-center gap-2 cursor-pointer bg-primary/10 text-primary px-4 py-6 rounded-xl text-sm font-bold hover:bg-primary/20 transition border border-primary/30 border-dashed">
+                        <Upload className="w-5 h-5" /> رفع صورة قبل
+                        <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                          const file = e.target.files?.[0]; if (!file) return;
+                          const fd = new FormData(); fd.append("image", file);
+                          const res = await fetch(API_BASE + "/api/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
+                          if (res.ok) { const data = await res.json(); setSections((prev: any) => { const list = [...(prev.beforeAfter?.comparisons || [])]; list[idx] = { ...list[idx], beforeImage: data.url }; return { ...prev, beforeAfter: { ...prev.beforeAfter, comparisons: list } }; }); toast({ title: "تم رفع صورة قبل بنجاح!" }); }
+                        }} />
+                      </label>
+                      {comp.beforeImage && (<div className="mt-3 aspect-video rounded-xl overflow-hidden border border-white/10"><img src={comp.beforeImage} className="w-full h-full object-cover" alt="Before" /></div>)}
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-400 mb-2">صورة بعد (التصميم الاحترافي)</label>
+                      <label className="flex items-center justify-center gap-2 cursor-pointer bg-green-500/10 text-green-500 px-4 py-6 rounded-xl text-sm font-bold hover:bg-green-500/20 transition border border-green-500/30 border-dashed">
+                        <Upload className="w-5 h-5" /> رفع صورة بعد
+                        <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                          const file = e.target.files?.[0]; if (!file) return;
+                          const fd = new FormData(); fd.append("image", file);
+                          const res = await fetch(API_BASE + "/api/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
+                          if (res.ok) { const data = await res.json(); setSections((prev: any) => { const list = [...(prev.beforeAfter?.comparisons || [])]; list[idx] = { ...list[idx], afterImage: data.url }; return { ...prev, beforeAfter: { ...prev.beforeAfter, comparisons: list } }; }); toast({ title: "تم رفع صورة بعد بنجاح!" }); }
+                        }} />
+                      </label>
+                      {comp.afterImage && (<div className="mt-3 aspect-video rounded-xl overflow-hidden border border-white/10"><img src={comp.afterImage} className="w-full h-full object-cover" alt="After" /></div>)}
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              <Button onClick={() => saveSection("beforeAfter")} disabled={loading} className="bg-primary hover:bg-primary/90 text-white rounded-xl">
+                <Save className="w-4 h-4 ml-2" /> حفظ جميع المقارنات
               </Button>
             </div>
 

@@ -1820,7 +1820,19 @@ function FinalCTA() {
 
 export default function Home() {
   const [isDiscountActive, setIsDiscountActive] = useState(false);
-  const beforeAfter = useSection("beforeAfter", {} as any);
+  const beforeAfterRaw = useSection("beforeAfter", {} as any);
+
+  // Build comparisons array — supports both legacy single-pair and new multi-pair format
+  const comparisons = (() => {
+    if (Array.isArray(beforeAfterRaw.comparisons) && beforeAfterRaw.comparisons.length > 0) {
+      return beforeAfterRaw.comparisons.filter((c: any) => c.beforeImage && c.afterImage);
+    }
+    // Legacy single-pair fallback
+    if (beforeAfterRaw.beforeImage && beforeAfterRaw.afterImage) {
+      return [{ beforeImage: beforeAfterRaw.beforeImage, afterImage: beforeAfterRaw.afterImage }];
+    }
+    return [];
+  })();
 
   return (
     <div className="min-h-screen bg-background text-foreground font-sans">
@@ -1838,11 +1850,8 @@ export default function Home() {
       <Urgency />
       <ClientShowcase />
       <PortfolioGrid />
-      {beforeAfter.beforeImage && beforeAfter.afterImage && (
-        <BeforeAfterSlider 
-          beforeImage={beforeAfter.beforeImage} 
-          afterImage={beforeAfter.afterImage} 
-        />
+      {comparisons.length > 0 && (
+        <BeforeAfterSlider comparisons={comparisons} />
       )}
       <WhyChooseMe />
       <Contact isDiscountActive={isDiscountActive} />
@@ -1850,3 +1859,4 @@ export default function Home() {
     </div>
   );
 }
+
