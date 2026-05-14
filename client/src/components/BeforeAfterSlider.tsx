@@ -17,35 +17,29 @@ interface BeforeAfterSliderProps {
 /* ─── slider core ─── */
 function SliderCore({ beforeImage, afterImage }: { beforeImage: string; afterImage: string }) {
   const { t } = useLanguage();
-  const [pos, setPos] = useState(50);
   const dragging = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const rafId = useRef<number>(0);
 
-  const calcPercent = useCallback((clientX: number) => {
-    if (!containerRef.current) return 50;
-    const { left, width } = containerRef.current.getBoundingClientRect();
+  const updatePos = useCallback((clientX: number) => {
+    const el = containerRef.current;
+    if (!el) return;
+    const { left, width } = el.getBoundingClientRect();
     const raw = ((clientX - left) / width) * 100;
-    const clamped = Math.max(0, Math.min(raw, 100));
-    // Snap to edges when within 2%
-    if (clamped < 2) return 0;
-    if (clamped > 98) return 100;
-    return clamped;
+    let clamped = Math.max(0, Math.min(raw, 100));
+    if (clamped < 2) clamped = 0;
+    if (clamped > 98) clamped = 100;
+    el.style.setProperty('--pos', `${clamped}`);
   }, []);
 
-  const onPointerMove = useCallback((clientX: number) => {
-    if (!dragging.current) return;
-    cancelAnimationFrame(rafId.current);
-    rafId.current = requestAnimationFrame(() => setPos(calcPercent(clientX)));
-  }, [calcPercent]);
-
   useEffect(() => {
-    const mm = (e: MouseEvent) => onPointerMove(e.clientX);
+    const mm = (e: MouseEvent) => {
+      if (!dragging.current) return;
+      updatePos(e.clientX);
+    };
     const tm = (e: TouchEvent) => {
-      // Only prevent scroll when actively dragging the slider
       if (!dragging.current) return;
       e.preventDefault();
-      onPointerMove(e.touches[0].clientX);
+      updatePos(e.touches[0].clientX);
     };
     const stop = () => { dragging.current = false; document.body.style.cursor = ''; };
 
@@ -58,21 +52,20 @@ function SliderCore({ beforeImage, afterImage }: { beforeImage: string; afterIma
       window.removeEventListener('touchmove', tm);
       window.removeEventListener('mouseup', stop);
       window.removeEventListener('touchend', stop);
-      cancelAnimationFrame(rafId.current);
     };
-  }, [onPointerMove]);
+  }, [updatePos]);
 
   const startDrag = (clientX: number) => {
     dragging.current = true;
     document.body.style.cursor = 'ew-resize';
-    setPos(calcPercent(clientX));
+    updatePos(clientX);
   };
 
   return (
     <div
       ref={containerRef}
-      className="relative w-full aspect-[16/9] overflow-hidden select-none touch-none"
-      style={{ cursor: 'ew-resize', willChange: 'transform' }}
+      className="ba-slider relative w-full aspect-[16/9] overflow-hidden select-none touch-none"
+      style={{ cursor: 'ew-resize', '--pos': '50' } as React.CSSProperties}
       onMouseDown={(e) => { e.preventDefault(); startDrag(e.clientX); }}
       onTouchStart={(e) => startDrag(e.touches[0].clientX)}
     >
@@ -85,12 +78,11 @@ function SliderCore({ beforeImage, afterImage }: { beforeImage: string; afterIma
         loading="lazy"
       />
 
-      {/* Before image (clipped — pixel-perfect with divider) */}
+      {/* Before image (clipped via CSS var for GPU-smooth updates) */}
       <img
         src={beforeImage}
         alt={t("ba.before")}
-        className="absolute inset-0 w-full h-full object-cover"
-        style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}
+        className="ba-before absolute inset-0 w-full h-full object-cover"
         draggable={false}
         loading="lazy"
       />
@@ -109,34 +101,29 @@ function SliderCore({ beforeImage, afterImage }: { beforeImage: string; afterIma
         {t("ba.after")}
       </div>
       <div
-        className="absolute top-3 md:top-5 px-3 py-1 md:px-3.5 md:py-1.5 rounded-lg text-white/90 text-[10px] md:text-xs font-semibold pointer-events-none tracking-wide uppercase"
+        className="ba-label-before absolute top-3 md:top-5 px-3 py-1 md:px-3.5 md:py-1.5 rounded-lg text-white/90 text-[10px] md:text-xs font-semibold pointer-events-none tracking-wide uppercase"
         style={{
           left: '12px',
           background: 'rgba(0,0,0,0.45)',
           backdropFilter: 'blur(10px)',
           WebkitBackdropFilter: 'blur(10px)',
           border: '1px solid rgba(255,255,255,0.08)',
-          opacity: pos < 10 ? 0 : 1,
-          transition: 'opacity 0.2s ease',
         }}
       >
         {t("ba.before")}
       </div>
 
       {/* ── Divider line + handle ── */}
-      <div
-        className="absolute top-0 bottom-0 z-10 pointer-events-none"
-        style={{ left: `${pos}%`, transform: 'translateX(-50%)', opacity: pos === 0 || pos === 100 ? 0 : 1, transition: 'opacity 0.15s ease' }}
-      >
+      <div className="ba-divider absolute top-0 bottom-0 z-10 pointer-events-none">
         {/* Thin line */}
         <div
           className="absolute inset-0"
           style={{
-            width: '1.5px',
+            width: '2px',
             left: '50%',
             transform: 'translateX(-50%)',
-            background: 'rgba(255,255,255,0.7)',
-            boxShadow: '0 0 6px rgba(255,255,255,0.2)',
+            background: 'rgba(255,255,255,0.85)',
+            boxShadow: '0 0 8px rgba(255,255,255,0.3), 0 0 20px rgba(255,255,255,0.1)',
           }}
         />
 
@@ -145,24 +132,23 @@ function SliderCore({ beforeImage, afterImage }: { beforeImage: string; afterIma
           <div
             className="flex items-center justify-center gap-[3px]"
             style={{
-              width: '36px',
-              height: '36px',
+              width: '40px',
+              height: '40px',
               borderRadius: '50%',
-              background: 'rgba(255,255,255,0.12)',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255,255,255,0.25)',
-              boxShadow: '0 2px 16px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.05) inset',
-              transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+              background: 'rgba(255,255,255,0.15)',
+              backdropFilter: 'blur(24px)',
+              WebkitBackdropFilter: 'blur(24px)',
+              border: '1.5px solid rgba(255,255,255,0.35)',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.08) inset',
             }}
           >
             {/* Left arrow */}
             <svg width="8" height="12" viewBox="0 0 8 12" fill="none" style={{ opacity: 0.9 }}>
-              <path d="M6 2L2 6L6 10" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M6 2L2 6L6 10" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
             {/* Right arrow */}
             <svg width="8" height="12" viewBox="0 0 8 12" fill="none" style={{ opacity: 0.9 }}>
-              <path d="M2 2L6 6L2 10" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M2 2L6 6L2 10" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
         </div>
