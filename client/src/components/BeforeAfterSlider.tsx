@@ -25,7 +25,12 @@ function SliderCore({ beforeImage, afterImage }: { beforeImage: string; afterIma
   const calcPercent = useCallback((clientX: number) => {
     if (!containerRef.current) return 50;
     const { left, width } = containerRef.current.getBoundingClientRect();
-    return Math.max(2, Math.min(((clientX - left) / width) * 100, 98));
+    const raw = ((clientX - left) / width) * 100;
+    const clamped = Math.max(0, Math.min(raw, 100));
+    // Snap to edges when within 2%
+    if (clamped < 2) return 0;
+    if (clamped > 98) return 100;
+    return clamped;
   }, []);
 
   const onPointerMove = useCallback((clientX: number) => {
@@ -106,7 +111,7 @@ function SliderCore({ beforeImage, afterImage }: { beforeImage: string; afterIma
           backdropFilter: 'blur(10px)',
           WebkitBackdropFilter: 'blur(10px)',
           border: '1px solid rgba(255,255,255,0.08)',
-          opacity: pos < 15 ? 0 : 1,
+          opacity: pos < 10 ? 0 : 1,
           transition: 'opacity 0.2s ease',
         }}
       >
@@ -116,7 +121,7 @@ function SliderCore({ beforeImage, afterImage }: { beforeImage: string; afterIma
       {/* ── Divider line + handle ── */}
       <div
         className="absolute top-0 bottom-0 z-10 pointer-events-none"
-        style={{ left: `${pos}%`, transform: 'translateX(-50%)' }}
+        style={{ left: `${pos}%`, transform: 'translateX(-50%)', opacity: pos === 0 || pos === 100 ? 0 : 1, transition: 'opacity 0.15s ease' }}
       >
         {/* Thin line */}
         <div

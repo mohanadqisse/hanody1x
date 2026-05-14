@@ -248,7 +248,7 @@ function Hero() {
               transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
               className="absolute top-10 right-4 w-4/5 rounded-2xl overflow-hidden border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] z-20 shadow-primary/20 rotate-2 glass-card"
             >
-              <img src={images.heroCard1 || `${import.meta.env.BASE_URL}images/thumb-1.png`} alt="نموذج صورة مصغرة" className="w-full h-auto" />
+              <img src={images.heroCard1 || `${import.meta.env.BASE_URL}images/thumb-1.png`} alt="Thumbnail sample" className="w-full h-auto" />
             </motion.div>
             
             <motion.div 
@@ -256,7 +256,7 @@ function Hero() {
               transition={{ repeat: Infinity, duration: 7, ease: "easeInOut", delay: 1 }}
               className="absolute bottom-20 left-0 w-3/4 rounded-2xl overflow-hidden border border-white/5 shadow-2xl z-10 -rotate-3 opacity-60 backdrop-blur-xl"
             >
-              <img src={images.heroCard2 || `${import.meta.env.BASE_URL}images/thumb-2.png`} alt="نموذج صورة مصغرة" className="w-full h-auto grayscale-[30%]" />
+              <img src={images.heroCard2 || `${import.meta.env.BASE_URL}images/thumb-2.png`} alt="Thumbnail sample" className="w-full h-auto grayscale-[30%]" />
             </motion.div>
           </motion.div>
         </div>
@@ -319,18 +319,19 @@ function Pricing({ isDiscountActive }: { isDiscountActive?: boolean }) {
   const customPricing = useSection("pricing", {} as any);
   const packagesRaw = useLocalizedSection("packages", defaultPackages, EN.packagesEn, lang);
   
-  const packages = packagesRaw.map((pkg: any) => {
+  const packages = packagesRaw.map((pkg: any, idx: number) => {
     let price = pkg.price;
     let features = pkg.features;
-    if (pkg.name === "أساسي") {
+    // Use index-based matching so prices are identical in both languages
+    if (idx === 0) {
       if (customPricing.basicPrice) price = customPricing.basicPrice;
       if (customPricing.basicFeatures) features = customPricing.basicFeatures.split('\n').map((s: string) => s.trim()).filter(Boolean);
     }
-    if (pkg.name === "احترافي") {
+    if (idx === 1) {
       if (customPricing.proPrice) price = customPricing.proPrice;
       if (customPricing.proFeatures) features = customPricing.proFeatures.split('\n').map((s: string) => s.trim()).filter(Boolean);
     }
-    if (pkg.name === "النخبة") {
+    if (idx === 2) {
       if (customPricing.elitePrice) price = customPricing.elitePrice;
       if (customPricing.eliteFeatures) features = customPricing.eliteFeatures.split('\n').map((s: string) => s.trim()).filter(Boolean);
     }
@@ -978,7 +979,7 @@ function PortfolioGrid() {
               >
                 <img
                   src={src}
-                  alt={`معرض أعمال ${item.id}`}
+                  alt={`Portfolio ${item.id}`}
                   className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
@@ -997,7 +998,7 @@ function PortfolioGrid() {
             className="rounded-2xl px-8 py-6 text-lg font-bold shadow-[0_0_30px_rgba(59,130,246,0.3)] hover:shadow-[0_0_40px_rgba(59,130,246,0.5)] hover:scale-105 transition-all text-white bg-primary"
           >
             <Star className="ml-2 fill-current" size={20} />
-            تقييم الصور
+            {t("portfolio.rateBtn")}
           </Button>
         </div>
       </div>
@@ -1081,13 +1082,13 @@ function PortfolioGrid() {
               <div className="flex-1 relative">
                 <img
                   src={lightboxSrc}
-                  alt="عرض مكبّر"
+                  alt="Preview"
                   className="w-full h-auto max-h-[85vh] object-contain rounded-2xl shadow-[0_30px_80px_rgba(0,0,0,0.8)]"
                 />
                 <button
                   onClick={closeLightbox}
                   className="absolute -top-4 -left-4 w-10 h-10 rounded-full bg-primary hover:bg-primary/80 transition-colors flex items-center justify-center text-white font-bold text-lg shadow-xl"
-                  aria-label="إغلاق"
+                  aria-label="Close"
                 >
                   ✕
                 </button>
