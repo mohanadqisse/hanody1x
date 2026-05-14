@@ -48,7 +48,7 @@ function AppContent({ isLoading }: { isLoading: boolean }) {
             key="loader"
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+            transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
             style={{
               position: 'fixed',
               inset: 0,
@@ -59,33 +59,40 @@ function AppContent({ isLoading }: { isLoading: boolean }) {
               justifyContent: 'center',
               background: 'hsl(220 20% 4%)',
               overflow: 'hidden',
+              willChange: 'opacity',
             }}
           >
-            {/* Ambient glow */}
-            <div style={{
-              position: 'absolute',
-              width: '40vw',
-              height: '40vw',
-              maxWidth: '400px',
-              maxHeight: '400px',
-              borderRadius: '50%',
-              background: 'radial-gradient(circle, hsla(217,91%,55%,0.12) 0%, transparent 70%)',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              pointerEvents: 'none',
-            }} />
-
-            {/* Original Logo */}
+            {/* Ambient glow — subtle blue pulse */}
             <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: [1, 1.15, 1], opacity: [0.10, 0.18, 0.10] }}
+              transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+              style={{
+                position: 'absolute',
+                width: '50vw',
+                height: '50vw',
+                maxWidth: '500px',
+                maxHeight: '500px',
+                borderRadius: '50%',
+                background: 'radial-gradient(circle, hsla(217,91%,55%,0.15) 0%, transparent 70%)',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                pointerEvents: 'none',
+                willChange: 'transform, opacity',
+              }}
+            />
+
+            {/* Original Logo — blue themed */}
+            <motion.div
+              initial={{ scale: 0.7, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
+              transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
               className="loader-container"
               style={{
-                width: '10rem',
-                height: '10rem',
-                filter: 'drop-shadow(0 0 30px hsla(217,91%,55%,0.2))',
+                width: '8rem',
+                height: '8rem',
+                filter: 'drop-shadow(0 0 40px hsla(217,91%,55%,0.25))',
+                willChange: 'transform, opacity',
               }}
             >
               <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', height: '100%' }}>
@@ -99,17 +106,17 @@ function AppContent({ isLoading }: { isLoading: boolean }) {
               </svg>
             </motion.div>
 
-            {/* Loading bar */}
+            {/* Loading progress bar */}
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.5 }}
+              transition={{ delay: 0.5, duration: 0.6 }}
               style={{
-                marginTop: '24px',
-                width: '120px',
+                marginTop: '28px',
+                width: '100px',
                 height: '2px',
                 borderRadius: '1px',
-                background: 'hsla(217,91%,55%,0.1)',
+                background: 'hsla(217,91%,55%,0.08)',
                 overflow: 'hidden',
                 position: 'relative',
               }}
@@ -117,11 +124,11 @@ function AppContent({ isLoading }: { isLoading: boolean }) {
               <motion.div
                 initial={{ x: '-100%' }}
                 animate={{ x: '100%' }}
-                transition={{ duration: 1.2, repeat: Infinity, ease: [0.4, 0, 0.2, 1] }}
+                transition={{ duration: 1.4, repeat: Infinity, ease: [0.4, 0, 0.2, 1] }}
                 style={{
                   position: 'absolute',
                   inset: 0,
-                  background: 'linear-gradient(90deg, transparent 0%, hsla(217,91%,55%,0.6) 50%, transparent 100%)',
+                  background: 'linear-gradient(90deg, transparent 0%, hsla(217,91%,55%,0.7) 50%, transparent 100%)',
                 }}
               />
             </motion.div>

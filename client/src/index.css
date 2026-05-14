@@ -773,21 +773,24 @@ html {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background-color: hsl(var(--background));
+  background-color: hsl(220 20% 4%);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .loader-container {
-  width: 16rem;
-  height: 16rem;
+  width: 8rem;
+  height: 8rem;
+  will-change: transform, opacity;
 }
 
 .loader-container path {
-  stroke: hsl(var(--primary));
+  stroke: hsl(217 91% 55%);
   stroke-width: 0.8px;
-  animation: svgDashArray 4s ease-in-out infinite, svgDashOffset 4s linear infinite;
+  fill: none;
+  animation: svgDashArray 3.5s ease-in-out infinite, svgDashOffset 3.5s linear infinite;
+  will-change: stroke-dasharray, stroke-dashoffset;
 }
 
 @keyframes svgDashArray {
@@ -840,3 +843,89 @@ html.rtl {
 html.ltr {
   direction: ltr;
 }
+
+/* ========== MOBILE PERFORMANCE OPTIMIZATIONS ========== */
+
+/* GPU acceleration for animated elements */
+.glass-card,
+.glass-panel,
+.pricing-wave-card,
+[class*="hover:scale"],
+[class*="group-hover:scale"] {
+  will-change: transform;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* Smooth touch scrolling everywhere */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Fix iOS Safari fixed positioning and scroll */
+@supports (-webkit-touch-callout: none) {
+  body {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .fixed {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
+}
+
+/* Reduce animations on low-power devices */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Mobile-specific optimizations */
+@media (max-width: 768px) {
+  /* Reduce blur intensity on mobile for performance */
+  .backdrop-blur-xl {
+    -webkit-backdrop-filter: blur(12px) !important;
+    backdrop-filter: blur(12px) !important;
+  }
+  
+  /* Lighter shadows on mobile */
+  .shadow-2xl {
+    box-shadow: 0 8px 20px -6px rgba(0,0,0,0.3) !important;
+  }
+  
+  /* Prevent content from overflowing viewport */
+  .container {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+  
+  /* Ensure sections don't cause horizontal scroll */
+  section {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+  
+  /* Optimize particle field on mobile */
+  canvas {
+    will-change: auto !important;
+  }
+}
+
+/* Prevent body scroll lock residues */
+html:not(.modal-active) body {
+  overflow-y: auto !important;
+  position: static !important;
+}
+
