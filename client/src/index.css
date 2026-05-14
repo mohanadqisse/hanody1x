@@ -834,16 +834,13 @@ html {
 /* Scroll Safety — prevent language switch from locking scroll */
 html, body {
   -webkit-overflow-scrolling: touch;
+  touch-action: manipulation;
+  overscroll-behavior: auto;
 }
 
 body {
-  overflow-y: auto !important;
+  overflow-y: scroll;
   overflow-x: hidden;
-}
-
-/* Only allow overflow hidden when explicitly set by modals */
-body.modal-open {
-  overflow: hidden !important;
 }
 
 /* RTL / LTR layout helpers */
@@ -860,13 +857,9 @@ html.ltr {
 /* GPU acceleration for animated elements */
 .glass-card,
 .glass-panel,
-.pricing-wave-card,
-[class*="hover:scale"],
-[class*="group-hover:scale"] {
+.pricing-wave-card {
   will-change: transform;
-  -webkit-transform: translateZ(0);
   transform: translateZ(0);
-  -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
 }
 
@@ -884,11 +877,6 @@ html {
 @supports (-webkit-touch-callout: none) {
   body {
     -webkit-overflow-scrolling: touch;
-  }
-  
-  .fixed {
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
   }
 }
 
@@ -911,32 +899,12 @@ html {
     backdrop-filter: blur(12px) !important;
   }
   
-  /* Lighter shadows on mobile */
-  .shadow-2xl {
-    box-shadow: 0 8px 20px -6px rgba(0,0,0,0.3) !important;
-  }
-  
   /* Prevent content from overflowing viewport */
-  .container {
-    max-width: 100vw;
-    overflow-x: hidden;
-  }
-  
-  /* Ensure sections don't cause horizontal scroll */
+  .container,
   section {
     max-width: 100vw;
     overflow-x: hidden;
   }
-  
-  /* Optimize particle field on mobile */
-  canvas {
-    will-change: auto !important;
-  }
 }
 
-/* Prevent body scroll lock residues */
-html:not(.modal-active) body {
-  overflow-y: auto !important;
-  position: static !important;
-}
 

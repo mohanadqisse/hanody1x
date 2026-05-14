@@ -59,7 +59,7 @@ export function Navbar() {
         <div className="flex items-center justify-between w-full sm:w-auto gap-1 sm:gap-1 px-0.5">
           {/* Logo — desktop only */}
           <Link href="/">
-            <div className={`w-10 h-10 shrink-0 rounded-full bg-[#2c2c2e] border border-white/5 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors cursor-pointer hidden sm:flex ${isRTL ? 'ml-1' : 'mr-1'} overflow-hidden`}>
+            <div className={`w-8 h-8 sm:w-10 sm:h-10 shrink-0 rounded-full bg-[#2c2c2e] border border-white/5 flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors cursor-pointer ${isRTL ? 'ml-0.5 sm:ml-1' : 'mr-0.5 sm:mr-1'} overflow-hidden`}>
               {brand?.logoImage ? (
                 <img src={brand.logoImage} alt="Logo" className="w-full h-full object-cover" />
               ) : (

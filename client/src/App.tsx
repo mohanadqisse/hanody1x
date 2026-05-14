@@ -41,7 +41,7 @@ function AppContent({ isLoading }: { isLoading: boolean }) {
   const { dir } = useLanguage();
 
   return (
-    <div className="min-h-screen bg-background text-foreground" dir={dir}>
+    <div className="min-h-screen bg-background text-foreground" style={{ touchAction: 'manipulation', overscrollBehavior: 'auto', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
       <AnimatePresence mode="wait">
         {isLoading ? (
           <motion.div
