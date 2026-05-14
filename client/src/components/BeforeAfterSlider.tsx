@@ -101,18 +101,13 @@ export function BeforeAfterSlider({ beforeImage, afterImage }: BeforeAfterSlider
           />
 
           {/* Before Image (Foreground - Left side clipped) */}
-          <div
-            className="absolute inset-0 top-0 left-0 bottom-0 overflow-hidden pointer-events-none"
-            style={{ width: `${sliderPosition}%` }}
-          >
-            <img
-              src={beforeImage}
-              alt="Before"
-              className="absolute inset-0 w-full h-full object-cover max-w-none"
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              draggable="false"
-            />
-          </div>
+          <img
+            src={beforeImage}
+            alt="Before"
+            className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+            style={{ clipPath: `inset(0 ${100 - sliderPosition}% 0 0)` }}
+            draggable="false"
+          />
 
           {/* Labels */}
           <div className="absolute top-6 right-6 px-4 py-2 rounded-xl bg-black/60 backdrop-blur-sm text-white font-bold text-sm pointer-events-none border border-white/10">
