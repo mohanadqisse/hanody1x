@@ -768,7 +768,7 @@ html {
   --bg: var(--background-hover);
 }
 
-/* Loading Screen — 3D Cube Loader */
+/* Loading Screen — UIverse Rect Loader */
 .loader-screen {
   position: fixed;
   inset: 0;
@@ -779,40 +779,60 @@ html {
   justify-content: center;
 }
 
-.cube-loader {
+.uiverse-loader {
+  --path: hsla(217, 91%, 55%, 0.2);
+  --dot: hsl(217, 91%, 55%);
+  --duration: 3s;
+  width: 44px;
+  height: 44px;
   position: relative;
-  width: 52px;
-  height: 52px;
-  background: hsl(217 91% 55%);
-  transform: rotateX(65deg) rotate(45deg);
-  color: hsl(217 91% 70%);
-  animation: cube-layers 1s linear infinite alternate;
+  display: inline-block;
 }
 
-.cube-loader::after {
+.uiverse-loader::before {
   content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
   position: absolute;
-  inset: 0;
-  background: hsla(217, 91%, 75%, 0.7);
-  animation: cube-translate 1s linear infinite alternate;
+  display: block;
+  background: var(--dot);
+  top: 37px;
+  left: 19px;
+  transform: translate(-18px, -18px);
+  animation: dotRect var(--duration) cubic-bezier(0.785, 0.135, 0.15, 0.86) infinite;
+  box-shadow: 0 0 12px var(--dot), 0 0 24px hsla(217, 91%, 55%, 0.3);
 }
 
-@keyframes cube-layers {
-  0% {
-    box-shadow: 0px 0px 0 0px;
-  }
-  90%, 100% {
-    box-shadow: 20px 20px 0 -4px;
-  }
+.uiverse-loader svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
-@keyframes cube-translate {
-  0% {
-    transform: translate(0, 0) scale(1);
-  }
-  100% {
-    transform: translate(-25px, -25px) scale(1);
-  }
+.uiverse-loader svg rect {
+  fill: none;
+  stroke: var(--path);
+  stroke-width: 10px;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  stroke-dasharray: 192 64 192 64;
+  stroke-dashoffset: 0;
+  animation: pathRect 3s cubic-bezier(0.785, 0.135, 0.15, 0.86) infinite;
+}
+
+@keyframes pathRect {
+  25% { stroke-dashoffset: 64; }
+  50% { stroke-dashoffset: 128; }
+  75% { stroke-dashoffset: 192; }
+  100% { stroke-dashoffset: 256; }
+}
+
+@keyframes dotRect {
+  25% { transform: translate(0, 0); }
+  50% { transform: translate(18px, -18px); }
+  75% { transform: translate(0, -36px); }
+  100% { transform: translate(-18px, -18px); }
 }
 
 /* Custom Scrollbar */

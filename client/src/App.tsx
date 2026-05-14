@@ -77,8 +77,12 @@ function AppContent({ isLoading }: { isLoading: boolean }) {
               pointerEvents: 'none',
             }} />
 
-            {/* 3D Cube Loader */}
-            <div className="cube-loader" />
+            {/* UIverse Rect Loader */}
+            <div className="uiverse-loader">
+              <svg viewBox="0 0 80 80">
+                <rect x="8" y="8" width="64" height="64" rx="0" ry="0" />
+              </svg>
+            </div>
           </motion.div>
         ) : (
           <motion.div
