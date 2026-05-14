@@ -51,6 +51,8 @@ const translations: Record<Lang, Record<string, string>> = {
     "ba.after": "بعد",
 
     // Showcase
+    "showcase.title": "قصص نجاح صناع محتوى",
+    "showcase.subtitle": "اكتشف كيف غيّرت الصور المصغرة المخصصة هذه القنوات وأطلقت نموها بشكل صاروخي.",
     "showcase.viewCase": "عرض دراسة الحالة",
     "showcase.youtube": "انتقال إلى قناة اليوتيوب",
 
@@ -171,6 +173,8 @@ const translations: Record<Lang, Record<string, string>> = {
     "ba.after": "After",
 
     // Showcase
+    "showcase.title": "Creator Success Stories",
+    "showcase.subtitle": "Discover how custom thumbnails transformed these channels and launched their growth.",
     "showcase.viewCase": "View Case Study",
     "showcase.youtube": "Visit YouTube Channel",
 

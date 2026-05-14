@@ -322,18 +322,15 @@ function Pricing({ isDiscountActive }: { isDiscountActive?: boolean }) {
   const packages = packagesRaw.map((pkg: any, idx: number) => {
     let price = pkg.price;
     let features = pkg.features;
-    // Use index-based matching so prices are identical in both languages
-    if (idx === 0) {
-      if (customPricing.basicPrice) price = customPricing.basicPrice;
-      if (customPricing.basicFeatures) features = customPricing.basicFeatures.split('\n').map((s: string) => s.trim()).filter(Boolean);
-    }
-    if (idx === 1) {
-      if (customPricing.proPrice) price = customPricing.proPrice;
-      if (customPricing.proFeatures) features = customPricing.proFeatures.split('\n').map((s: string) => s.trim()).filter(Boolean);
-    }
-    if (idx === 2) {
-      if (customPricing.elitePrice) price = customPricing.elitePrice;
-      if (customPricing.eliteFeatures) features = customPricing.eliteFeatures.split('\n').map((s: string) => s.trim()).filter(Boolean);
+    // Always apply admin price overrides (prices are just numbers)
+    if (idx === 0 && customPricing.basicPrice) price = customPricing.basicPrice;
+    if (idx === 1 && customPricing.proPrice) price = customPricing.proPrice;
+    if (idx === 2 && customPricing.elitePrice) price = customPricing.elitePrice;
+    // Only apply admin feature overrides when lang=ar (admin features are in Arabic)
+    if (lang === "ar") {
+      if (idx === 0 && customPricing.basicFeatures) features = customPricing.basicFeatures.split('\n').map((s: string) => s.trim()).filter(Boolean);
+      if (idx === 1 && customPricing.proFeatures) features = customPricing.proFeatures.split('\n').map((s: string) => s.trim()).filter(Boolean);
+      if (idx === 2 && customPricing.eliteFeatures) features = customPricing.eliteFeatures.split('\n').map((s: string) => s.trim()).filter(Boolean);
     }
     return { ...pkg, price, features };
   });
@@ -614,7 +611,14 @@ function Urgency() {
 function ClientShowcase() {
   const { lang, t, isRTL } = useLanguage();
   const brand = useSection("brand", { youtubeChannelUrl: "" } as any);
-  const caseStudiesData = useLocalizedSection("caseStudies", defaultCaseStudies, EN.caseStudiesEn, lang) as typeof defaultCaseStudies;
+  const arData = useSection("caseStudies", defaultCaseStudies) as any[];
+  const caseStudiesRaw = useLocalizedSection("caseStudies", defaultCaseStudies, EN.caseStudiesEn, lang) as typeof defaultCaseStudies;
+  // Merge avatar images and YouTube URLs from Arabic API data into EN defaults
+  const caseStudiesData = caseStudiesRaw.map((study, idx) => ({
+    ...study,
+    avatarImage: (arData[idx] as any)?.avatarImage || (study as any).avatarImage || "",
+    youtubeUrl: (arData[idx] as any)?.youtubeUrl || (study as any).youtubeUrl || "",
+  }));
   return (
     <section id="showcase" className="py-32 bg-background relative">
       <div className="container mx-auto px-6">
@@ -626,7 +630,7 @@ function ClientShowcase() {
             transition={{ duration: 0.7, ease: easeApple }}
             className="text-4xl md:text-6xl font-black mb-6 tracking-tighter"
           >
-            {t("showcase.viewCase") === "View Case Study" ? "Creator Success Stories" : "قصص نجاح صناع محتوى"}
+            {t("showcase.title")}
           </motion.h2>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
@@ -635,7 +639,7 @@ function ClientShowcase() {
             transition={{ duration: 0.7, delay: 0.1, ease: easeApple }}
             className="text-lg text-muted-foreground max-w-2xl mx-auto"
           >
-            {lang === "en" ? "Discover how custom thumbnails transformed these channels and launched their growth." : "اكتشف كيف غيّرت الصور المصغرة المخصصة هذه القنوات وأطلقت نموها بشكل صاروخي."}
+            {t("showcase.subtitle")}
           </motion.p>
         </div>
 
