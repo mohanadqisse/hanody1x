@@ -77,11 +77,21 @@ function AppContent({ isLoading }: { isLoading: boolean }) {
               pointerEvents: 'none',
             }} />
 
-            {/* UIverse Rect Loader */}
-            <div className="uiverse-loader">
-              <svg viewBox="0 0 80 80">
-                <rect x="8" y="8" width="64" height="64" rx="0" ry="0" />
-              </svg>
+            {/* UIverse Skeleton Walker Loader */}
+            <div className="loading-container">
+              <div className="ground"></div>
+              <div className="skeleton">
+                <div className="head">
+                  <div className="eye left"></div>
+                  <div className="eye right"></div>
+                  <div className="mouth"></div>
+                </div>
+                <div className="body"></div>
+                <div className="arm left"></div>
+                <div className="arm right"></div>
+                <div className="leg left"></div>
+                <div className="leg right"></div>
+              </div>
             </div>
           </motion.div>
         ) : (
