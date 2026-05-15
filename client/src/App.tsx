@@ -62,20 +62,7 @@ function AppContent({ isLoading }: { isLoading: boolean }) {
               willChange: 'opacity',
             }}
           >
-            {/* Ambient glow */}
-            <div style={{
-              position: 'absolute',
-              width: '50vw',
-              height: '50vw',
-              maxWidth: '400px',
-              maxHeight: '400px',
-              borderRadius: '50%',
-              background: 'radial-gradient(circle, hsla(217,91%,55%,0.10) 0%, transparent 70%)',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              pointerEvents: 'none',
-            }} />
+
 
             {/* SVG Drawing Loader */}
             <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className="svg-loader">

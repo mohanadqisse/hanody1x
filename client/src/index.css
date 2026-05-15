@@ -617,7 +617,6 @@ html {
 .svg-loader {
   width: 12em;
   height: 12em;
-  filter: drop-shadow(0 0 12px hsla(217, 91%, 55%, 0.35));
 }
 
 .svg-loader path {
