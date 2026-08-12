@@ -45,7 +45,28 @@ router.get("/images", async (_req, res) => {
       prefix: "portfolio",
       max_results: 100,
     });
-    const files = result.resources.map((file: any) => file.secure_url || file.url);
+    let files = result.resources.map((file: any) => file.secure_url || file.url);
+
+    try {
+      const [orderRow] = await db.select().from(siteContent).where(eq(siteContent.section, "library_order"));
+      if (orderRow && orderRow.content) {
+        const orderData = JSON.parse(orderRow.content);
+        if (orderData.urls && Array.isArray(orderData.urls)) {
+          const orderUrls = orderData.urls;
+          files.sort((a: string, b: string) => {
+            const idxA = orderUrls.indexOf(a);
+            const idxB = orderUrls.indexOf(b);
+            if (idxA === -1 && idxB === -1) return 0;
+            if (idxA === -1) return 1;
+            if (idxB === -1) return -1;
+            return idxA - idxB;
+          });
+        }
+      }
+    } catch (e) {
+      console.error("Error applying library order:", e);
+    }
+
     res.json(files);
   } catch (err) {
     console.error("Cloudinary fetch error:", err);

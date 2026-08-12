@@ -10,7 +10,7 @@ import {
   LogOut, Save, Upload, Trash2, Settings, Mail, MailOpen, 
   ChevronDown, ChevronUp, Package, User, AtSign, Clock, 
   Inbox, Shield, ShieldCheck, ShieldX, Globe, Smartphone, 
-  Monitor, LayoutDashboard, Users, Database, Play, Square, FileText, CheckCircle, Edit, Star
+  Monitor, LayoutDashboard, Users, Database, Play, Square, FileText, CheckCircle, Edit, Star, ArrowRight, ArrowLeft, RefreshCw
 } from "lucide-react";
 import { caseStudies as defaultCaseStudies } from "@/lib/data";
 import UserContentManager from "./UserContentManager";
@@ -321,6 +321,26 @@ export default function AdminDashboard() {
       const res = await fetch(API_BASE + `/api/upload/${filename}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) { await fetchImages(); toast({ title: "تم الحذف" }); }
     } catch (err) { toast({ title: "خطأ", variant: "destructive" }); }
+  }
+
+  async function moveImage(index: number, direction: 'left' | 'right') {
+    const newImages = [...images];
+    if (direction === 'left' && index < newImages.length - 1) {
+      [newImages[index], newImages[index + 1]] = [newImages[index + 1], newImages[index]];
+    } else if (direction === 'right' && index > 0) {
+      [newImages[index], newImages[index - 1]] = [newImages[index - 1], newImages[index]];
+    } else return;
+    setImages(newImages);
+    try {
+      const res = await fetch(API_BASE + "/api/content/library_order", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ content: JSON.stringify({ urls: newImages }) })
+      });
+      if (res.ok) toast({ title: "تم تحديث الترتيب" });
+    } catch (err) {
+      toast({ title: "خطأ", variant: "destructive" });
+    }
   }
 
   const updateCaseStudy = (index: number, field: string, value: string) => {
@@ -1206,11 +1226,21 @@ export default function AdminDashboard() {
             <div className="glass-panel rounded-3xl p-8 bg-card/40 border border-white/5">
               <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2"><Upload className="w-5 h-5"/> إدارة مكتبة الصور المرفوعة</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                {images.map((url) => (
+                {images.map((url, index) => (
                   <div key={url} className="relative group cursor-pointer" onClick={() => { navigator.clipboard?.writeText(url); toast({ title: "تم نسخ الرابط" }); }}>
                     <img src={url} alt="" className="w-full aspect-video object-cover rounded-xl border border-white/5" />
                     <div className="absolute top-2 right-2 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={(e) => { e.stopPropagation(); deleteImage(url); }} className="w-8 h-8 bg-red-500/90 rounded-lg flex items-center justify-center hover:bg-red-600 transition">
+                      <button onClick={(e) => { e.stopPropagation(); moveImage(index, 'right'); }} className="w-8 h-8 bg-black/60 rounded-lg flex items-center justify-center hover:bg-black transition" title="تحريك لليمين">
+                        <ArrowRight className="w-4 h-4 text-white" />
+                      </button>
+                      <button onClick={(e) => { e.stopPropagation(); moveImage(index, 'left'); }} className="w-8 h-8 bg-black/60 rounded-lg flex items-center justify-center hover:bg-black transition" title="تحريك لليسار">
+                        <ArrowLeft className="w-4 h-4 text-white" />
+                      </button>
+                      <label onClick={(e) => e.stopPropagation()} className="w-8 h-8 cursor-pointer bg-blue-500/90 rounded-lg flex items-center justify-center hover:bg-blue-600 transition" title="استبدال الصورة">
+                        <RefreshCw className="w-4 h-4 text-white" />
+                        <input type="file" accept="image/*" className="hidden" onChange={(e) => replaceImage(e, url)} />
+                      </label>
+                      <button onClick={(e) => { e.stopPropagation(); deleteImage(url); }} className="w-8 h-8 bg-red-500/90 rounded-lg flex items-center justify-center hover:bg-red-600 transition" title="حذف الصورة">
                         <Trash2 className="w-4 h-4 text-white" />
                       </button>
                     </div>
