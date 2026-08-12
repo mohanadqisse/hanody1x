@@ -1370,11 +1370,100 @@ export default function AdminDashboard() {
               {editableSection("hero", "subheadline", "العنوان الفرعي", true)}
               {editableSection("hero", "ctaPrimary", "زر CTA الرئيسي")}
               {editableSection("hero", "trustText", "نص الثقة")}
-              {editableSection("hero", "heroCard1", "رابط صورة البطاقة 1")}
-              {editableSection("hero", "heroCard2", "رابط صورة البطاقة 2")}
               <Button onClick={() => saveSection("hero")} disabled={loading} className="bg-primary hover:bg-primary/90 text-white rounded-xl">
                 <Save className="w-4 h-4 ml-2" /> حفظ
               </Button>
+            </div>
+
+            {/* HERO IMAGES */}
+            <div className="glass-panel rounded-3xl p-8 bg-card/40 border border-white/5">
+              <h2 className="text-xl font-bold text-foreground mb-6">صور القسم الرئيسي (البطاقتين)</h2>
+              <p className="text-sm text-gray-400 mb-4">هذه الصورتان تظهران في القسم الرئيسي للموقع. اضغط على الصورة لاستبدالها أو ارفع صورة جديدة.</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {(["heroCard1", "heroCard2"] as const).map((cardKey, idx) => {
+                  const currentUrl = (sections.hero as any)?.[cardKey] || "";
+                  return (
+                    <div key={cardKey} className="relative group flex flex-col items-center gap-3">
+                      <span className="text-sm font-bold text-muted-foreground">البطاقة {idx + 1}</span>
+                      <div className="relative w-full aspect-[4/3] bg-black/20 border border-white/10 rounded-xl overflow-hidden flex items-center justify-center">
+                        {currentUrl ? (
+                          <>
+                            <img src={currentUrl} alt={`Hero Card ${idx + 1}`} className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                              <label onClick={(e) => e.stopPropagation()} className="cursor-pointer bg-blue-500/90 rounded-xl px-4 py-2 flex items-center gap-2 hover:bg-blue-600 transition" title="استبدال الصورة">
+                                <RefreshCw className="w-4 h-4 text-white" />
+                                <span className="text-white text-sm font-bold">استبدال</span>
+                                <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (!file) return;
+                                  try {
+                                    setLoading(true);
+                                    const fd = new FormData();
+                                    fd.append("image", file);
+                                    if (currentUrl) {
+                                      const filename = currentUrl.split("/").pop();
+                                      const publicId = filename?.split(".")[0];
+                                      if (publicId) fd.append("publicId", publicId);
+                                    }
+                                    const res = await fetch(API_BASE + "/api/upload", {
+                                      method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd
+                                    });
+                                    if (res.ok) {
+                                      const data = await res.json();
+                                      setSections(prev => ({
+                                        ...prev,
+                                        hero: { ...(prev.hero as any), [cardKey]: data.url }
+                                      }));
+                                      await fetch(API_BASE + "/api/content/hero", {
+                                        method: "PUT",
+                                        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                                        body: JSON.stringify({ content: JSON.stringify({ ...(sections.hero as any), [cardKey]: data.url }) })
+                                      });
+                                      toast({ title: "تم استبدال الصورة بنجاح" });
+                                    }
+                                  } catch { toast({ title: "خطأ", variant: "destructive" }); }
+                                  finally { setLoading(false); e.target.value = ""; }
+                                }} />
+                              </label>
+                            </div>
+                          </>
+                        ) : (
+                          <label className="cursor-pointer w-full h-full flex flex-col items-center justify-center hover:bg-primary/10 transition-colors p-4 text-center">
+                            <Upload className="w-8 h-8 text-muted-foreground mb-2" />
+                            <span className="text-sm text-muted-foreground font-bold">ارفع صورة البطاقة {idx + 1}</span>
+                            <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              try {
+                                setLoading(true);
+                                const fd = new FormData();
+                                fd.append("image", file);
+                                const res = await fetch(API_BASE + "/api/upload", {
+                                  method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd
+                                });
+                                if (res.ok) {
+                                  const data = await res.json();
+                                  setSections(prev => ({
+                                    ...prev,
+                                    hero: { ...(prev.hero as any), [cardKey]: data.url }
+                                  }));
+                                  await fetch(API_BASE + "/api/content/hero", {
+                                    method: "PUT",
+                                    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                                    body: JSON.stringify({ content: JSON.stringify({ ...(sections.hero as any), [cardKey]: data.url }) })
+                                  });
+                                  toast({ title: "تم رفع الصورة بنجاح" });
+                                }
+                              } catch { toast({ title: "خطأ", variant: "destructive" }); }
+                              finally { setLoading(false); e.target.value = ""; }
+                            }} />
+                          </label>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
             {/* PRICING */}
