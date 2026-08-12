@@ -1,0 +1,51 @@
+{
+  "name": "portfolio-creator",
+  "version": "1.0.0",
+  "description": "Portfolio Creator - Thumbnail Designer Portfolio Website",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install && npm --prefix client install && npm --prefix server install",
+    "dev": "concurrently \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
+    "dev:client": "npm --prefix client run dev",
+    "dev:server": "npm --prefix server run dev",
+    "build": "npm --prefix client install --legacy-peer-deps && npm --prefix client run build && npm --prefix server install && npm --prefix server run build",
+    "start": "npm --prefix server run start",
+    "db:push": "npm --prefix server run db:push",
+    "db:seed": "npm --prefix server run db:seed"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "concurrently": "^9.1.0"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
+    "@libsql/client": "^0.14.0",
+    "@radix-ui/react-label": "^2.1.8",
+    "@radix-ui/react-select": "^2.2.6",
+    "@radix-ui/react-slot": "^1.2.4",
+    "@radix-ui/react-toast": "^1.2.15",
+    "@tanstack/react-query": "^5.95.2",
+    "bcryptjs": "^2.4.3",
+    "class-variance-authority": "^0.7.1",
+    "cloudinary": "^1.41.3",
+    "clsx": "^2.1.1",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^17.3.1",
+    "drizzle-orm": "^0.39.0",
+    "express": "^5.0.1",
+    "express-rate-limit": "^7.5.0",
+    "framer-motion": "^12.38.0",
+    "jsonwebtoken": "^9.0.2",
+    "lucide-react": "^1.7.0",
+    "multer": "^1.4.5-lts.1",
+    "multer-storage-cloudinary": "^4.0.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-hook-form": "^7.72.0",
+    "tailwind-merge": "^3.5.0",
+    "wouter": "^3.9.0",
+    "zod": "^3.24.1"
+  }
+}
