@@ -343,6 +343,78 @@ export default function AdminDashboard() {
     }
   }
 
+  const getPortfolioImages = () => {
+    const urlsStr = (sections.portfolio as any)?.images || "";
+    const urls = urlsStr.split(",").map((s: string) => s.trim());
+    const slots = Array(20).fill("");
+    for (let i = 0; i < 20; i++) {
+      if (urls[i]) slots[i] = urls[i];
+    }
+    return slots;
+  };
+
+  const updatePortfolioImages = async (newSlots: string[]) => {
+    const newString = newSlots.join(",");
+    setSections(prev => ({
+      ...prev,
+      portfolio: { ...(prev.portfolio as any), images: newString }
+    }));
+    try {
+      await fetch(API_BASE + "/api/content/portfolio", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ content: JSON.stringify({ ...(sections.portfolio as any), images: newString }) })
+      });
+    } catch {}
+  };
+
+  const movePortfolioImage = (index: number, direction: 'left' | 'right') => {
+    const slots = getPortfolioImages();
+    if (direction === 'left' && index < 19) {
+      [slots[index], slots[index + 1]] = [slots[index + 1], slots[index]];
+    } else if (direction === 'right' && index > 0) {
+      [slots[index], slots[index - 1]] = [slots[index - 1], slots[index]];
+    } else return;
+    updatePortfolioImages(slots);
+  };
+
+  const deletePortfolioImage = (index: number) => {
+    const slots = getPortfolioImages();
+    slots[index] = "";
+    updatePortfolioImages(slots);
+  };
+
+  const uploadPortfolioImage = async (e: React.ChangeEvent<HTMLInputElement>, index: number, isReplace = false) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const slots = getPortfolioImages();
+    const oldUrl = slots[index];
+    try {
+      setLoading(true);
+      const fd = new FormData();
+      fd.append("image", file);
+      if (isReplace && oldUrl) {
+         const filename = oldUrl.split("/").pop();
+         const publicId = filename?.split(".")[0];
+         if (publicId) fd.append("publicId", publicId);
+      }
+      const res = await fetch(API_BASE + "/api/upload", {
+        method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd
+      });
+      if (res.ok) {
+        const data = await res.json();
+        slots[index] = data.url;
+        await updatePortfolioImages(slots);
+        toast({ title: isReplace ? "تم الاستبدال بنجاح" : "تم الرفع بنجاح" });
+      }
+    } catch {
+      toast({ title: "خطأ في الرفع", variant: "destructive" });
+    } finally {
+      setLoading(false);
+      e.target.value = "";
+    }
+  };
+
   const updateCaseStudy = (index: number, field: string, value: string) => {
     setSections(prev => {
       const current = Array.isArray(prev.caseStudies) && prev.caseStudies.length > 0 ? [...prev.caseStudies] : [...defaultCaseStudies];
@@ -1224,7 +1296,7 @@ export default function AdminDashboard() {
 
             {/* UPLOAD IMAGES */}
             <div className="glass-panel rounded-3xl p-8 bg-card/40 border border-white/5">
-              <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2"><Upload className="w-5 h-5"/> إدارة مكتبة الصور المرفوعة</h2>
+              <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2"><Upload className="w-5 h-5"/> مكتبة الصور (صور صناع المحتوى ومعرض الأعمال)</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 {images.map((url, index) => (
                   <div key={url} className="relative group cursor-pointer" onClick={() => { navigator.clipboard?.writeText(url); toast({ title: "تم نسخ الرابط" }); }}>
@@ -1327,12 +1399,43 @@ export default function AdminDashboard() {
 
             {/* PORTFOLIO */}
             <div className="glass-panel rounded-3xl p-8 bg-card/40 border border-white/5">
-              <h2 className="text-xl font-bold text-foreground mb-6">صور معرض الأعمال (Portfolio)</h2>
-              <p className="text-sm text-gray-400 mb-4">انسخ الروابط من الأعلى وألصقها هنا مسافة أو فاصلة بين كل رابط.</p>
-              {editableSection("portfolio", "images", "روابط الصور", true)}
-              <Button onClick={() => saveSection("portfolio")} disabled={loading} className="bg-primary hover:bg-primary/90 text-white rounded-xl">
-                <Save className="w-4 h-4 ml-2" /> حفظ
-              </Button>
+              <h2 className="text-xl font-bold text-foreground mb-6">صور معرض الأعمال (Portfolio) - 20 صورة</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                {getPortfolioImages().map((url, index) => (
+                  <div key={`portfolio-${index}`} className="relative group flex items-center justify-center bg-black/20 border border-white/10 rounded-xl aspect-video overflow-hidden">
+                    {url ? (
+                      <>
+                        <img src={url} alt={`Portfolio ${index + 1}`} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2">
+                          <div className="flex items-center justify-between h-full">
+                            <button onClick={(e) => { e.stopPropagation(); movePortfolioImage(index, 'right'); }} className="w-8 h-8 bg-black/60 rounded-lg flex items-center justify-center hover:bg-black transition" title="تحريك لليمين">
+                              <ArrowRight className="w-4 h-4 text-white" />
+                            </button>
+                            <div className="flex flex-col gap-2">
+                              <label onClick={(e) => e.stopPropagation()} className="w-8 h-8 cursor-pointer bg-blue-500/90 rounded-lg flex items-center justify-center hover:bg-blue-600 transition" title="استبدال الصورة">
+                                <RefreshCw className="w-4 h-4 text-white" />
+                                <input type="file" accept="image/*" className="hidden" onChange={(e) => uploadPortfolioImage(e, index, true)} />
+                              </label>
+                              <button onClick={(e) => { e.stopPropagation(); deletePortfolioImage(index); }} className="w-8 h-8 bg-red-500/90 rounded-lg flex items-center justify-center hover:bg-red-600 transition" title="حذف الصورة">
+                                <Trash2 className="w-4 h-4 text-white" />
+                              </button>
+                            </div>
+                            <button onClick={(e) => { e.stopPropagation(); movePortfolioImage(index, 'left'); }} className="w-8 h-8 bg-black/60 rounded-lg flex items-center justify-center hover:bg-black transition" title="تحريك لليسار">
+                              <ArrowLeft className="w-4 h-4 text-white" />
+                            </button>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <label className="cursor-pointer w-full h-full flex flex-col items-center justify-center hover:bg-primary/10 transition-colors p-4 text-center">
+                        <Upload className="w-6 h-6 text-muted-foreground mb-2" />
+                        <span className="text-xs text-muted-foreground font-bold">خانة {index + 1}</span>
+                        <input type="file" accept="image/*" className="hidden" onChange={(e) => uploadPortfolioImage(e, index, false)} />
+                      </label>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* CASE STUDIES */}

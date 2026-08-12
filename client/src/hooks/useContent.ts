@@ -86,7 +86,7 @@ export function useImages(): ImagesMap {
   });
 
   const urls = allImages ?? [];
-  const portfolioUrls = portfolioSection?.images ? portfolioSection.images.split(/[\s,]+/).filter(Boolean) : urls.slice(2);
+  const portfolioUrls = portfolioSection?.images ? portfolioSection.images.split(",").map((s: string) => s.trim()) : urls.slice(2);
 
   return {
     heroCard1: heroSection?.heroCard1 || urls[0],

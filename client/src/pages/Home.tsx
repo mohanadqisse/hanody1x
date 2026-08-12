@@ -1024,7 +1024,7 @@ function PortfolioGrid() {
         isOpen={isRatingModalOpen} 
         onClose={() => setIsRatingModalOpen(false)} 
         images={images.portfolio || {}} 
-        items={portfolioItems.slice(0, 12)}
+        items={portfolioItems}
       />
 
       {/* Lightbox with Color Palette */}

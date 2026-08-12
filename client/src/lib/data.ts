@@ -94,4 +94,12 @@ export const portfolioItems = [
   { id: 10, category: "مالية", categoryEn: "Finance" },
   { id: 11, category: "فلوج", categoryEn: "Vlogs" },
   { id: 12, category: "ردود الفعل", categoryEn: "Reaction" },
+  { id: 13, category: "جيمينج", categoryEn: "Gaming" },
+  { id: 14, category: "مالية", categoryEn: "Finance" },
+  { id: 15, category: "فلوج", categoryEn: "Vlogs" },
+  { id: 16, category: "ردود الفعل", categoryEn: "Reaction" },
+  { id: 17, category: "جيمينج", categoryEn: "Gaming" },
+  { id: 18, category: "مالية", categoryEn: "Finance" },
+  { id: 19, category: "فلوج", categoryEn: "Vlogs" },
+  { id: 20, category: "ردود الفعل", categoryEn: "Reaction" },
 ];
