@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "../lib/db.js";
-import { clients, timeSessions, users, thumbnails, transactions, comments, ratings, notifications, creatorCodes } from "../schema/index.js";
+import { clients, timeSessions, users, thumbnails, transactions, comments, ratings, notifications, creatorCodes, revisionRequests } from "../schema/index.js";
 import { eq, desc, sum, count } from "drizzle-orm";
 import { requireAuth } from "../lib/auth.js";
 import bcrypt from "bcryptjs";
@@ -532,6 +532,85 @@ router.post("/thumbnails/:id/comments", async (req, res) => {
     }).returning();
     res.status(201).json(newComment);
   } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// =======================
+// Admin — Revision Requests
+// =======================
+
+// GET /api/dashboard/revisions — list all revision requests with thumbnail + user info
+router.get("/revisions", async (_req, res) => {
+  try {
+    const allRevisions = await db
+      .select({
+        id: revisionRequests.id,
+        thumbnailId: revisionRequests.thumbnailId,
+        userId: revisionRequests.userId,
+        message: revisionRequests.message,
+        status: revisionRequests.status,
+        createdAt: revisionRequests.createdAt,
+        updatedAt: revisionRequests.updatedAt,
+        thumbnailTitle: thumbnails.title,
+        thumbnailImage: thumbnails.image,
+        userFullName: users.fullName,
+        userEmail: users.email,
+      })
+      .from(revisionRequests)
+      .leftJoin(thumbnails, eq(revisionRequests.thumbnailId, thumbnails.id))
+      .leftJoin(users, eq(revisionRequests.userId, users.id))
+      .orderBy(desc(revisionRequests.createdAt));
+
+    res.json(allRevisions);
+  } catch (error) {
+    console.error("Admin revisions fetch error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// GET /api/dashboard/revisions/:thumbnailId — revisions for a specific thumbnail (admin)
+router.get("/revisions/thumbnail/:thumbnailId", async (req, res) => {
+  try {
+    const thumbnailId = parseInt(req.params.thumbnailId);
+    const revs = await db
+      .select()
+      .from(revisionRequests)
+      .where(eq(revisionRequests.thumbnailId, thumbnailId))
+      .orderBy(desc(revisionRequests.createdAt));
+    res.json(revs);
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// PATCH /api/dashboard/revisions/:id — update status (admin only)
+const VALID_STATUSES = ["pending", "in_progress", "completed", "rejected"];
+
+router.patch("/revisions/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { status } = req.body;
+
+    if (!status || !VALID_STATUSES.includes(status)) {
+      res.status(400).json({ error: `Invalid status. Must be one of: ${VALID_STATUSES.join(", ")}` });
+      return;
+    }
+
+    const [updated] = await db
+      .update(revisionRequests)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(revisionRequests.id, id))
+      .returning();
+
+    if (!updated) {
+      res.status(404).json({ error: "Revision request not found." });
+      return;
+    }
+
+    res.json(updated);
+  } catch (error) {
+    console.error("Admin revision update error:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });

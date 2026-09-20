@@ -2,55 +2,15 @@ import { API_BASE } from "@/lib/api";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "wouter";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 import {
-  Search, Download, MessageSquare, Star, Send, X
+  Search, Download, MessageSquare, Star, Send, X, ArrowRight
 } from "lucide-react";
-
-/* ─── Types ─────────────────────────────────────── */
-interface Thumbnail {
-  id: number;
-  image: string;
-  title: string;
-  status: string;
-  price: number;
-  notes?: string;
-  downloadUrl?: string;
-  createdAt: string;
-}
-
-interface Comment {
-  id: number;
-  authorName: string;
-  isAdmin: boolean;
-  content: string;
-  createdAt: string;
-}
-
-interface Rating {
-  id: number;
-  rating: number;
-}
-
-/* ─── Status helpers ────────────────────────────── */
-function statusBadgeClass(status: string) {
-  if (status.includes("تم التسليم"))  return "dash-badge dash-badge-green";
-  if (status.includes("تم التنفيذ"))  return "dash-badge dash-badge-blue";
-  if (status.includes("قيد"))         return "dash-badge dash-badge-amber";
-  return "dash-badge dash-badge-gray";
-}
-
-function statusLabel(status: string) {
-  if (status.includes("تم التسليم"))                              return "Delivered";
-  if (status.includes("تم التنفيذ"))                              return "Completed";
-  if (status.includes("قيد التنفيذ") || status.includes("قيد العمل")) return "In Progress";
-  if (status.includes("في انتظار") || status.includes("انتظار")) return "Pending";
-  return status;
-}
-
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-}
+import {
+  Thumbnail, Comment, Rating,
+  statusBadgeClass, statusLabel, formatDate,
+} from "@/types/dashboard";
 
 /* ─── Skeleton ──────────────────────────────────── */
 function ThumbnailsSkeleton() {
@@ -488,19 +448,34 @@ export default function Thumbnails() {
                       <button
                         onClick={() => handleDownload(thumb)}
                         style={{
-                          flex: 1, height: "32px", display: "flex", alignItems: "center", justifyContent: "center", gap: "5px",
+                          height: "32px", display: "flex", alignItems: "center", justifyContent: "center", gap: "5px",
                           background: "var(--dash-ink)", color: "#fff", border: "none", borderRadius: "6px",
                           fontSize: "12px", fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
-                          transition: "opacity 0.15s ease",
+                          transition: "opacity 0.15s ease", padding: "0 10px",
                         }}
                         onMouseEnter={e => (e.currentTarget.style.opacity = "0.85")}
                         onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
                       >
                         <Download size={12} /> Download
                       </button>
+                      <Link href={`/dashboard/thumbnails/${thumb.id}`}>
+                        <div
+                          title="View details"
+                          style={{
+                            height: "32px", display: "flex", alignItems: "center", gap: "5px", padding: "0 10px",
+                            background: "var(--dash-border-2)", border: "1px solid var(--dash-border)", borderRadius: "6px",
+                            cursor: "pointer", color: "var(--dash-ink-2)", fontSize: "12px", fontWeight: 600,
+                            transition: "background 0.13s ease",
+                          }}
+                          onMouseEnter={e => (e.currentTarget.style.background = "var(--dash-border)")}
+                          onMouseLeave={e => (e.currentTarget.style.background = "var(--dash-border-2)")}
+                        >
+                          <ArrowRight size={12} /> Details
+                        </div>
+                      </Link>
                       <button
                         onClick={() => setCommentId(thumb.id)}
-                        title="Comments"
+                        title="Quick comment"
                         style={{
                           width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center",
                           background: "var(--dash-border-2)", border: "1px solid var(--dash-border)", borderRadius: "6px",

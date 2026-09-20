@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "../lib/db.js";
-import { users, thumbnails, transactions, notifications, siteContent, comments, ratings } from "../schema/index.js";
+import { users, thumbnails, transactions, notifications, siteContent, comments, ratings, revisionRequests } from "../schema/index.js";
 import { requireUserAuth } from "../lib/auth.js";
 import { eq, desc, and } from "drizzle-orm";
 
@@ -188,6 +188,132 @@ router.patch("/notifications/:id/read", requireUserAuth, async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ message: "خطأ في الخادم" });
+  }
+});
+
+// --- Single Thumbnail Detail ---
+router.get("/thumbnails/:id", requireUserAuth, async (req, res) => {
+  const payload = (req as typeof req & { user: { id: number; role: string } }).user;
+  const thumbnailId = parseInt(String(req.params.id));
+
+  if (payload.role === "guest") {
+    // Return guest mock thumbnail
+    const mock = {
+      id: thumbnailId,
+      userId: 0,
+      image: "https://placehold.co/1280x720/1a1a1a/FFFFFF?text=Demo+Thumbnail",
+      title: "Demo Thumbnail",
+      status: "تم التسليم",
+      price: 50,
+      notes: "هذا عمل تجريبي للعرض فقط.",
+      downloadUrl: null,
+      creatorName: "Demo Creator",
+      youtubeUrl: null,
+      views: "1.2M",
+      videoTitle: "Demo Video Title",
+      category: "Entertainment",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    res.json(mock);
+    return;
+  }
+
+  try {
+    const [thumb] = await db
+      .select()
+      .from(thumbnails)
+      .where(and(eq(thumbnails.id, thumbnailId), eq(thumbnails.userId, payload.id)));
+
+    if (!thumb) {
+      res.status(404).json({ message: "Thumbnail not found." });
+      return;
+    }
+    res.json(thumb);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error." });
+  }
+});
+
+// --- Revision Requests ---
+router.get("/thumbnails/:id/revisions", requireUserAuth, async (req, res) => {
+  const payload = (req as typeof req & { user: { id: number; role: string } }).user;
+  const thumbnailId = parseInt(String(req.params.id));
+
+  if (payload.role === "guest") {
+    res.json([]);
+    return;
+  }
+
+  try {
+    // Verify ownership
+    const [thumb] = await db
+      .select()
+      .from(thumbnails)
+      .where(and(eq(thumbnails.id, thumbnailId), eq(thumbnails.userId, payload.id)));
+
+    if (!thumb) {
+      res.status(404).json({ message: "Thumbnail not found." });
+      return;
+    }
+
+    const requests = await db
+      .select()
+      .from(revisionRequests)
+      .where(and(eq(revisionRequests.thumbnailId, thumbnailId), eq(revisionRequests.userId, payload.id)))
+      .orderBy(desc(revisionRequests.createdAt));
+
+    res.json(requests);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error." });
+  }
+});
+
+router.post("/thumbnails/:id/revisions", requireUserAuth, async (req, res) => {
+  const payload = (req as typeof req & { user: { id: number; role: string } }).user;
+  const thumbnailId = parseInt(String(req.params.id));
+
+  if (payload.role === "guest") {
+    res.status(403).json({ message: "Guests cannot submit revision requests." });
+    return;
+  }
+
+  try {
+    // Validate message
+    const rawMessage: unknown = req.body.message;
+    if (typeof rawMessage !== "string" || rawMessage.trim().length === 0) {
+      res.status(400).json({ message: "Revision message is required." });
+      return;
+    }
+    const message = rawMessage.trim().slice(0, 2000); // max 2000 chars
+
+    // Verify ownership
+    const [thumb] = await db
+      .select()
+      .from(thumbnails)
+      .where(and(eq(thumbnails.id, thumbnailId), eq(thumbnails.userId, payload.id)));
+
+    if (!thumb) {
+      res.status(404).json({ message: "Thumbnail not found." });
+      return;
+    }
+
+    const [revision] = await db
+      .insert(revisionRequests)
+      .values({
+        thumbnailId,
+        userId: payload.id,
+        message,
+        status: "pending",
+      })
+      .returning();
+
+    res.status(201).json(revision);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error." });
   }
 });
 

@@ -135,6 +135,17 @@ export const notifications = pgTable("notifications", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const revisionRequests = pgTable("revision_requests", {
+  id: serial("id").primaryKey(),
+  thumbnailId: integer("thumbnail_id").references(() => thumbnails.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  message: text("message").notNull(),
+  // status: "pending" | "in_progress" | "completed" | "rejected"
+  status: text("status").notNull().default("pending"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const publicRatings = pgTable("public_ratings", {
   id: serial("id").primaryKey(),
   portfolioItemId: integer("portfolio_item_id").notNull(),
@@ -151,6 +162,7 @@ export const insertCommentSchema = createInsertSchema(comments).omit({ id: true,
 export const insertRatingSchema = createInsertSchema(ratings).omit({ id: true, createdAt: true });
 export const insertNotificationSchema = createInsertSchema(notifications).omit({ id: true, createdAt: true });
 export const insertPublicRatingSchema = createInsertSchema(publicRatings).omit({ id: true, createdAt: true });
+export const insertRevisionRequestSchema = createInsertSchema(revisionRequests).omit({ id: true, createdAt: true, updatedAt: true });
 
 export type PublicRating = typeof publicRatings.$inferSelect;
 export type AdminUser = typeof adminUsers.$inferSelect;
@@ -167,3 +179,4 @@ export type Comment = typeof comments.$inferSelect;
 export type Rating = typeof ratings.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
 export type CreatorCode = typeof creatorCodes.$inferSelect;
+export type RevisionRequest = typeof revisionRequests.$inferSelect;

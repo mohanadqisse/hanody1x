@@ -15,11 +15,12 @@ import { Menu, X } from "lucide-react";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 
 // Sub-pages
-import Overview      from "./Overview";
-import Thumbnails    from "./Thumbnails";
-import Billing       from "./Billing";
-import UserSettings  from "./UserSettings";
-import Notifications from "./Notifications";
+import Overview         from "./Overview";
+import Thumbnails       from "./Thumbnails";
+import ThumbnailDetail  from "./ThumbnailDetail";
+import Billing          from "./Billing";
+import UserSettings     from "./UserSettings";
+import Notifications    from "./Notifications";
 
 export default function UserDashboard() {
   const { user, isAuthenticated, isLoading } = useUser();
@@ -180,11 +181,12 @@ export default function UserDashboard() {
           }}
         >
           <Switch>
-            <Route path="/dashboard"               component={Overview}      />
-            <Route path="/dashboard/thumbnails"    component={Thumbnails}    />
-            <Route path="/dashboard/billing"       component={Billing}       />
-            <Route path="/dashboard/notifications" component={Notifications} />
-            <Route path="/dashboard/settings"      component={UserSettings}  />
+            <Route path="/dashboard"                        component={Overview}        />
+            <Route path="/dashboard/thumbnails/:id"         component={ThumbnailDetail} />
+            <Route path="/dashboard/thumbnails"             component={Thumbnails}      />
+            <Route path="/dashboard/billing"                component={Billing}         />
+            <Route path="/dashboard/notifications"          component={Notifications}   />
+            <Route path="/dashboard/settings"               component={UserSettings}    />
           </Switch>
         </div>
       </main>
