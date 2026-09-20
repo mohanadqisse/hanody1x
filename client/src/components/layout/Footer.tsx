@@ -1,26 +1,59 @@
-import { useLanguage } from "@/contexts/LanguageContext";
+import { Link } from "wouter";
+
+const footerLinks = [
+  { label: "Work",         href: "/work" },
+  { label: "About",        href: "/#about" },
+  { label: "Contact",      href: "/#contact" },
+  { label: "Client Login", href: "/login" },
+];
 
 export function Footer() {
-  const { t } = useLanguage();
+  const scrollTo = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: "smooth" });
+    else window.location.href = `/#${id}`;
+  };
 
   return (
-    <footer className="border-t border-border py-12 mt-20">
-      <div className="container mx-auto px-6">
+    <footer className="border-t border-black/8 py-10 mt-20">
+      <div className="pub-container">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <p className="text-muted-foreground text-sm text-center">
-            © {new Date().getFullYear()} {t("footer.rights")}
-          </p>
+          {/* Brand */}
+          <Link href="/">
+            <span className="text-sm font-black tracking-[0.08em] uppercase text-black cursor-pointer hover:text-black/60 transition-colors">
+              MUHANAD
+            </span>
+          </Link>
+
+          {/* Nav links */}
           <nav className="flex items-center gap-6">
-            <button onClick={() => document.getElementById("services")?.scrollIntoView({ behavior: "smooth" })} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              {t("footer.services")}
-            </button>
-            <button onClick={() => document.getElementById("portfolio")?.scrollIntoView({ behavior: "smooth" })} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              {t("footer.portfolio")}
-            </button>
-            <button onClick={() => document.getElementById("order")?.scrollIntoView({ behavior: "smooth" })} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              {t("footer.order")}
-            </button>
+            {footerLinks.map((link) => {
+              if (link.href.startsWith("/#")) {
+                const id = link.href.slice(2);
+                return (
+                  <button
+                    key={link.label}
+                    onClick={() => scrollTo(id)}
+                    className="text-sm text-black/40 hover:text-black transition-colors"
+                  >
+                    {link.label}
+                  </button>
+                );
+              }
+              return (
+                <Link key={link.label} href={link.href}>
+                  <span className="text-sm text-black/40 hover:text-black transition-colors cursor-pointer">
+                    {link.label}
+                  </span>
+                </Link>
+              );
+            })}
           </nav>
+
+          {/* Copyright */}
+          <p className="text-xs text-black/30">
+            © {new Date().getFullYear()} MUHANAD · hanody1x.com
+          </p>
         </div>
       </div>
     </footer>
