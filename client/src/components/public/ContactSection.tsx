@@ -1,21 +1,11 @@
-import { useState, useRef } from "react";
-import { motion, useInView } from "framer-motion";
+import { useState } from "react";
+import { motion } from "framer-motion";
 import { Send, Instagram } from "lucide-react";
 import { API_BASE } from "@/lib/api";
 
 const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
 
-const packages = [
-  "Basic",
-  "Pro",
-  "Elite",
-  "Not sure yet",
-];
-
 export function ContactSection() {
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: "-80px" });
-
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -52,14 +42,15 @@ export function ContactSection() {
   };
 
   return (
-    <section id="contact" className="pub-section border-t border-black/8" ref={ref}>
+    <section id="contact" className="pub-section border-t border-black/8">
       <div className="pub-container">
         <div className="grid md:grid-cols-2 gap-16 items-start">
           {/* Left */}
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, ease }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.65, ease }}
           >
             <p className="text-xs font-semibold uppercase tracking-widest text-black/30 mb-3">
               Contact
@@ -88,9 +79,10 @@ export function ContactSection() {
 
           {/* Right — Form */}
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.1, ease }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.65, delay: 0.12, ease }}
           >
             {status === "success" ? (
               <div className="rounded-2xl border border-green-200 bg-green-50 p-8 text-center">
@@ -139,25 +131,6 @@ export function ContactSection() {
                       className="w-full px-4 py-3 rounded-xl border border-black/12 bg-white text-black text-sm placeholder:text-black/25 outline-none focus:border-black/30 focus:ring-2 focus:ring-black/5 transition-all"
                     />
                   </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-black/50 mb-1.5">
-                    Package (optional)
-                  </label>
-                  <select
-                    name="packageType"
-                    value={form.packageType}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 rounded-xl border border-black/12 bg-white text-black text-sm outline-none focus:border-black/30 focus:ring-2 focus:ring-black/5 transition-all appearance-none"
-                  >
-                    <option value="">Select a package...</option>
-                    {packages.map((pkg) => (
-                      <option key={pkg} value={pkg}>
-                        {pkg}
-                      </option>
-                    ))}
-                  </select>
                 </div>
 
                 <div>

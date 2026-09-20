@@ -1,5 +1,4 @@
-import { useRef } from "react";
-import { motion, useInView } from "framer-motion";
+import { motion } from "framer-motion";
 import { caseStudiesEn } from "@/lib/i18n-defaults";
 
 const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
@@ -15,16 +14,15 @@ const testimonials = caseStudiesEn.map((cs) => ({
 }));
 
 export function Testimonials() {
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: "-80px" });
-
   return (
-    <section className="pub-section border-t border-black/8" ref={ref}>
+    <section className="pub-section border-t border-black/8">
       <div className="pub-container">
+        {/* Section header */}
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6, ease }}
+          initial={{ opacity: 0, y: 18 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.65, ease }}
           className="mb-12 text-center"
         >
           <p className="text-xs font-semibold uppercase tracking-widest text-black/30 mb-3">
@@ -39,8 +37,9 @@ export function Testimonials() {
           {testimonials.map((t, i) => (
             <motion.div
               key={t.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={inView ? { opacity: 1, y: 0 } : {}}
+              initial={{ opacity: 0, y: 24, scale: 0.98 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
+              viewport={{ once: true, margin: "-60px" }}
               transition={{ duration: 0.55, delay: i * 0.08, ease }}
               className="border border-black/8 rounded-2xl p-6 bg-white hover:border-black/16 hover:shadow-[0_4px_24px_rgba(0,0,0,0.06)] transition-all duration-300"
             >

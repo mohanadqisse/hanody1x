@@ -1,5 +1,4 @@
-import { useRef } from "react";
-import { motion, useInView } from "framer-motion";
+import { motion } from "framer-motion";
 import { useSection } from "@/hooks/useContent";
 
 const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
@@ -11,26 +10,25 @@ const defaultStats = [
 ];
 
 export function Stats() {
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: "-80px" });
-
   // Try to pull live stats from CMS, fall back to defaults
   const apiStats = useSection<typeof defaultStats>("stats", defaultStats);
-  // Map API stats to English labels if they came back as English
-  const stats = Array.isArray(apiStats) && apiStats.length > 0 ? apiStats.map((s: any) => ({
-    value: s.suffix ? `${s.value}${s.suffix}` : s.value,
-    label: s.label,
-  })) : defaultStats;
+  const stats = Array.isArray(apiStats) && apiStats.length > 0
+    ? apiStats.map((s: any) => ({
+        value: s.suffix ? `${s.value}${s.suffix}` : s.value,
+        label: s.label,
+      }))
+    : defaultStats;
 
   return (
-    <section className="pub-section border-t border-black/8" ref={ref}>
+    <section className="pub-section border-t border-black/8">
       <div className="pub-container">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-12 sm:gap-8 md:divide-x md:divide-black/8">
           {stats.map((stat, i) => (
             <motion.div
               key={stat.label}
-              initial={{ opacity: 0, y: 16 }}
-              animate={inView ? { opacity: 1, y: 0 } : {}}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-60px" }}
               transition={{ duration: 0.6, delay: i * 0.1, ease }}
               className="flex flex-col items-center sm:items-center text-center"
             >

@@ -35,8 +35,12 @@ async function ensureTables() {
     await db.execute(sql`CREATE TABLE IF NOT EXISTS public_ratings (id SERIAL PRIMARY KEY, portfolio_item_id INTEGER NOT NULL, rating INTEGER NOT NULL, visitor_id TEXT NOT NULL, visitor_name TEXT NOT NULL DEFAULT 'زائر', created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
     // Add visitor_name column if it doesn't exist (safe migration)
     try { await db.execute(sql`ALTER TABLE public_ratings ADD COLUMN IF NOT EXISTS visitor_name TEXT NOT NULL DEFAULT 'زائر'`); } catch(e) { /* column may already exist */ }
-    // Clear all existing ratings as requested
-    await db.execute(sql`DELETE FROM public_ratings`);
+    // Add portfolio metadata columns to thumbnails if they don't exist (safe migration)
+    try { await db.execute(sql`ALTER TABLE thumbnails ADD COLUMN IF NOT EXISTS creator_name TEXT`); } catch(e) {}
+    try { await db.execute(sql`ALTER TABLE thumbnails ADD COLUMN IF NOT EXISTS youtube_url TEXT`); } catch(e) {}
+    try { await db.execute(sql`ALTER TABLE thumbnails ADD COLUMN IF NOT EXISTS views TEXT`); } catch(e) {}
+    try { await db.execute(sql`ALTER TABLE thumbnails ADD COLUMN IF NOT EXISTS video_title TEXT`); } catch(e) {}
+    try { await db.execute(sql`ALTER TABLE thumbnails ADD COLUMN IF NOT EXISTS category TEXT`); } catch(e) {}
     console.log("Database tables verified (safe migration - no data loss)");
 
     // Auto-seed admin if it doesn't exist

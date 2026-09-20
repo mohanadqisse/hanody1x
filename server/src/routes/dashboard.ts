@@ -280,10 +280,19 @@ router.get("/users/:id/transactions", async (req, res) => {
   }
 });
 
+router.get("/thumbnails", async (_req, res) => {
+  try {
+    const all = await db.select().from(thumbnails).orderBy(desc(thumbnails.createdAt));
+    res.json(all);
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 router.patch("/thumbnails/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const { title, image, status, notes, downloadUrl, price } = req.body;
+    const { title, image, status, notes, downloadUrl, price, creatorName, youtubeUrl, views, videoTitle, category } = req.body;
     const [updated] = await db.update(thumbnails).set({
       ...(title !== undefined && { title }),
       ...(image !== undefined && { image }),
@@ -291,6 +300,12 @@ router.patch("/thumbnails/:id", async (req, res) => {
       ...(notes !== undefined && { notes }),
       ...(downloadUrl !== undefined && { downloadUrl }),
       ...(price !== undefined && { price: parseInt(price) || 0 }),
+      ...(creatorName !== undefined && { creatorName }),
+      ...(youtubeUrl !== undefined && { youtubeUrl }),
+      ...(views !== undefined && { views }),
+      ...(videoTitle !== undefined && { videoTitle }),
+      ...(category !== undefined && { category }),
+      updatedAt: new Date(),
     }).where(eq(thumbnails.id, id)).returning();
     res.json(updated);
   } catch (error) {
@@ -335,15 +350,20 @@ router.delete("/transactions/:id", async (req, res) => {
 
 router.post("/thumbnails", async (req, res) => {
   try {
-    const { userId, title, image, status, notes, downloadUrl, price } = req.body;
+    const { userId, title, image, status, notes, downloadUrl, price, creatorName, youtubeUrl, views, videoTitle, category } = req.body;
     const [newThumb] = await db.insert(thumbnails).values({
       userId: parseInt(userId),
-      title,
+      title: title || "Untitled",
       image,
       status: status || "قيد العمل",
-      notes,
-      downloadUrl,
-      price: price ? parseInt(price) : 0
+      notes: notes || null,
+      downloadUrl: downloadUrl || null,
+      price: price ? parseInt(price) : 0,
+      creatorName: creatorName || null,
+      youtubeUrl: youtubeUrl || null,
+      views: views || null,
+      videoTitle: videoTitle || null,
+      category: category || null,
     }).returning();
     res.status(201).json(newThumb);
   } catch (error) {

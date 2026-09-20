@@ -36,7 +36,7 @@ export function FinalCTA() {
             <p className="text-xs font-semibold uppercase tracking-widest text-white/30 mb-4">
               Ready to start?
             </p>
-            <h2 className="text-4xl md:text-6xl font-black tracking-tight mb-5 leading-[1.05]">
+            <h2 className="text-4xl md:text-6xl font-black tracking-tight mb-5 leading-[1.05] text-white/75">
               Let's build thumbnails
               <br />
               <span className="text-white/30">that actually work.</span>

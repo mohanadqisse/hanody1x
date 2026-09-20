@@ -121,7 +121,7 @@ router.get("/settings-content", async (req, res) => {
 // --- Comments ---
 router.get("/thumbnails/:id/comments", requireUserAuth, async (req, res) => {
   try {
-    const thumbnailId = parseInt(req.params.id);
+    const thumbnailId = parseInt(String(req.params.id));
     const thumbComments = await db.select().from(comments).where(eq(comments.thumbnailId, thumbnailId)).orderBy(desc(comments.createdAt));
     res.json(thumbComments);
   } catch (err) {
@@ -133,7 +133,7 @@ router.post("/thumbnails/:id/comments", requireUserAuth, async (req, res) => {
   const payload = (req as typeof req & { user: { id: number; role: string } }).user;
   if (payload.role === "guest") { res.status(403).json({ message: "غير مسموح للزوار" }); return; }
   try {
-    const thumbnailId = parseInt(req.params.id);
+    const thumbnailId = parseInt(String(req.params.id));
     const { content } = req.body;
     const userRecord = await db.select().from(users).where(eq(users.id, payload.id));
     const authorName = userRecord[0]?.fullName || "مستخدم";
@@ -153,7 +153,7 @@ router.post("/thumbnails/:id/comments", requireUserAuth, async (req, res) => {
 router.get("/thumbnails/:id/rating", requireUserAuth, async (req, res) => {
   const payload = (req as typeof req & { user: { id: number; role: string } }).user;
   try {
-    const thumbnailId = parseInt(req.params.id);
+    const thumbnailId = parseInt(String(req.params.id));
     const existing = await db.select().from(ratings).where(and(eq(ratings.thumbnailId, thumbnailId), eq(ratings.userId, payload.id)));
     res.json(existing[0] || null);
   } catch (err) {
@@ -165,7 +165,7 @@ router.post("/thumbnails/:id/rating", requireUserAuth, async (req, res) => {
   const payload = (req as typeof req & { user: { id: number; role: string } }).user;
   if (payload.role === "guest") { res.status(403).json({ message: "غير مسموح للزوار" }); return; }
   try {
-    const thumbnailId = parseInt(req.params.id);
+    const thumbnailId = parseInt(String(req.params.id));
     const { rating } = req.body;
     // Upsert: delete old rating then insert new one
     await db.delete(ratings).where(and(eq(ratings.thumbnailId, thumbnailId), eq(ratings.userId, payload.id)));
@@ -183,7 +183,7 @@ router.post("/thumbnails/:id/rating", requireUserAuth, async (req, res) => {
 // Mark notification as read
 router.patch("/notifications/:id/read", requireUserAuth, async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(String(req.params.id));
     await db.update(notifications).set({ read: true }).where(eq(notifications.id, id));
     res.json({ success: true });
   } catch (err) {

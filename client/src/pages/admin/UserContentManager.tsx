@@ -8,17 +8,29 @@ import { ArrowRight, Plus, Trash2, Image as ImageIcon, CreditCard, Bell, Setting
 export default function UserContentManager({ user, onBack, token }: { user: any, onBack: () => void, token: string }) {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'thumbnails' | 'transactions' | 'notifications' | 'settings'>('thumbnails');
-  
+
   const [thumbnails, setThumbnails] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // States for new items
-  const [newThumb, setNewThumb] = useState({ title: "", image: "", status: "قيد التنفيذ", downloadUrl: "", notes: "", price: "" });
+  const [newThumb, setNewThumb] = useState({
+    title: "",
+    image: "",
+    status: "قيد التنفيذ",
+    downloadUrl: "",
+    notes: "",
+    price: "",
+    creatorName: "",
+    videoTitle: "",
+    youtubeUrl: "",
+    views: "",
+    category: "Gaming"
+  });
   const [newTrans, setNewTrans] = useState({ description: "", amount: "", status: "pending" });
   const [newNotif, setNewNotif] = useState({ message: "" });
-  
+
   // States for settings
   const [settings, setSettings] = useState({ fullName: user.fullName || "", avatar: user.avatar || "", password: "" });
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -82,7 +94,19 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
       });
       if (res.ok) {
         toast({ title: "تم إضافة الثمنيل" });
-        setNewThumb({ title: "", image: "", status: "قيد التنفيذ", downloadUrl: "", notes: "", price: "" });
+        setNewThumb({
+          title: "",
+          image: "",
+          status: "قيد التنفيذ",
+          downloadUrl: "",
+          notes: "",
+          price: "",
+          creatorName: "",
+          videoTitle: "",
+          youtubeUrl: "",
+          views: "",
+          category: "Gaming"
+        });
         fetchUserData();
       }
     } catch (e) { toast({ title: "حدث خطأ", variant: "destructive" }); }
@@ -225,7 +249,7 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
         <div className="text-center py-10">جاري التحميل...</div>
       ) : (
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-          
+
           {/* THUMBNAILS TAB */}
           {activeTab === 'thumbnails' && (
             <div className="bg-black/20 rounded-2xl p-6 border border-white/5">
@@ -239,24 +263,24 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
                     <div className="flex gap-2">
                       <div className="flex-1 flex gap-2">
                         <Input value={t.image} onChange={e => updateThumbnail(t.id, 'image', e.target.value)} placeholder="رابط الصورة" className="bg-black/30 h-8 text-xs flex-1" dir="ltr" />
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
+                        <Button
+                          size="sm"
+                          variant="outline"
                           className="h-8 shrink-0 relative overflow-hidden text-xs"
                           disabled={isUploading}
                         >
                           {isUploading ? "جاري الرفع..." : <Upload className="w-3 h-3 mr-1 ml-1" />}
                           {!isUploading && "رفع صورة"}
-                          <input 
-                            type="file" 
-                            accept="image/*" 
+                          <input
+                            type="file"
+                            accept="image/*"
                             className="absolute inset-0 opacity-0 cursor-pointer"
                             onChange={(e) => handleImageUpload(e, (url) => updateThumbnail(t.id, 'image', url))}
                           />
                         </Button>
                       </div>
-                      <select 
-                        value={t.status} 
+                      <select
+                        value={t.status}
                         onChange={e => updateThumbnail(t.id, 'status', e.target.value)}
                         className="bg-black/30 border border-input rounded-md px-2 text-xs h-8 text-foreground"
                       >
@@ -270,6 +294,31 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
                       <Input type="number" value={t.price || 0} onChange={e => updateThumbnail(t.id, 'price', parseInt(e.target.value))} placeholder="السعر ($)" className="bg-black/30 h-8 text-xs w-24" dir="ltr" />
                       <Input value={t.notes || ""} onChange={e => updateThumbnail(t.id, 'notes', e.target.value)} placeholder="ملاحظات (تظهر للعميل)" className="bg-black/30 h-8 text-xs flex-1" />
                     </div>
+                    {/* Portfolio Metadata Section */}
+                    <div className="pt-2 border-t border-white/5 space-y-2" dir="ltr">
+                      <p className="text-[11px] font-bold text-muted-foreground text-left">Portfolio Metadata (Optional):</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input value={t.creatorName || ""} onChange={e => updateThumbnail(t.id, 'creatorName', e.target.value)} placeholder="Creator / Channel (e.g. MrBeast)" className="bg-black/30 h-8 text-xs" />
+                        <Input value={t.views || ""} onChange={e => updateThumbnail(t.id, 'views', e.target.value)} placeholder="Views (e.g. 12.4M views)" className="bg-black/30 h-8 text-xs" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input value={t.videoTitle || ""} onChange={e => updateThumbnail(t.id, 'videoTitle', e.target.value)} placeholder="Video Title" className="bg-black/30 h-8 text-xs" />
+                        <Input value={t.youtubeUrl || ""} onChange={e => updateThumbnail(t.id, 'youtubeUrl', e.target.value)} placeholder="YouTube URL" className="bg-black/30 h-8 text-xs font-mono" />
+                      </div>
+                      <select
+                        value={t.category || "Gaming"}
+                        onChange={e => updateThumbnail(t.id, 'category', e.target.value)}
+                        className="w-full bg-black/30 border border-input rounded-md px-2 text-xs h-8 text-foreground"
+                      >
+                        <option value="Gaming">Gaming</option>
+                        <option value="Finance">Finance</option>
+                        <option value="Vlogs">Vlogs</option>
+                        <option value="Reaction">Reaction</option>
+                        <option value="Entertainment">Entertainment</option>
+                        <option value="Education">Education</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
                   </div>
                 ))}
                 {thumbnails.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">لا يوجد ثمنيلات</p>}
@@ -280,24 +329,24 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
                 <Input placeholder="العنوان" value={newThumb.title} onChange={e => setNewThumb({...newThumb, title: e.target.value})} className="bg-black/20" />
                 <div className="flex gap-2">
                   <Input placeholder="رابط الصورة (أو ارفع من الجهاز ->)" value={newThumb.image} onChange={e => setNewThumb({...newThumb, image: e.target.value})} className="bg-black/20 flex-1" dir="ltr" />
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="shrink-0 relative overflow-hidden"
                     disabled={isUploading}
                   >
                     {isUploading ? "جاري الرفع..." : <Upload className="w-4 h-4 mr-2" />}
                     {!isUploading && "رفع من الجهاز"}
-                    <input 
-                      type="file" 
-                      accept="image/*" 
+                    <input
+                      type="file"
+                      accept="image/*"
                       className="absolute inset-0 opacity-0 cursor-pointer"
                       onChange={(e) => handleImageUpload(e, (url) => setNewThumb({...newThumb, image: url}))}
                     />
                   </Button>
                 </div>
                 <div className="flex gap-2">
-                  <select 
-                    value={newThumb.status} 
+                  <select
+                    value={newThumb.status}
                     onChange={e => setNewThumb({...newThumb, status: e.target.value})}
                     className="bg-black/20 border border-input rounded-xl px-3 text-sm h-10 text-foreground w-1/3"
                   >
@@ -306,10 +355,35 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
                     ))}
                   </select>
                   <Input type="number" placeholder="السعر ($)" value={newThumb.price} onChange={e => setNewThumb({...newThumb, price: e.target.value})} className="bg-black/20 w-1/3" dir="ltr" />
-                  <Button onClick={addThumbnail} className="flex-1 bg-primary hover:bg-primary/90 text-white rounded-xl">
-                    <Plus className="w-4 h-4 ml-2" /> إضافة
-                  </Button>
                 </div>
+                {/* New thumbnail metadata */}
+                <div className="space-y-2 pt-2 border-t border-white/5" dir="ltr">
+                  <p className="text-[11px] font-bold text-muted-foreground text-left">Portfolio Metadata (Optional):</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input placeholder="Creator / Channel (e.g. MrBeast)" value={newThumb.creatorName} onChange={e => setNewThumb({...newThumb, creatorName: e.target.value})} className="bg-black/20 h-9 text-xs" />
+                    <Input placeholder="Views (e.g. 12.4M views)" value={newThumb.views} onChange={e => setNewThumb({...newThumb, views: e.target.value})} className="bg-black/20 h-9 text-xs" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Input placeholder="Video Title" value={newThumb.videoTitle} onChange={e => setNewThumb({...newThumb, videoTitle: e.target.value})} className="bg-black/20 h-9 text-xs" />
+                    <Input placeholder="YouTube Video URL" value={newThumb.youtubeUrl} onChange={e => setNewThumb({...newThumb, youtubeUrl: e.target.value})} className="bg-black/20 h-9 text-xs font-mono" />
+                  </div>
+                  <select
+                    value={newThumb.category}
+                    onChange={e => setNewThumb({...newThumb, category: e.target.value})}
+                    className="w-full bg-black/20 border border-input rounded-xl px-3 text-sm h-10 text-foreground"
+                  >
+                    <option value="Gaming">Gaming</option>
+                    <option value="Finance">Finance</option>
+                    <option value="Vlogs">Vlogs</option>
+                    <option value="Reaction">Reaction</option>
+                    <option value="Entertainment">Entertainment</option>
+                    <option value="Education">Education</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <Button onClick={addThumbnail} className="w-full bg-primary hover:bg-primary/90 text-white rounded-xl">
+                  <Plus className="w-4 h-4 ml-2" /> إضافة ثمنيل
+                </Button>
               </div>
             </div>
           )}
@@ -326,8 +400,8 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
                     </div>
                     <div className="flex gap-2">
                       <Input type="number" value={t.amount} onChange={e => updateTransaction(t.id, 'amount', parseInt(e.target.value))} className="bg-black/30 h-8 text-xs w-24" dir="ltr" />
-                      <select 
-                        value={t.status} 
+                      <select
+                        value={t.status}
                         onChange={e => updateTransaction(t.id, 'status', e.target.value)}
                         className="bg-black/30 border border-input rounded-md px-2 text-xs h-8 text-foreground flex-1"
                       >
@@ -389,18 +463,18 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
                   <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center text-primary text-2xl font-black overflow-hidden border-2 border-primary/30">
                     {settings.avatar ? <img src={settings.avatar} className="w-full h-full object-cover" /> : settings.fullName.charAt(0).toUpperCase()}
                   </div>
-                  <div 
+                  <div
                     onClick={() => settingsFileInputRef.current?.click()}
                     className="absolute inset-0 bg-black/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
                   >
                     <Camera className="text-white w-6 h-6" />
                   </div>
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    ref={settingsFileInputRef} 
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={settingsFileInputRef}
                     onChange={(e) => handleImageUpload(e, (url) => setSettings({...settings, avatar: url}))}
-                    className="hidden" 
+                    className="hidden"
                   />
                 </div>
                 <div>
@@ -412,7 +486,7 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">الاسم الكامل</label>
-                  <Input 
+                  <Input
                     value={settings.fullName}
                     onChange={(e) => setSettings({...settings, fullName: e.target.value})}
                     className="bg-black/30 border-white/10 rounded-xl"
@@ -420,7 +494,7 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">كلمة المرور الجديدة</label>
-                  <Input 
+                  <Input
                     type="password"
                     value={settings.password}
                     onChange={(e) => setSettings({...settings, password: e.target.value})}

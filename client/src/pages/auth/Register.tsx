@@ -2,19 +2,31 @@ import { API_BASE } from "@/lib/api";
 import { useState } from "react";
 import { useLocation, Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { useUser } from "@/contexts/UserContext";
-import { AlertCircle, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft } from "lucide-react";
+
+const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
+
+const stagger = {
+  container: {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.06, delayChildren: 0.08 },
+    },
+  },
+  item: {
+    hidden: { opacity: 0, y: 10 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.4, ease } },
+  },
+};
 
 export default function Register() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { login } = useUser();
-  
 
-  
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -25,237 +37,541 @@ export default function Register() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleRegister = async (role: "user" | "guest", e?: React.FormEvent) => {
+  const handleRegister = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!fullName || !username || !email || !password || !confirmPassword) {
-      return toast({ title: "يرجى تعبئة جميع الحقول", variant: "destructive" });
+      return toast({ title: "Please fill in all fields.", variant: "destructive" });
     }
     if (password !== confirmPassword) {
-      return toast({ title: "كلمات المرور غير متطابقة", variant: "destructive" });
+      return toast({ title: "Passwords do not match.", variant: "destructive" });
     }
     if (password.length < 6) {
-      return toast({ title: "كلمة المرور يجب أن تكون 6 أحرف على الأقل", variant: "destructive" });
+      return toast({ title: "Password must be at least 6 characters.", variant: "destructive" });
     }
-
     if (username.includes(" ") || !/^[A-Za-z0-9_]+$/.test(username)) {
-      return toast({ title: "اسم المستخدم يجب أن يحتوي على حروف إنجليزية وأرقام فقط (بدون مسافات)", variant: "destructive" });
+      return toast({
+        title: "Username must contain only letters, numbers, and underscores.",
+        variant: "destructive",
+      });
     }
-    
     if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
-      return toast({ title: "كلمة المرور ضعيفة: يجب أن تحتوي على حرف إنجليزي كبير، حرف صغير، ورقم", variant: "destructive" });
+      return toast({
+        title: "Password must include an uppercase letter, lowercase letter, and number.",
+        variant: "destructive",
+      });
     }
 
-    if (role === "user" && !inviteCode) {
+    if (!inviteCode) {
       setShowInviteModal(true);
       return;
     }
 
     setIsLoading(true);
     try {
-      const apiBase = API_BASE;
-      const res = await fetch(`${apiBase}/api/users/auth/register`, {
+      const res = await fetch(`${API_BASE}/api/users/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fullName, username, email, password, role, inviteCode })
+        body: JSON.stringify({ fullName, username, email, password, role: "user", inviteCode }),
       });
       const data = await res.json();
       if (res.ok) {
         login(data.token, data.user);
-        toast({ title: "تم إنشاء الحساب بنجاح!" });
+        toast({ title: "Account created successfully!" });
         setLocation("/dashboard");
       } else {
-        toast({ title: data.message || "فشل إنشاء الحساب", variant: "destructive" });
+        toast({ title: data.message || "Registration failed.", variant: "destructive" });
       }
-    } catch (error) {
-      toast({ title: "حدث خطأ", variant: "destructive" });
+    } catch {
+      toast({ title: "Connection error. Please try again.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden font-sans" dir="rtl">
-      {/* Background blobs */}
-      <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-green-500/20 blur-[120px] rounded-full pointer-events-none" />
+  const FieldLabel = ({ htmlFor, children }: { htmlFor: string; children: React.ReactNode }) => (
+    <label
+      htmlFor={htmlFor}
+      style={{
+        display: "block",
+        fontSize: "11px",
+        fontWeight: 600,
+        letterSpacing: "0.08em",
+        textTransform: "uppercase" as const,
+        color: "#555",
+        marginBottom: "0.45rem",
+      }}
+    >
+      {children}
+    </label>
+  );
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md relative z-10"
-      >
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-black mb-2 tracking-tight">إنشاء حساب جديد</h1>
-          <p className="text-muted-foreground">قم بإنشاء حسابك لإدارة أعمالك بسهولة</p>
+  return (
+    <div className="auth-page">
+      <div className="auth-split">
+        {/* ─── LEFT — Brand Panel ────────────────────── */}
+        <div className="auth-brand-panel">
+          <Link href="/">
+            <span
+              style={{
+                fontSize: "13px",
+                fontWeight: 900,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                color: "#111",
+                cursor: "pointer",
+                userSelect: "none",
+              }}
+            >
+              MUHANAD
+            </span>
+          </Link>
+
+          <div>
+            <p
+              style={{
+                fontSize: "11px",
+                fontWeight: 600,
+                letterSpacing: "0.16em",
+                textTransform: "uppercase",
+                color: "#999",
+                marginBottom: "1.5rem",
+              }}
+            >
+              WHERE CREATIVITY MEETS PRECISION
+            </p>
+            <h2
+              style={{
+                fontSize: "clamp(2.8rem, 4vw, 4.2rem)",
+                fontWeight: 900,
+                lineHeight: 1.05,
+                letterSpacing: "-0.03em",
+                color: "#111",
+                marginBottom: "1.5rem",
+              }}
+            >
+              Start your
+              <br />
+              creative
+              <br />
+              <span style={{ color: "#bbb" }}>journey.</span>
+            </h2>
+            <p
+              style={{
+                fontSize: "15px",
+                color: "#777",
+                lineHeight: 1.65,
+                maxWidth: "320px",
+                fontWeight: 400,
+              }}
+            >
+              Get access to your dedicated client portal and manage every project from one place.
+            </p>
+          </div>
+
+          <p
+            style={{
+              fontSize: "12px",
+              color: "#bbb",
+              letterSpacing: "0.04em",
+            }}
+          >
+            © {new Date().getFullYear()} MUHANAD
+          </p>
         </div>
 
-        <motion.form
-          onSubmit={(e) => e.preventDefault()}
-          className="bg-card p-6 rounded-3xl border border-white/5 shadow-2xl space-y-4"
-        >
-          <div>
-            <label className="block text-sm font-medium mb-2">الاسم الكامل</label>
-            <Input
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              className="bg-black/20 border-white/10 text-right h-12 rounded-xl"
-              placeholder="مثال: محمد أحمد"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">البريد الإلكتروني</label>
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="bg-black/20 border-white/10 text-right h-12 rounded-xl"
-              dir="ltr"
-              placeholder="email@example.com"
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck="false"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">اسم المستخدم</label>
-            <Input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="bg-black/20 border-white/10 text-right h-12 rounded-xl"
-              dir="ltr"
-              placeholder="username"
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck="false"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">كلمة المرور</label>
-            <div className="relative">
-              <Input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="bg-black/20 border-white/10 text-right h-12 rounded-xl pl-12"
-                dir="ltr"
-                placeholder="••••••••"
-                autoCapitalize="none"
-                autoCorrect="off"
-                spellCheck="false"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-colors"
+        {/* ─── RIGHT — Form Panel ────────────────────── */}
+        <div className="auth-form-panel" style={{ position: "relative" }}>
+          {/* Top bar */}
+          <div className="auth-topbar">
+            <Link href="/">
+              <span
+                style={{
+                  fontSize: "12px",
+                  fontWeight: 900,
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  color: "#111",
+                  cursor: "pointer",
+                }}
               >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                MUHANAD
+              </span>
+            </Link>
+            <Link href="/">
+              <button className="auth-btn-ghost" type="button">
+                <ArrowLeft size={13} />
+                Back to site
               </button>
-            </div>
+            </Link>
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">تأكيد كلمة المرور</label>
-            <div className="relative">
-              <Input
-                type={showPassword ? "text" : "password"}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="bg-black/20 border-white/10 text-right h-12 rounded-xl pl-12"
-                dir="ltr"
-                placeholder="••••••••"
-                autoCapitalize="none"
-                autoCorrect="off"
-                spellCheck="false"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-colors"
-              >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
-          </div>
-          <div className="pt-4 flex flex-col gap-3">
-            <div className="flex gap-3">
-              <Button 
-                type="button" 
-                onClick={(e) => handleRegister("guest", e)}
-                disabled={isLoading}
-                variant="outline"
-                className="flex-1 rounded-xl h-12 font-bold border-white/20 hover:bg-white/10"
-              >
-                {isLoading ? "جاري..." : "إنشاء حساب كزائر"}
-              </Button>
-              <Button 
-                type="button" 
-                onClick={(e) => handleRegister("user", e)}
-                disabled={isLoading}
-                className="flex-1 rounded-xl h-12 font-bold bg-green-600 hover:bg-green-700 text-white"
-              >
-                {isLoading ? "جاري..." : "إنشاء كصانع محتوى"}
-              </Button>
-            </div>
-            <Button 
-              type="button" 
-              variant="ghost" 
-              onClick={() => setLocation("/login")}
-              className="w-full rounded-xl h-12"
-            >
-              لديك حساب بالفعل؟ تسجيل الدخول
-            </Button>
-          </div>
-        </motion.form>
-      </motion.div>
 
+          {/* Form */}
+          <div className="auth-form-inner">
+            <div style={{ width: "100%", maxWidth: "420px" }}>
+              <motion.div
+                variants={stagger.container}
+                initial="hidden"
+                animate="show"
+              >
+                {/* Eyebrow */}
+                <motion.p
+                  variants={stagger.item}
+                  style={{
+                    fontSize: "10px",
+                    fontWeight: 700,
+                    letterSpacing: "0.18em",
+                    textTransform: "uppercase",
+                    color: "#aaa",
+                    marginBottom: "0.75rem",
+                  }}
+                >
+                  Client Portal
+                </motion.p>
+
+                {/* Heading */}
+                <motion.h1
+                  variants={stagger.item}
+                  style={{
+                    fontSize: "clamp(1.75rem, 3vw, 2.25rem)",
+                    fontWeight: 800,
+                    letterSpacing: "-0.03em",
+                    color: "#111",
+                    marginBottom: "0.5rem",
+                    lineHeight: 1.1,
+                  }}
+                >
+                  Create account.
+                </motion.h1>
+
+                <motion.p
+                  variants={stagger.item}
+                  style={{
+                    fontSize: "14px",
+                    color: "#888",
+                    marginBottom: "2rem",
+                    lineHeight: 1.5,
+                  }}
+                >
+                  Use your invite code to get started.
+                </motion.p>
+
+                <motion.div
+                  variants={stagger.item}
+                  style={{
+                    height: "1px",
+                    backgroundColor: "#ebebea",
+                    marginBottom: "1.75rem",
+                  }}
+                />
+
+                {/* Fields */}
+                <motion.form
+                  variants={stagger.container}
+                  initial="hidden"
+                  animate="show"
+                  onSubmit={handleRegister}
+                  style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}
+                >
+                  {/* Two-col: Full Name + Username */}
+                  <motion.div
+                    variants={stagger.item}
+                    style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.85rem" }}
+                  >
+                    <div>
+                      <FieldLabel htmlFor="reg-fullname">Full Name</FieldLabel>
+                      <input
+                        id="reg-fullname"
+                        type="text"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        placeholder="Your name"
+                        autoComplete="name"
+                        className="auth-input"
+                      />
+                    </div>
+                    <div>
+                      <FieldLabel htmlFor="reg-username">Username</FieldLabel>
+                      <input
+                        id="reg-username"
+                        type="text"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder="username"
+                        autoComplete="username"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        className="auth-input"
+                      />
+                    </div>
+                  </motion.div>
+
+                  {/* Email */}
+                  <motion.div variants={stagger.item}>
+                    <FieldLabel htmlFor="reg-email">Email</FieldLabel>
+                    <input
+                      id="reg-email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      autoComplete="email"
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      className="auth-input"
+                    />
+                  </motion.div>
+
+                  {/* Password */}
+                  <motion.div variants={stagger.item}>
+                    <FieldLabel htmlFor="reg-password">Password</FieldLabel>
+                    <div style={{ position: "relative" }}>
+                      <input
+                        id="reg-password"
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        autoComplete="new-password"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        className="auth-input"
+                        style={{ paddingRight: "44px" }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        style={{
+                          position: "absolute",
+                          right: "14px",
+                          top: "50%",
+                          transform: "translateY(-50%)",
+                          background: "none",
+                          border: "none",
+                          color: "#aaa",
+                          cursor: "pointer",
+                          padding: 0,
+                          display: "flex",
+                          alignItems: "center",
+                          transition: "color 0.15s ease",
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = "#555")}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = "#aaa")}
+                      >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </motion.div>
+
+                  {/* Confirm Password */}
+                  <motion.div variants={stagger.item}>
+                    <FieldLabel htmlFor="reg-confirm">Confirm Password</FieldLabel>
+                    <input
+                      id="reg-confirm"
+                      type={showPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="••••••••"
+                      autoComplete="new-password"
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      className="auth-input"
+                    />
+                  </motion.div>
+
+                  {/* Submit */}
+                  <motion.div variants={stagger.item} style={{ paddingTop: "0.35rem" }}>
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="auth-btn-primary"
+                    >
+                      {isLoading ? (
+                        <>
+                          <span
+                            style={{
+                              width: "14px",
+                              height: "14px",
+                              border: "2px solid rgba(255,255,255,0.3)",
+                              borderTopColor: "#fff",
+                              borderRadius: "50%",
+                              display: "inline-block",
+                              animation: "loaderSpin 0.75s linear infinite",
+                            }}
+                          />
+                          Creating account…
+                        </>
+                      ) : (
+                        "Create account"
+                      )}
+                    </button>
+                  </motion.div>
+
+                  {/* Sign in link */}
+                  <motion.div
+                    variants={stagger.item}
+                    style={{ textAlign: "center", paddingTop: "0.25rem" }}
+                  >
+                    <span style={{ fontSize: "13px", color: "#999" }}>
+                      Already have an account?{" "}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setLocation("/login")}
+                      style={{
+                        fontSize: "13px",
+                        fontWeight: 600,
+                        color: "#111",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        padding: 0,
+                        textDecoration: "underline",
+                        textUnderlineOffset: "3px",
+                        transition: "opacity 0.15s ease",
+                        fontFamily: "inherit",
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.6")}
+                      onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+                    >
+                      Sign in
+                    </button>
+                  </motion.div>
+                </motion.form>
+              </motion.div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Invite Code Modal ──────────────────────────── */}
       <AnimatePresence>
-
         {showInviteModal && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-md"
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 50,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "1rem",
+              backgroundColor: "rgba(250,250,248,0.9)",
+              backdropFilter: "blur(8px)",
+            }}
           >
             <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              className="bg-card p-8 rounded-3xl border border-white/10 shadow-2xl max-w-sm w-full text-center"
+              initial={{ scale: 0.95, y: 12, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.95, y: 12, opacity: 0 }}
+              transition={{ duration: 0.22, ease }}
+              style={{
+                backgroundColor: "#fff",
+                border: "1px solid #e2e2e0",
+                borderRadius: "16px",
+                padding: "2rem 2rem 2rem",
+                maxWidth: "380px",
+                width: "100%",
+                boxShadow: "0 16px 48px rgba(0,0,0,0.08)",
+              }}
             >
-              <h2 className="text-xl font-black mb-3">كود صانع المحتوى</h2>
-              <p className="text-muted-foreground mb-6 text-sm">
-                أدخل كود صانع المحتوى لإنشاء الحساب
+              <p
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 700,
+                  letterSpacing: "0.16em",
+                  textTransform: "uppercase",
+                  color: "#aaa",
+                  marginBottom: "0.5rem",
+                }}
+              >
+                Client Portal
               </p>
-              
-              <Input
+              <h2
+                style={{
+                  fontSize: "20px",
+                  fontWeight: 800,
+                  letterSpacing: "-0.02em",
+                  color: "#111",
+                  marginBottom: "0.5rem",
+                }}
+              >
+                Enter invite code
+              </h2>
+              <p
+                style={{
+                  fontSize: "13px",
+                  color: "#888",
+                  marginBottom: "1.5rem",
+                  lineHeight: 1.55,
+                }}
+              >
+                Your account requires an invite code to register. Contact the admin to get yours.
+              </p>
+
+              <input
                 type="text"
                 value={inviteCode}
                 onChange={(e) => setInviteCode(e.target.value)}
-                className="bg-black/20 border-white/10 text-center h-12 rounded-xl mb-6 text-lg font-mono tracking-widest"
-                dir="ltr"
-                placeholder="الكود"
+                placeholder="INVITE-CODE"
                 autoFocus
+                dir="ltr"
+                className="auth-input"
+                style={{
+                  textAlign: "center",
+                  letterSpacing: "0.12em",
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  marginBottom: "1.25rem",
+                  textTransform: "uppercase",
+                }}
               />
 
-              <div className="flex gap-3">
-                <Button 
-                  variant="outline" 
+              <div style={{ display: "flex", gap: "0.75rem" }}>
+                <button
+                  type="button"
                   onClick={() => setShowInviteModal(false)}
-                  className="flex-1 rounded-xl h-12"
-                >
-                  إلغاء
-                </Button>
-                <Button 
-                  onClick={(e) => {
-                    setShowInviteModal(false);
-                    handleRegister("user", e as any);
+                  style={{
+                    flex: 1,
+                    height: "44px",
+                    background: "none",
+                    border: "1px solid #e2e2e0",
+                    borderRadius: "8px",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    color: "#555",
+                    cursor: "pointer",
+                    transition: "border-color 0.15s ease",
+                    fontFamily: "inherit",
                   }}
-                  className="flex-1 rounded-xl h-12 font-bold bg-primary text-white"
-                  disabled={!inviteCode}
+                  onMouseEnter={(e) =>
+                    ((e.currentTarget as HTMLButtonElement).style.borderColor = "#aaa")
+                  }
+                  onMouseLeave={(e) =>
+                    ((e.currentTarget as HTMLButtonElement).style.borderColor = "#e2e2e0")
+                  }
                 >
-                  تأكيد
-                </Button>
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={!inviteCode}
+                  onClick={() => {
+                    setShowInviteModal(false);
+                    handleRegister();
+                  }}
+                  className="auth-btn-primary"
+                  style={{ flex: 1, height: "44px" }}
+                >
+                  Confirm
+                </button>
               </div>
             </motion.div>
           </motion.div>

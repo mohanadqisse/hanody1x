@@ -91,6 +91,11 @@ export const thumbnails = pgTable("thumbnails", {
   price: integer("price").notNull().default(0),
   notes: text("notes"),
   downloadUrl: text("download_url"),
+  creatorName: text("creator_name"),
+  youtubeUrl: text("youtube_url"),
+  views: text("views"),
+  videoTitle: text("video_title"),
+  category: text("category"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

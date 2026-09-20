@@ -94,3 +94,38 @@ export function useImages(): ImagesMap {
     portfolio: portfolioUrls,
   };
 }
+
+export interface PortfolioItem {
+  id: number | string;
+  imageUrl: string;
+  creatorName?: string;
+  videoTitle?: string;
+  youtubeUrl?: string;
+  views?: string;
+  category?: string;
+}
+
+export function usePortfolioItems(): PortfolioItem[] {
+  const images = useImages();
+  const { data: portfolioSection } = useQuery({
+    queryKey: ["section", "portfolio"],
+    queryFn: () => fetchSection("portfolio"),
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const portfolioUrls: string[] = images.portfolio ?? [];
+  const storedItems: any[] = Array.isArray(portfolioSection?.items) ? portfolioSection.items : [];
+
+  return portfolioUrls.map((url, i) => {
+    const meta = storedItems[i] || storedItems.find((it: any) => it && it.imageUrl === url);
+    return {
+      id: meta?.id ?? i + 1,
+      imageUrl: url,
+      creatorName: meta?.creatorName || undefined,
+      videoTitle: meta?.videoTitle || undefined,
+      youtubeUrl: meta?.youtubeUrl || undefined,
+      views: meta?.views || undefined,
+      category: meta?.category || undefined,
+    };
+  });
+}

@@ -6,10 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useAdmin } from "@/contexts/AdminContext";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  LogOut, Save, Upload, Trash2, Settings, Mail, MailOpen, 
-  ChevronDown, ChevronUp, Package, User, AtSign, Clock, 
-  Inbox, Shield, ShieldCheck, ShieldX, Globe, Smartphone, 
+import {
+  LogOut, Save, Upload, Trash2, Settings, Mail, MailOpen,
+  ChevronDown, ChevronUp, Package, User, AtSign, Clock,
+  Inbox, Shield, ShieldCheck, ShieldX, Globe, Smartphone,
   Monitor, LayoutDashboard, Users, Database, Play, Square, FileText, CheckCircle, Edit, Star, ArrowRight, ArrowLeft, RefreshCw
 } from "lucide-react";
 import { caseStudies as defaultCaseStudies } from "@/lib/data";
@@ -62,7 +62,7 @@ export default function AdminDashboard() {
   const [, navigate] = useLocation();
   const { isAuthenticated, logout, token } = useAdmin();
   const { toast } = useToast();
-  
+
   // Tabs: 'home' | 'clients' | 'content' | 'inbox' | 'logs' | 'users' | 'codes' | 'creators' | 'public_ratings'
   const [activeTab, setActiveTab] = useState<'home' | 'clients' | 'users' | 'content' | 'codes' | 'creators' | 'public_ratings'>('home');
 
@@ -86,12 +86,30 @@ export default function AdminDashboard() {
   const [managingUser, setManagingUser] = useState<any>(null);
   const [publicRatingsData, setPublicRatingsData] = useState<any[]>([]);
   const [expandedVisitors, setExpandedVisitors] = useState<Set<string>>(new Set());
-  
+
   // Timer State
   const [isTracking, setIsTracking] = useState(false);
   const [trackingSeconds, setTrackingSeconds] = useState(0);
   const [trackingTitle, setTrackingTitle] = useState("");
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Portfolio Metadata Editor State
+  const [editingMetaIndex, setEditingMetaIndex] = useState<number | null>(null);
+  const [metaForm, setMetaForm] = useState<{
+    imageUrl: string;
+    creatorName: string;
+    videoTitle: string;
+    youtubeUrl: string;
+    views: string;
+    category: string;
+  }>({
+    imageUrl: "",
+    creatorName: "",
+    videoTitle: "",
+    youtubeUrl: "",
+    views: "",
+    category: "Gaming",
+  });
 
   // Modal State
   const [modalConfig, setModalConfig] = useState<{
@@ -278,10 +296,10 @@ export default function AdminDashboard() {
   async function saveSection(section: string) {
     setLoading(true);
     try {
-      const contentToSave = section === "caseStudies" 
+      const contentToSave = section === "caseStudies"
         ? (Array.isArray(sections.caseStudies) && sections.caseStudies.length > 0 ? sections.caseStudies : defaultCaseStudies)
         : (sections[section] || {});
-        
+
       const res = await fetch(API_BASE + `/api/content/${section}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
@@ -382,6 +400,71 @@ export default function AdminDashboard() {
     const slots = getPortfolioImages();
     slots[index] = "";
     updatePortfolioImages(slots);
+  };
+
+  const openEditMeta = (index: number) => {
+    const slots = getPortfolioImages();
+    const url = slots[index] || "";
+    const items: any[] = Array.isArray((sections.portfolio as any)?.items) ? (sections.portfolio as any).items : [];
+    const existing = items[index] || items.find((it: any) => it && it.imageUrl === url) || {};
+    setMetaForm({
+      imageUrl: url,
+      creatorName: existing.creatorName || "",
+      videoTitle: existing.videoTitle || "",
+      youtubeUrl: existing.youtubeUrl || "",
+      views: existing.views || "",
+      category: existing.category || "Gaming",
+    });
+    setEditingMetaIndex(index);
+  };
+
+  const savePortfolioMetadata = async () => {
+    if (editingMetaIndex === null) return;
+    const slots = getPortfolioImages();
+    const currentItems: any[] = Array.isArray((sections.portfolio as any)?.items)
+      ? [...(sections.portfolio as any).items]
+      : [];
+
+    while (currentItems.length < 20) {
+      currentItems.push({ imageUrl: slots[currentItems.length] || "" });
+    }
+
+    currentItems[editingMetaIndex] = {
+      ...currentItems[editingMetaIndex],
+      imageUrl: slots[editingMetaIndex],
+      creatorName: metaForm.creatorName.trim() || undefined,
+      videoTitle: metaForm.videoTitle.trim() || undefined,
+      youtubeUrl: metaForm.youtubeUrl.trim() || undefined,
+      views: metaForm.views.trim() || undefined,
+      category: metaForm.category.trim() || undefined,
+    };
+
+    const newPortfolio = {
+      ...(sections.portfolio as any),
+      images: slots.join(","),
+      items: currentItems,
+    };
+
+    setSections(prev => ({
+      ...prev,
+      portfolio: newPortfolio,
+    }));
+
+    try {
+      const res = await fetch(API_BASE + "/api/content/portfolio", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ content: JSON.stringify(newPortfolio) })
+      });
+      if (res.ok) {
+        toast({ title: "تم حفظ بيانات العمل بنجاح" });
+        setEditingMetaIndex(null);
+      } else {
+        toast({ title: "خطأ في الحفظ", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "خطأ في الحفظ", variant: "destructive" });
+    }
   };
 
   const uploadPortfolioImage = async (e: React.ChangeEvent<HTMLInputElement>, index: number, isReplace = false) => {
@@ -511,7 +594,7 @@ export default function AdminDashboard() {
       description: currentBanStatus ? 'هل أنت متأكد من إلغاء الحظر عن هذا المستخدم؟' : 'أدخل سبب الحظر (اختياري). سيمنع هذا المستخدم من تسجيل الدخول.',
       placeholder: 'سبب الحظر...',
       clientId: userId,
-      initialValue: currentBanStatus ? "unban" : "" 
+      initialValue: currentBanStatus ? "unban" : ""
     });
     setModalInputValue("");
   };
@@ -568,13 +651,13 @@ export default function AdminDashboard() {
           body: JSON.stringify({ name: val })
         });
         if (res.ok) { toast({ title: "تم إضافة العميل" }); fetchDashboardData(); }
-      } 
+      }
       else if (modalConfig.type === 'addWork' && modalConfig.clientId) {
         const pics = parseInt(val);
         if (isNaN(pics) || pics <= 0) return toast({ title: "قيمة غير صالحة", variant: "destructive" });
         const res = await fetch(API_BASE + `/api/dashboard/clients/${modalConfig.clientId}/work`, {
           method: "PATCH", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ items: pics, amount: 10 }) 
+          body: JSON.stringify({ items: pics, amount: 10 })
         });
         if (res.ok) { toast({ title: "تم إضافة السجل للعميل" }); fetchDashboardData(); }
       }
@@ -625,7 +708,7 @@ export default function AdminDashboard() {
     } catch (e) {
       toast({ title: "حدث خطأ", variant: "destructive" });
     }
-    
+
     setModalConfig({ ...modalConfig, isOpen: false });
   };
 
@@ -633,7 +716,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col md:flex-row-reverse font-sans" dir="rtl">
-      
+
       {/* SIDEBAR */}
       <aside className="w-full md:w-64 bg-card/60 border-l border-white/10 flex flex-col p-6 h-auto md:h-screen sticky top-0">
         <div className="flex flex-col gap-2 items-center text-center pb-8 border-b border-white/10 mb-8">
@@ -689,7 +772,7 @@ export default function AdminDashboard() {
 
       {/* MAIN CONTENT AREA */}
       <main className="flex-1 overflow-x-hidden p-6 md:p-10">
-        
+
         {/* Header Bar */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-10 gap-4">
           <div>
@@ -732,14 +815,14 @@ export default function AdminDashboard() {
                     <div className="text-5xl font-black tabular-nums tracking-widest text-foreground font-mono mb-6">
                       {formatTime(trackingSeconds)}
                     </div>
-                    <Input 
-                      placeholder="ماذا تعمل الآن؟ (اختياري)" 
-                      value={trackingTitle} 
+                    <Input
+                      placeholder="ماذا تعمل الآن؟ (اختياري)"
+                      value={trackingTitle}
                       onChange={e => setTrackingTitle(e.target.value)}
                       className="bg-black/20 border-white/10 text-center mb-4 rounded-xl"
                       disabled={isTracking}
                     />
-                    <Button 
+                    <Button
                       onClick={handleStartStopTimer}
                       className={`w-full rounded-xl h-12 font-bold text-white shadow-lg transition-all
                         ${isTracking ? 'bg-red-500 hover:bg-red-600 shadow-red-500/20' : 'bg-green-500 hover:bg-green-600 shadow-green-500/20'}`}
@@ -764,7 +847,7 @@ export default function AdminDashboard() {
                 <div className="bg-card/40 border border-white/5 rounded-3xl p-6 flex flex-col h-[300px]">
                   <h2 className="text-lg font-bold mb-1">أحدث العملاء النشطين</h2>
                   <p className="text-xs text-muted-foreground mb-4">العملاء الذين تم إضافتهم مؤخراً لجدولة أعمالهم.</p>
-                  
+
                   <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
                     {clientsData.slice(0,5).map(c => (
                       <div key={c.id} className="flex items-center justify-between border-b border-white/5 pb-3 last:border-0 last:pb-0">
@@ -806,7 +889,7 @@ export default function AdminDashboard() {
                 <div className="bg-card/40 border border-white/5 rounded-3xl p-6 flex flex-col items-center justify-center text-center">
                   <h2 className="text-lg font-bold mb-1 w-full text-right">إنجاز الطلبات</h2>
                   <p className="text-xs text-muted-foreground w-full text-right mb-6">نسبة الطلبات المنتهية مقابل قيد العمل</p>
-                  
+
                   <div className="relative w-48 h-48 mb-6">
                     <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                       <circle cx="50" cy="50" r="40" stroke="currentColor" strokeWidth="10" fill="transparent" className="text-white/5" />
@@ -828,7 +911,7 @@ export default function AdminDashboard() {
         )}
 
         {/* TAB: USERS */}
-        
+
         {activeTab === 'creators' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {managingUser ? (
@@ -867,7 +950,7 @@ export default function AdminDashboard() {
                           </div>
                         </div>
                         <div className="flex gap-2">
-                          <Button 
+                          <Button
                             onClick={() => setManagingUser(user)}
                             className="bg-primary hover:bg-primary/90 text-white font-bold rounded-xl shadow-lg shadow-primary/20"
                           >
@@ -910,7 +993,7 @@ export default function AdminDashboard() {
                     </span>
                   </div>
                 </div>
-                
+
                 {publicRatingsData.length === 0 ? (
                   <div className="text-center py-20">
                     <Star className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
@@ -1053,8 +1136,8 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                       <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           onClick={() => handleBanUser(user.id, user.isBanned)}
                           variant={user.isBanned ? "outline" : "destructive"}
                           className="rounded-xl w-full sm:w-auto font-bold h-10"
@@ -1062,8 +1145,8 @@ export default function AdminDashboard() {
                           {user.isBanned ? <ShieldCheck className="w-4 h-4 mr-1 ml-1" /> : <ShieldX className="w-4 h-4 mr-1 ml-1" />}
                           {user.isBanned ? "إلغاء الحظر" : "حظر المستخدم"}
                         </Button>
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           variant="destructive"
                           onClick={() => setModalConfig({ isOpen: true, type: 'deletePlatformUser', title: 'حذف المستخدم نهائياً', description: 'هل أنت متأكد من حذف هذا المستخدم وكل بياناته؟', clientId: user.id })}
                           className="rounded-xl w-full sm:w-auto h-10 bg-red-900/50 hover:bg-red-600 text-white"
@@ -1116,17 +1199,17 @@ export default function AdminDashboard() {
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center gap-3 w-full sm:w-auto shrink-0 justify-end">
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           onClick={() => handleAddWorkAction(client.id)}
                           className="bg-primary/20 text-primary hover:bg-primary/30 border border-primary/30 rounded-xl text-xs font-bold"
                         >
                           + تسجيل عمل / صور
                         </Button>
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           variant="outline"
                           onClick={() => handleClearBalance(client.id)}
                           className={`text-xs rounded-xl font-bold border-white/10 ${client.balance === 0 ? 'opacity-50 cursor-not-allowed text-green-400' : 'text-foreground hover:bg-white/5'}`}
@@ -1134,8 +1217,8 @@ export default function AdminDashboard() {
                         >
                           {client.balance === 0 ? <><CheckCircle className="w-4 h-4 ml-1" /> أرصدة خالصة</> : "تصفير الحساب"}
                         </Button>
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           variant="destructive"
                           onClick={() => handleDeleteClient(client.id)}
                           className="text-xs rounded-xl font-bold w-10 p-0"
@@ -1187,10 +1270,10 @@ export default function AdminDashboard() {
                         <h3 className="text-2xl font-mono font-black text-foreground mb-1" dir="ltr">{code.code}</h3>
                         <p className="text-xs text-muted-foreground">تم الإنشاء: {new Date(code.createdAt).toLocaleDateString('ar-JO')}</p>
                       </div>
-                      
-                      <Button 
-                        variant={code.isActive ? "destructive" : "secondary"} 
-                        size="sm" 
+
+                      <Button
+                        variant={code.isActive ? "destructive" : "secondary"}
+                        size="sm"
                         onClick={() => handleToggleCode(code.id)}
                         className="w-full rounded-xl font-bold text-xs"
                       >
@@ -1375,6 +1458,315 @@ export default function AdminDashboard() {
               </Button>
             </div>
 
+            {/* ABOUT ME SECTION */}
+            <div className="glass-panel rounded-3xl p-8 bg-card/40 border border-white/5">
+              <h2 className="text-xl font-bold text-foreground mb-1 flex items-center gap-2">
+                <User className="w-5 h-5" /> قسم "من أنا" (About)
+              </h2>
+              <p className="text-sm text-muted-foreground mb-6">محتوى القسم الذي يتحدث عنك — يظهر في الصفحة الرئيسية للموقع.</p>
+
+              {/* Headline */}
+              <div className="mb-6 bg-black/10 border border-white/5 rounded-2xl p-5">
+                <h3 className="text-sm font-bold text-muted-foreground mb-4 uppercase tracking-widest">العنوان الرئيسي</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {editableSection("about", "headline1", "السطر الأول (غامق)")}
+                  {editableSection("about", "headline2", "السطر الثاني (شفاف)")}
+                </div>
+              </div>
+
+              {/* Bio */}
+              <div className="mb-6 bg-black/10 border border-white/5 rounded-2xl p-5">
+                <h3 className="text-sm font-bold text-muted-foreground mb-4 uppercase tracking-widest">النص التعريفي</h3>
+                {editableSection("about", "bio1", "الفقرة الأولى", true)}
+                {editableSection("about", "bio2", "الفقرة الثانية (اختيارية)", true)}
+              </div>
+
+              {/* Skills */}
+              <div className="mb-6 bg-black/10 border border-white/5 rounded-2xl p-5">
+                <h3 className="text-sm font-bold text-muted-foreground mb-1 uppercase tracking-widest">المهارات</h3>
+                <p className="text-xs text-muted-foreground mb-3">أدخل المهارات مفصولة بفاصلة (,)</p>
+                {editableSection("about", "skills", "المهارات (مفصولة بفاصلة)")}
+                <p className="text-xs text-muted-foreground mt-1">مثال: Thumbnail Design, CTR Optimization, Color Psychology</p>
+              </div>
+
+              {/* Stats */}
+              <div className="mb-6 bg-black/10 border border-white/5 rounded-2xl p-5">
+                <h3 className="text-sm font-bold text-muted-foreground mb-4 uppercase tracking-widest">الإحصائيات (3 أرقام)</h3>
+                {[1, 2, 3].map((n) => (
+                  <div key={n} className="mb-5 last:mb-0 p-4 rounded-xl bg-black/20 border border-white/5">
+                    <p className="text-xs text-primary font-bold mb-3">الإحصائية {n}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      {editableSection("about", `stat${n}Number` as any, "الرقم (مثال: 50+)")}
+                      {editableSection("about", `stat${n}Title` as any, "العنوان (مثال: YouTube Creators)")}
+                      {editableSection("about", `stat${n}Desc` as any, "الوصف المختصر")}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Profile Image */}
+              <div className="mb-6 bg-black/10 border border-white/5 rounded-2xl p-5">
+                <h3 className="text-sm font-bold text-muted-foreground mb-3 uppercase tracking-widest">الصورة الشخصية (اختيارية)</h3>
+                <p className="text-xs text-muted-foreground mb-4">إذا كانت فارغة لا تظهر الصورة. يُنصح بصورة بأبعاد 4:3 أو مربعة.</p>
+                <div className="flex items-center gap-4 flex-row-reverse justify-end">
+                  <label className="flex items-center gap-2 cursor-pointer bg-primary/20 text-primary px-4 py-2 rounded-xl text-sm font-bold hover:bg-primary/30 transition border border-primary/30">
+                    <Upload className="w-4 h-4" /> رفع صورة
+                    <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                      const file = e.target.files?.[0]; if (!file) return;
+                      const fd = new FormData(); fd.append("image", file);
+                      const res = await fetch(API_BASE + "/api/upload", { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd });
+                      if (res.ok) {
+                        const data = await res.json();
+                        setSections((prev) => ({ ...prev, about: { ...prev.about, profileImage: data.url } }));
+                        toast({ title: "تم رفع الصورة بنجاح!" });
+                      }
+                    }} />
+                  </label>
+                  {sections.about?.profileImage ? (
+                    <div className="relative group">
+                      <img src={sections.about.profileImage} alt="Profile" className="w-20 h-16 rounded-xl object-cover border-2 border-primary" />
+                      <button
+                        onClick={() => setSections((prev) => ({ ...prev, about: { ...prev.about, profileImage: "" } }))}
+                        className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                      >✕</button>
+                    </div>
+                  ) : (
+                    <div className="w-20 h-16 rounded-xl bg-black/40 border border-white/10 flex items-center justify-center text-muted-foreground text-xs">لا يوجد</div>
+                  )}
+                </div>
+              </div>
+
+              {/* CTA Button */}
+              <div className="mb-6 bg-black/10 border border-white/5 rounded-2xl p-5">
+                <h3 className="text-sm font-bold text-muted-foreground mb-4 uppercase tracking-widest">زر الدعوة للعمل (CTA)</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {editableSection("about", "ctaLabel", "نص الزر (مثال: Let's Work Together)")}
+                  {editableSection("about", "ctaLink", "الرابط (مثال: #contact)")}
+                </div>
+              </div>
+
+              <Button onClick={() => saveSection("about")} disabled={loading} className="bg-primary hover:bg-primary/90 text-white rounded-xl">
+                <Save className="w-4 h-4 ml-2" /> حفظ قسم "من أنا"
+              </Button>
+            </div>
+
+            {/* ═══════════════════════════════════════════
+                ABOUT ME — NEW STANDALONE SECTION
+                Section key: "aboutMe"
+                Separate from existing "about" section.
+                Appears near the END of the homepage,
+                before Final CTA.
+            ═══════════════════════════════════════════ */}
+            <div className="glass-panel rounded-3xl p-8 bg-card/40 border border-white/5">
+              <h2 className="text-xl font-bold text-foreground mb-1 flex items-center gap-2">
+                <User className="w-5 h-5 text-primary" />
+                About Me — القسم الشخصي (New Section)
+              </h2>
+              <p className="text-sm text-muted-foreground mb-1">
+                هذا قسم منفصل تمامًا عن قسم "من أنا" أعلاه.
+              </p>
+              <p className="text-xs text-primary/70 font-medium mb-6 border border-primary/20 bg-primary/5 rounded-xl px-4 py-2">
+                يظهر في نهاية الصفحة الرئيسية — قبل Final CTA مباشرةً — بتصميم عمودين: صورة شخصية كبيرة يسارًا + نص تعريفي يمينًا.
+              </p>
+
+              {/* ─ Eyebrow + Headline ─ */}
+              <div className="mb-6 bg-black/10 border border-white/5 rounded-2xl p-5">
+                <h3 className="text-sm font-bold text-muted-foreground mb-4 uppercase tracking-widest">العنوان</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {editableSection("aboutMe", "eyebrow", "نص Eyebrow (مثال: About)")}
+                  {editableSection("aboutMe", "headline1", "السطر الأول (غامق)")}
+                  {editableSection("aboutMe", "headline2", "السطر الثاني (شفاف)")}
+                </div>
+              </div>
+
+              {/* ─ Biography ─ */}
+              <div className="mb-6 bg-black/10 border border-white/5 rounded-2xl p-5">
+                <h3 className="text-sm font-bold text-muted-foreground mb-4 uppercase tracking-widest">السيرة الذاتية</h3>
+                {editableSection("aboutMe", "bio1", "الفقرة الأولى", true)}
+                {editableSection("aboutMe", "bio2", "الفقرة الثانية (اختيارية)", true)}
+              </div>
+
+              {/* ─ Specialties ─ */}
+              <div className="mb-6 bg-black/10 border border-white/5 rounded-2xl p-5">
+                <h3 className="text-sm font-bold text-muted-foreground mb-1 uppercase tracking-widest">التخصصات (Specialties)</h3>
+                <p className="text-xs text-muted-foreground mb-3">
+                  أدخل التخصصات مفصولة بفاصلة (,) — ستظهر كـ pills على الموقع.
+                </p>
+                {editableSection("aboutMe", "specialties", "مثال: Thumbnail Design, Visual Storytelling, Creative Direction")}
+                {/* Live preview of pills */}
+                {sections.aboutMe?.specialties && (
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {(sections.aboutMe.specialties as string).split(",").map((s: string) => s.trim()).filter(Boolean).map((s: string) => (
+                      <span key={s} className="px-3 py-1 rounded-full border border-white/15 text-xs text-muted-foreground bg-white/5">
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* ─ Stats ─ */}
+              <div className="mb-6 bg-black/10 border border-white/5 rounded-2xl p-5">
+                <h3 className="text-sm font-bold text-muted-foreground mb-1 uppercase tracking-widest">الإحصائيات (اختيارية)</h3>
+                <p className="text-xs text-muted-foreground mb-4">
+                  اتركها فارغة إن لم تكن لديك أرقام حقيقية — لن تظهر على الموقع.
+                </p>
+                {[1, 2, 3].map((n) => (
+                  <div key={n} className="mb-4 last:mb-0 p-4 rounded-xl bg-black/20 border border-white/5">
+                    <p className="text-xs text-primary font-bold mb-3">الإحصائية {n}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      {editableSection("aboutMe", `stat${n}Number` as any, "الرقم (مثال: 500+)")}
+                      {editableSection("aboutMe", `stat${n}Title` as any, "العنوان")}
+                      {editableSection("aboutMe", `stat${n}Desc` as any, "الوصف المختصر")}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* ─ Profile Image ─ */}
+              <div className="mb-6 bg-black/10 border border-white/5 rounded-2xl p-5">
+                <h3 className="text-sm font-bold text-muted-foreground mb-1 uppercase tracking-widest">الصورة الشخصية</h3>
+                <p className="text-xs text-muted-foreground mb-4">
+                  تظهر على اليسار في القسم. يُنصح بصورة بأبعاد 3:4 أو مربعة عالية الجودة.
+                  إذا كانت فارغة، يظهر مكان فارغ بدلًا من صورة وهمية.
+                </p>
+
+                {/* Current image preview + actions */}
+                {sections.aboutMe?.profileImage ? (
+                  <div className="flex items-start gap-4 flex-wrap">
+                    {/* Preview */}
+                    <div className="relative group w-28 shrink-0">
+                      <img
+                        src={sections.aboutMe.profileImage}
+                        alt="About Me Profile"
+                        className="w-28 aspect-[3/4] object-cover rounded-xl border-2 border-primary"
+                      />
+                      {/* Remove overlay */}
+                      <button
+                        title="حذف الصورة"
+                        onClick={() =>
+                          setSections((prev) => ({
+                            ...prev,
+                            aboutMe: { ...prev.aboutMe, profileImage: "" },
+                          }))
+                        }
+                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full text-white text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition shadow"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    {/* Replace button */}
+                    <div className="flex flex-col gap-2 justify-center">
+                      <label className="flex items-center gap-2 cursor-pointer bg-blue-500/20 text-blue-400 px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-500/30 transition border border-blue-500/30">
+                        <RefreshCw className="w-4 h-4" /> استبدال الصورة
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            try {
+                              setLoading(true);
+                              const fd = new FormData();
+                              fd.append("image", file);
+                              const oldUrl = sections.aboutMe?.profileImage as string | undefined;
+                              if (oldUrl) {
+                                const filename = oldUrl.split("/").pop();
+                                const publicId = filename?.split(".")[0];
+                                if (publicId) fd.append("publicId", publicId);
+                              }
+                              const res = await fetch(API_BASE + "/api/upload", {
+                                method: "POST",
+                                headers: { Authorization: `Bearer ${token}` },
+                                body: fd,
+                              });
+                              if (res.ok) {
+                                const data = await res.json();
+                                setSections((prev) => ({
+                                  ...prev,
+                                  aboutMe: { ...prev.aboutMe, profileImage: data.url },
+                                }));
+                                toast({ title: "تم استبدال الصورة بنجاح!" });
+                              }
+                            } catch {
+                              toast({ title: "خطأ في الرفع", variant: "destructive" });
+                            } finally {
+                              setLoading(false);
+                              e.target.value = "";
+                            }
+                          }}
+                        />
+                      </label>
+                      <button
+                        onClick={() =>
+                          setSections((prev) => ({
+                            ...prev,
+                            aboutMe: { ...prev.aboutMe, profileImage: "" },
+                          }))
+                        }
+                        className="flex items-center gap-2 text-red-400 px-4 py-2 rounded-xl text-sm font-bold hover:bg-red-500/10 transition border border-red-500/20"
+                      >
+                        <Trash2 className="w-4 h-4" /> حذف الصورة
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Upload area when no image */
+                  <label className="flex flex-col items-center justify-center gap-3 cursor-pointer bg-black/20 border border-dashed border-white/15 rounded-2xl px-6 py-10 hover:border-primary/40 hover:bg-primary/5 transition-colors">
+                    <Upload className="w-8 h-8 text-muted-foreground" />
+                    <span className="text-sm font-bold text-muted-foreground">اضغط لرفع الصورة الشخصية</span>
+                    <span className="text-xs text-muted-foreground/60">PNG / JPG / WEBP — حتى 10MB</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        try {
+                          setLoading(true);
+                          const fd = new FormData();
+                          fd.append("image", file);
+                          const res = await fetch(API_BASE + "/api/upload", {
+                            method: "POST",
+                            headers: { Authorization: `Bearer ${token}` },
+                            body: fd,
+                          });
+                          if (res.ok) {
+                            const data = await res.json();
+                            setSections((prev) => ({
+                              ...prev,
+                              aboutMe: { ...prev.aboutMe, profileImage: data.url },
+                            }));
+                            toast({ title: "تم رفع الصورة بنجاح!" });
+                          }
+                        } catch {
+                          toast({ title: "خطأ في الرفع", variant: "destructive" });
+                        } finally {
+                          setLoading(false);
+                          e.target.value = "";
+                        }
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
+
+              {/* ─ CTA ─ */}
+              <div className="mb-6 bg-black/10 border border-white/5 rounded-2xl p-5">
+                <h3 className="text-sm font-bold text-muted-foreground mb-4 uppercase tracking-widest">زر الدعوة (CTA)</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {editableSection("aboutMe", "ctaLabel", "نص الزر (مثال: Let's Work Together)")}
+                  {editableSection("aboutMe", "ctaLink", "الرابط (مثال: #contact)")}
+                </div>
+              </div>
+
+              <Button onClick={() => saveSection("aboutMe")} disabled={loading} className="bg-primary hover:bg-primary/90 text-white rounded-xl">
+                <Save className="w-4 h-4 ml-2" /> حفظ About Me (New Section)
+              </Button>
+            </div>
+
             {/* HERO IMAGES */}
             <div className="glass-panel rounded-3xl p-8 bg-card/40 border border-white/5">
               <h2 className="text-xl font-bold text-foreground mb-6">صور القسم الرئيسي (البطاقتين)</h2>
@@ -1490,48 +1882,162 @@ export default function AdminDashboard() {
             <div className="glass-panel rounded-3xl p-8 bg-card/40 border border-white/5">
               <h2 className="text-xl font-bold text-foreground mb-6">صور معرض الأعمال (Portfolio) - 20 صورة</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                {getPortfolioImages().map((url, index) => (
-                  <div key={`portfolio-${index}`} className="relative group flex items-center justify-center bg-black/20 border border-white/10 rounded-xl aspect-video overflow-hidden">
-                    {url ? (
-                      <>
-                        <img src={url} alt={`Portfolio ${index + 1}`} className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2">
-                          <div className="flex items-center justify-between h-full">
-                            <button onClick={(e) => { e.stopPropagation(); movePortfolioImage(index, 'right'); }} className="w-8 h-8 bg-black/60 rounded-lg flex items-center justify-center hover:bg-black transition" title="تحريك لليمين">
-                              <ArrowRight className="w-4 h-4 text-white" />
-                            </button>
-                            <div className="flex flex-col gap-2">
-                              <label onClick={(e) => e.stopPropagation()} className="w-8 h-8 cursor-pointer bg-blue-500/90 rounded-lg flex items-center justify-center hover:bg-blue-600 transition" title="استبدال الصورة">
-                                <RefreshCw className="w-4 h-4 text-white" />
-                                <input type="file" accept="image/*" className="hidden" onChange={(e) => uploadPortfolioImage(e, index, true)} />
-                              </label>
-                              <button onClick={(e) => { e.stopPropagation(); deletePortfolioImage(index); }} className="w-8 h-8 bg-red-500/90 rounded-lg flex items-center justify-center hover:bg-red-600 transition" title="حذف الصورة">
-                                <Trash2 className="w-4 h-4 text-white" />
+                {getPortfolioImages().map((url, index) => {
+                  const items: any[] = Array.isArray((sections.portfolio as any)?.items) ? (sections.portfolio as any).items : [];
+                  const meta = items[index] || items.find((it: any) => it && it.imageUrl === url);
+
+                  return (
+                    <div key={`portfolio-${index}`} className="relative group flex items-center justify-center bg-black/20 border border-white/10 rounded-xl aspect-video overflow-hidden">
+                      {url ? (
+                        <>
+                          <img src={url} alt={`Portfolio ${index + 1}`} className="w-full h-full object-cover" />
+
+                          {/* Display concise metadata badge if set */}
+                          {meta && (meta.creatorName || meta.views || meta.category) && (
+                            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-2 pointer-events-none z-10">
+                              <div className="flex items-center justify-between text-[11px] text-white">
+                                <span className="font-bold truncate max-w-[60%]">{meta.creatorName || meta.category}</span>
+                                <span className="text-white/70 font-mono text-[10px]">{meta.views || ""}</span>
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2 z-20">
+                            <div className="flex items-center justify-between h-full">
+                              <button onClick={(e) => { e.stopPropagation(); movePortfolioImage(index, 'right'); }} className="w-8 h-8 bg-black/60 rounded-lg flex items-center justify-center hover:bg-black transition" title="تحريك لليمين">
+                                <ArrowRight className="w-4 h-4 text-white" />
+                              </button>
+                              <div className="flex flex-col gap-2">
+                                <label onClick={(e) => e.stopPropagation()} className="w-8 h-8 cursor-pointer bg-blue-500/90 rounded-lg flex items-center justify-center hover:bg-blue-600 transition" title="استبدال الصورة">
+                                  <RefreshCw className="w-4 h-4 text-white" />
+                                  <input type="file" accept="image/*" className="hidden" onChange={(e) => uploadPortfolioImage(e, index, true)} />
+                                </label>
+                                <button onClick={(e) => { e.stopPropagation(); openEditMeta(index); }} className="w-8 h-8 bg-amber-500/90 rounded-lg flex items-center justify-center hover:bg-amber-600 transition" title="تعديل بيانات العمل (Metadata)">
+                                  <FileText className="w-4 h-4 text-white" />
+                                </button>
+                                <button onClick={(e) => { e.stopPropagation(); deletePortfolioImage(index); }} className="w-8 h-8 bg-red-500/90 rounded-lg flex items-center justify-center hover:bg-red-600 transition" title="حذف الصورة">
+                                  <Trash2 className="w-4 h-4 text-white" />
+                                </button>
+                              </div>
+                              <button onClick={(e) => { e.stopPropagation(); movePortfolioImage(index, 'left'); }} className="w-8 h-8 bg-black/60 rounded-lg flex items-center justify-center hover:bg-black transition" title="تحريك لليسار">
+                                <ArrowLeft className="w-4 h-4 text-white" />
                               </button>
                             </div>
-                            <button onClick={(e) => { e.stopPropagation(); movePortfolioImage(index, 'left'); }} className="w-8 h-8 bg-black/60 rounded-lg flex items-center justify-center hover:bg-black transition" title="تحريك لليسار">
-                              <ArrowLeft className="w-4 h-4 text-white" />
-                            </button>
                           </div>
-                        </div>
-                      </>
-                    ) : (
-                      <label className="cursor-pointer w-full h-full flex flex-col items-center justify-center hover:bg-primary/10 transition-colors p-4 text-center">
-                        <Upload className="w-6 h-6 text-muted-foreground mb-2" />
-                        <span className="text-xs text-muted-foreground font-bold">خانة {index + 1}</span>
-                        <input type="file" accept="image/*" className="hidden" onChange={(e) => uploadPortfolioImage(e, index, false)} />
-                      </label>
-                    )}
-                  </div>
-                ))}
+                        </>
+                      ) : (
+                        <label className="cursor-pointer w-full h-full flex flex-col items-center justify-center hover:bg-primary/10 transition-colors p-4 text-center">
+                          <Upload className="w-6 h-6 text-muted-foreground mb-2" />
+                          <span className="text-xs text-muted-foreground font-bold">خانة {index + 1}</span>
+                          <input type="file" accept="image/*" className="hidden" onChange={(e) => uploadPortfolioImage(e, index, false)} />
+                        </label>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
+
+            {/* Portfolio Metadata Editor Modal */}
+            {editingMetaIndex !== null && (
+              <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+                <div className="bg-card border border-white/10 rounded-2xl p-6 max-w-lg w-full shadow-2xl space-y-4" dir="ltr">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                    <div>
+                      <h3 className="font-bold text-lg text-foreground">Portfolio Metadata</h3>
+                      <p className="text-xs text-muted-foreground">Slot #{editingMetaIndex + 1} details for public display</p>
+                    </div>
+                    <button
+                      onClick={() => setEditingMetaIndex(null)}
+                      className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-muted-foreground hover:text-foreground"
+                    >
+                      <Square className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {metaForm.imageUrl && (
+                    <div className="aspect-video w-full rounded-xl overflow-hidden border border-white/10 bg-black/40">
+                      <img src={metaForm.imageUrl} alt="Thumbnail preview" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs font-semibold text-muted-foreground mb-1 block">Creator / Channel</label>
+                      <Input
+                        value={metaForm.creatorName}
+                        onChange={e => setMetaForm(f => ({ ...f, creatorName: e.target.value }))}
+                        placeholder="e.g. MrBeast"
+                        className="bg-black/30"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-semibold text-muted-foreground mb-1 block">Video Title</label>
+                      <Input
+                        value={metaForm.videoTitle}
+                        onChange={e => setMetaForm(f => ({ ...f, videoTitle: e.target.value }))}
+                        placeholder="e.g. $1 vs $1,000,000 Hotel Room!"
+                        className="bg-black/30"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-semibold text-muted-foreground mb-1 block">YouTube URL</label>
+                      <Input
+                        value={metaForm.youtubeUrl}
+                        onChange={e => setMetaForm(f => ({ ...f, youtubeUrl: e.target.value }))}
+                        placeholder="https://www.youtube.com/watch?v=..."
+                        className="bg-black/30 font-mono text-xs"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-semibold text-muted-foreground mb-1 block">Views</label>
+                      <Input
+                        value={metaForm.views}
+                        onChange={e => setMetaForm(f => ({ ...f, views: e.target.value }))}
+                        placeholder="e.g. 12.4M views"
+                        className="bg-black/30"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-semibold text-muted-foreground mb-1 block">Category</label>
+                      <select
+                        value={metaForm.category}
+                        onChange={e => setMetaForm(f => ({ ...f, category: e.target.value }))}
+                        className="w-full bg-black/30 border border-input rounded-md px-3 py-2 text-sm text-foreground"
+                      >
+                        <option value="Gaming">Gaming</option>
+                        <option value="Finance">Finance</option>
+                        <option value="Vlogs">Vlogs</option>
+                        <option value="Reaction">Reaction</option>
+                        <option value="Entertainment">Entertainment</option>
+                        <option value="Education">Education</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
+                    <Button variant="outline" onClick={() => setEditingMetaIndex(null)} className="rounded-xl text-xs">
+                      Cancel
+                    </Button>
+                    <Button onClick={savePortfolioMetadata} className="bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold">
+                      <Save className="w-3.5 h-3.5 mr-1" />
+                      Save Metadata
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* CASE STUDIES */}
             <div className="glass-panel rounded-3xl p-8 bg-card/40 border border-white/5">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold text-foreground">قصص نجاح صناع محتوى</h2>
-                <Button 
+                <Button
                   onClick={() => {
                     setSections(prev => {
                       const current = Array.isArray(prev.caseStudies) && prev.caseStudies.length > 0 ? [...prev.caseStudies] : [...defaultCaseStudies];
@@ -1561,7 +2067,7 @@ export default function AdminDashboard() {
               {((Array.isArray(sections.caseStudies) && sections.caseStudies.length > 0) ? sections.caseStudies : defaultCaseStudies).map((study: any, idx: number) => (
                 <div key={study.id || idx} className="mb-8 border border-white/10 rounded-2xl p-6 bg-black/20 text-right relative">
                   <div className="flex justify-between items-center mb-4">
-                    <button 
+                    <button
                       onClick={() => {
                         if(!confirm("هل أنت متأكد من حذف قصة النجاح هذه؟")) return;
                         setSections(prev => {
@@ -1751,7 +2257,7 @@ export default function AdminDashboard() {
           <div className="bg-card border border-white/10 p-8 rounded-3xl shadow-2xl max-w-md w-full animate-in zoom-in-95 duration-200">
             <h2 className="text-xl font-black text-foreground mb-2">{modalConfig.title}</h2>
             <p className="text-sm text-muted-foreground mb-6">{modalConfig.description}</p>
-            
+
             {(['addClient', 'addWork', 'editOrder', 'addCode'].includes(modalConfig.type || '') || (modalConfig.type === 'banUser' && modalConfig.initialValue !== "unban")) && (
               <Input
                 type={modalConfig.type === 'addClient' || modalConfig.type === 'banUser' || modalConfig.type === 'addCode' ? 'text' : 'number'}
@@ -1764,16 +2270,16 @@ export default function AdminDashboard() {
                 dir="rtl"
               />
             )}
-            
+
             <div className="flex gap-3 justify-end mt-2">
               <Button variant="ghost" onClick={() => setModalConfig({ ...modalConfig, isOpen: false })} className="rounded-xl">
                 إلغاء
               </Button>
-              <Button 
-                onClick={submitModal} 
+              <Button
+                onClick={submitModal}
                 className={`rounded-xl font-bold text-white ${
-                  ['deleteClient', 'clearBalance'].includes(modalConfig.type || '') 
-                    ? 'bg-red-500 hover:bg-red-600' 
+                  ['deleteClient', 'clearBalance'].includes(modalConfig.type || '')
+                    ? 'bg-red-500 hover:bg-red-600'
                     : 'bg-primary hover:bg-primary/90'
                 }`}
               >

@@ -257,20 +257,18 @@ const translations: Record<Lang, Record<string, string>> = {
 };
 
 const LanguageContext = createContext<LanguageContextType>({
-  lang: "ar",
+  lang: "en",
   setLang: () => {},
   t: (key: string) => key,
-  dir: "rtl",
-  isRTL: true,
+  dir: "ltr",
+  isRTL: false,
 });
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(() => {
     const stored = localStorage.getItem("site_lang");
     if (stored === "en" || stored === "ar") return stored;
-    // Auto-detect: if browser language starts with "ar", default to Arabic
-    const browserLang = navigator.language || "";
-    return browserLang.startsWith("ar") ? "ar" : "ar"; // Default to Arabic for this Arabic-first site
+    return "en";
   });
 
   const unlockScroll = () => {
