@@ -1,87 +1,158 @@
 import { API_BASE } from "@/lib/api";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { useUser } from "@/contexts/UserContext";
-import { Bell, CheckCircle, MessageSquare, Image as ImageIcon } from "lucide-react";
+import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
+import { Bell, MessageSquare, Image as ImageIcon, CheckCircle } from "lucide-react";
 
+/* ─── Types ─────────────────────────────────────── */
+interface Notification {
+  id: number;
+  message: string;
+  read: boolean;
+  type?: string; // not in schema yet — handled gracefully
+  createdAt: string;
+}
+
+function getIcon(type?: string) {
+  if (type === "comment")   return <MessageSquare size={15} />;
+  if (type === "thumbnail") return <ImageIcon size={15} />;
+  return <Bell size={15} />;
+}
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+
+/* ─── Skeleton ──────────────────────────────────── */
+function NotifSkeleton() {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+      {[0,1,2,3].map(i => (
+        <div key={i} className="dash-card" style={{ display: "flex", alignItems: "flex-start", gap: "14px", padding: "16px 18px" }}>
+          <div className="dash-skeleton" style={{ width: "34px", height: "34px", borderRadius: "50%", flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <div className="dash-skeleton" style={{ height: "12px", width: "80%", marginBottom: "8px" }} />
+            <div className="dash-skeleton" style={{ height: "10px", width: "30%" }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ─── Component ─────────────────────────────────── */
 export default function Notifications() {
-  const { user } = useUser();
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isLoading, setIsLoading]         = useState(true);
 
   useEffect(() => {
-    const fetchNotifs = async () => {
-      try {
-        const token = localStorage.getItem("user_token");
-        const res = await fetch(API_BASE + "/api/users/dashboard/notifications", {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (res.ok) {
-          setNotifications(await res.json());
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchNotifs();
+    const token = localStorage.getItem("user_token");
+    fetch(API_BASE + "/api/users/dashboard/notifications", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.ok ? r.json() : [])
+      .then(setNotifications)
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
   }, []);
 
-  if (isLoading) return <div className="flex items-center justify-center h-full"><div className="loader" /></div>;
-
-  const getIcon = (type?: string) => {
-    if (type === 'comment') return <MessageSquare size={18} className="text-blue-500" />;
-    if (type === 'thumbnail') return <ImageIcon size={18} className="text-green-500" />;
-    return <Bell size={18} className="text-primary" />;
-  };
+  const unread = notifications.filter(n => !n.read).length;
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      <div className="mb-8">
-        <h2 className="text-2xl font-black flex items-center gap-2">
-          <Bell className="text-primary" /> الإشعارات
-        </h2>
-        <p className="text-muted-foreground mt-1">تابع آخر التحديثات والرسائل من الإدارة.</p>
-      </div>
+    <div style={{ maxWidth: "680px" }}>
+      <DashboardPageHeader
+        title="Notifications"
+        description={
+          unread > 0
+            ? `You have ${unread} unread notification${unread > 1 ? "s" : ""}.`
+            : "You're all caught up."
+        }
+      />
 
-      <div className="space-y-3">
-        {notifications.map((notif, i) => (
-          <motion.div
-            key={notif.id}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.05 }}
-            className={`bg-card p-5 rounded-2xl border ${notif.read ? 'border-white/5 opacity-70' : 'border-primary/30 shadow-[0_0_15px_rgba(var(--primary),0.1)]'} flex gap-4`}
-          >
-            <div className="w-10 h-10 shrink-0 rounded-full bg-white/5 flex items-center justify-center">
-              {getIcon(notif.type)}
-            </div>
-            <div className="flex-1">
-              <p className={`text-sm md:text-base ${notif.read ? 'text-muted-foreground' : 'font-bold text-white'}`}>
-                {notif.message}
-              </p>
-              <span className="text-xs text-muted-foreground mt-2 block">
-                {new Date(notif.createdAt).toLocaleString('ar-JO')}
-              </span>
-            </div>
-            {!notif.read && (
-              <div className="shrink-0 flex items-center">
-                <div className="w-2 h-2 rounded-full bg-primary" />
+      {isLoading ? <NotifSkeleton /> : notifications.length === 0 ? (
+        <div
+          style={{
+            padding: "56px 20px", textAlign: "center",
+            border: "1px dashed var(--dash-border)", borderRadius: "12px",
+            color: "var(--dash-ink-3)",
+          }}
+        >
+          <CheckCircle size={28} style={{ marginBottom: "12px", opacity: 0.3 }} />
+          <p style={{ fontSize: "14px" }}>No notifications yet.</p>
+          <p style={{ fontSize: "12.5px", marginTop: "4px" }}>We'll let you know when something needs your attention.</p>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+          {notifications.map((n, i) => (
+            <motion.div
+              key={n.id}
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.04 }}
+              className="dash-card"
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: "14px",
+                padding: "14px 18px",
+                opacity: n.read ? 0.65 : 1,
+                borderLeft: !n.read ? "3px solid var(--dash-ink)" : "3px solid transparent",
+                borderRadius: "12px",
+              }}
+            >
+              {/* Icon */}
+              <div
+                style={{
+                  width: "34px",
+                  height: "34px",
+                  borderRadius: "50%",
+                  background: n.read ? "var(--dash-border-2)" : "#111",
+                  color: n.read ? "var(--dash-ink-3)" : "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                  marginTop: "1px",
+                }}
+              >
+                {getIcon(n.type)}
               </div>
-            )}
-          </motion.div>
-        ))}
 
-        {notifications.length === 0 && (
-          <div className="text-center py-20 bg-white/5 rounded-3xl border border-white/5">
-            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 text-muted-foreground">
-              <CheckCircle size={32} />
-            </div>
-            <p className="text-muted-foreground text-lg">لا توجد إشعارات جديدة</p>
-          </div>
-        )}
-      </div>
+              {/* Body */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p
+                  style={{
+                    fontSize: "13.5px",
+                    fontWeight: n.read ? 400 : 600,
+                    color: "var(--dash-ink)",
+                    lineHeight: 1.5,
+                    marginBottom: "4px",
+                  }}
+                >
+                  {n.message}
+                </p>
+                <span style={{ fontSize: "11px", color: "var(--dash-ink-3)" }}>
+                  {formatDate(n.createdAt)}
+                </span>
+              </div>
+
+              {/* Unread indicator */}
+              {!n.read && (
+                <div
+                  style={{
+                    width: "7px",
+                    height: "7px",
+                    borderRadius: "50%",
+                    background: "var(--dash-ink)",
+                    flexShrink: 0,
+                    marginTop: "6px",
+                  }}
+                />
+              )}
+            </motion.div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,366 +1,545 @@
 import { API_BASE } from "@/lib/api";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useUser } from "@/contexts/UserContext";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Search, Download, MessageSquare, Star, Send, X } from "lucide-react";
+import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
+import {
+  Search, Download, MessageSquare, Star, Send, X
+} from "lucide-react";
 
-export default function Thumbnails() {
-  const { user } = useUser();
+/* ─── Types ─────────────────────────────────────── */
+interface Thumbnail {
+  id: number;
+  image: string;
+  title: string;
+  status: string;
+  price: number;
+  notes?: string;
+  downloadUrl?: string;
+  createdAt: string;
+}
+
+interface Comment {
+  id: number;
+  authorName: string;
+  isAdmin: boolean;
+  content: string;
+  createdAt: string;
+}
+
+interface Rating {
+  id: number;
+  rating: number;
+}
+
+/* ─── Status helpers ────────────────────────────── */
+function statusBadgeClass(status: string) {
+  if (status.includes("تم التسليم"))  return "dash-badge dash-badge-green";
+  if (status.includes("تم التنفيذ"))  return "dash-badge dash-badge-blue";
+  if (status.includes("قيد"))         return "dash-badge dash-badge-amber";
+  return "dash-badge dash-badge-gray";
+}
+
+function statusLabel(status: string) {
+  if (status.includes("تم التسليم"))                              return "Delivered";
+  if (status.includes("تم التنفيذ"))                              return "Completed";
+  if (status.includes("قيد التنفيذ") || status.includes("قيد العمل")) return "In Progress";
+  if (status.includes("في انتظار") || status.includes("انتظار")) return "Pending";
+  return status;
+}
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+
+/* ─── Skeleton ──────────────────────────────────── */
+function ThumbnailsSkeleton() {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px" }}>
+      {[0,1,2,3,4,5].map(i => (
+        <div key={i} className="dash-card" style={{ overflow: "hidden" }}>
+          <div className="dash-skeleton" style={{ width: "100%", aspectRatio: "16/9" }} />
+          <div style={{ padding: "14px 16px" }}>
+            <div className="dash-skeleton" style={{ height: "12px", width: "70%", marginBottom: "8px" }} />
+            <div className="dash-skeleton" style={{ height: "10px", width: "40%" }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ─── Modal base ─────────────────────────────────── */
+function Modal({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
+      style={{
+        position: "fixed", inset: 0, zIndex: 50,
+        background: "rgba(0,0,0,0.35)", backdropFilter: "blur(4px)",
+        display: "flex", alignItems: "center", justifyContent: "center", padding: "16px",
+      }}
+    >
+      <motion.div
+        initial={{ scale: 0.96, opacity: 0, y: 8 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.96, opacity: 0, y: 8 }}
+        transition={{ duration: 0.2 }}
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: "#fff", borderRadius: "14px",
+          boxShadow: "0 16px 48px rgba(0,0,0,0.14)",
+          width: "100%", maxWidth: "480px",
+          display: "flex", flexDirection: "column",
+          maxHeight: "85vh",
+        }}
+      >
+        {children}
+      </motion.div>
+    </motion.div>
+  );
+}
+
+/* ─── Comment modal ──────────────────────────────── */
+function CommentModal({
+  thumbId, token, onClose,
+}: { thumbId: number; token: string; onClose: () => void }) {
   const { toast } = useToast();
-  const [thumbnails, setThumbnails] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState("الكل");
-
-  // Comment/Rating modals
-  const [commentThumbId, setCommentThumbId] = useState<number | null>(null);
-  const [ratingThumbId, setRatingThumbId] = useState<number | null>(null);
-  const [commentText, setCommentText] = useState("");
-  const [commentsList, setCommentsList] = useState<any[]>([]);
-  const [selectedRating, setSelectedRating] = useState(0);
-  const [existingRating, setExistingRating] = useState<number | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [text, setText]         = useState("");
   const [submitting, setSubmitting] = useState(false);
-
-  const token = typeof window !== "undefined" ? localStorage.getItem("user_token") : "";
+  const [loading, setLoading]   = useState(true);
 
   useEffect(() => {
-    const fetchThumbnails = async () => {
-      try {
-        const res = await fetch(API_BASE + "/api/users/dashboard/thumbnails", {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (res.ok) {
-          setThumbnails(await res.json());
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchThumbnails();
-  }, []);
+    fetch(API_BASE + `/api/users/dashboard/thumbnails/${thumbId}/comments`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.ok ? r.json() : [])
+      .then(setComments)
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [thumbId, token]);
 
-  const filtered = thumbnails.filter(t => {
-    const matchesSearch = t.title.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = filterStatus === "الكل" || t.status === filterStatus;
-    return matchesSearch && matchesStatus;
-  });
-
-  // --- Comments ---
-  const openComments = async (thumbId: number) => {
-    setCommentThumbId(thumbId);
-    setCommentText("");
+  const submit = async () => {
+    if (!text.trim()) return;
+    setSubmitting(true);
     try {
       const res = await fetch(API_BASE + `/api/users/dashboard/thumbnails/${thumbId}/comments`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) setCommentsList(await res.json());
-    } catch (e) { console.error(e); }
-  };
-
-  const submitComment = async () => {
-    if (!commentText.trim() || !commentThumbId) return;
-    setSubmitting(true);
-    try {
-      const res = await fetch(API_BASE + `/api/users/dashboard/thumbnails/${commentThumbId}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ content: commentText })
+        body: JSON.stringify({ content: text }),
       });
       if (res.ok) {
-        const newComment = await res.json();
-        setCommentsList([newComment, ...commentsList]);
-        setCommentText("");
-        toast({ title: "تم إرسال التعليق بنجاح ✅" });
+        const c = await res.json();
+        setComments(prev => [c, ...prev]);
+        setText("");
+        toast({ title: "Comment posted." });
       }
-    } catch (e) { toast({ title: "حدث خطأ", variant: "destructive" }); }
-    setSubmitting(false);
-  };
-
-  // --- Ratings ---
-  const openRating = async (thumbId: number) => {
-    setRatingThumbId(thumbId);
-    setSelectedRating(0);
-    setExistingRating(null);
-    try {
-      const res = await fetch(API_BASE + `/api/users/dashboard/thumbnails/${thumbId}/rating`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data) {
-          setSelectedRating(data.rating);
-          setExistingRating(data.rating);
-        }
-      }
-    } catch (e) { console.error(e); }
-  };
-
-  const submitRating = async () => {
-    if (!selectedRating || !ratingThumbId) return;
-    setSubmitting(true);
-    try {
-      const res = await fetch(API_BASE + `/api/users/dashboard/thumbnails/${ratingThumbId}/rating`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ rating: selectedRating })
-      });
-      if (res.ok) {
-        setExistingRating(selectedRating);
-        toast({ title: `تم التقييم بنجاح! ⭐ ${selectedRating}/5` });
-        setRatingThumbId(null);
-      }
-    } catch (e) { toast({ title: "حدث خطأ", variant: "destructive" }); }
-    setSubmitting(false);
-  };
-
-  // --- Download ---
-  const handleDownload = (thumb: any) => {
-    const url = thumb.downloadUrl || thumb.image;
-    if (!url) {
-      toast({ title: "رابط التحميل غير متاح حالياً", variant: "destructive" });
-      return;
+    } catch {
+      toast({ title: "Failed to post comment.", variant: "destructive" });
+    } finally {
+      setSubmitting(false);
     }
-    const a = document.createElement("a");
-    a.href = url;
-    a.target = "_blank";
-    a.rel = "noopener noreferrer";
-    a.download = thumb.title || "thumbnail";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
   };
-
-  if (isLoading) return <div className="flex items-center justify-center h-full"><div className="loader" /></div>;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 className="text-2xl font-black">معرض الثمنيلات</h2>
-        
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-            <Input 
-              placeholder="ابحث عن تصميم..." 
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pr-10 bg-black/20 border-white/10 rounded-xl"
-            />
+    <Modal onClose={onClose}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid var(--dash-border)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <MessageSquare size={16} color="var(--dash-ink-2)" />
+          <span style={{ fontWeight: 700, fontSize: "14px", color: "var(--dash-ink)" }}>Comments</span>
+        </div>
+        <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--dash-ink-3)", display: "flex" }}>
+          <X size={18} />
+        </button>
+      </div>
+
+      {/* Thread */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "14px 20px", display: "flex", flexDirection: "column", gap: "10px" }}>
+        {loading ? (
+          <div style={{ display: "flex", justifyContent: "center", padding: "24px" }}>
+            <div className="loader" style={{ width: "20px", height: "20px" }} />
           </div>
-          <select 
-            className="bg-black/20 border border-white/10 rounded-xl px-3 py-2 outline-none"
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
+        ) : comments.length === 0 ? (
+          <p style={{ textAlign: "center", color: "var(--dash-ink-3)", fontSize: "13px", padding: "24px 0" }}>
+            No comments yet. Be the first to leave one.
+          </p>
+        ) : (
+          comments.map(c => (
+            <div
+              key={c.id}
+              style={{
+                padding: "10px 14px",
+                borderRadius: "9px",
+                background: c.isAdmin ? "#f0f9ff" : "#f7f7f5",
+                border: c.isAdmin ? "1px solid #bfdbfe" : "1px solid var(--dash-border)",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+                <span style={{ fontSize: "11px", fontWeight: 700, color: c.isAdmin ? "#1d4ed8" : "var(--dash-ink-2)" }}>
+                  {c.isAdmin ? "✦ Muhanad" : c.authorName}
+                </span>
+                <span style={{ fontSize: "10.5px", color: "var(--dash-ink-3)" }}>{formatDate(c.createdAt)}</span>
+              </div>
+              <p style={{ fontSize: "13.5px", color: "var(--dash-ink)", lineHeight: 1.5 }}>{c.content}</p>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Input */}
+      <div style={{ padding: "12px 20px", borderTop: "1px solid var(--dash-border)", display: "flex", gap: "8px" }}>
+        <input
+          className="dash-input"
+          placeholder="Write a comment…"
+          value={text}
+          onChange={e => setText(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && submit()}
+          style={{ flex: 1, height: "36px" }}
+        />
+        <button
+          onClick={submit}
+          disabled={submitting || !text.trim()}
+          style={{
+            height: "36px", width: "36px",
+            background: "var(--dash-ink)", color: "#fff",
+            border: "none", borderRadius: "7px", cursor: "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            opacity: (submitting || !text.trim()) ? 0.4 : 1,
+          }}
+        >
+          <Send size={14} />
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+/* ─── Rating modal ───────────────────────────────── */
+function RatingModal({
+  thumbId, token, onClose,
+}: { thumbId: number; token: string; onClose: () => void }) {
+  const { toast } = useToast();
+  const [selected, setSelected]   = useState(0);
+  const [existing, setExisting]   = useState<number | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    fetch(API_BASE + `/api/users/dashboard/thumbnails/${thumbId}/rating`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then((d: Rating | null) => { if (d) { setSelected(d.rating); setExisting(d.rating); } })
+      .catch(() => {});
+  }, [thumbId, token]);
+
+  const submit = async () => {
+    if (!selected) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch(API_BASE + `/api/users/dashboard/thumbnails/${thumbId}/rating`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ rating: selected }),
+      });
+      if (res.ok) {
+        setExisting(selected);
+        toast({ title: `Rated ${selected}/5 ⭐` });
+        onClose();
+      }
+    } catch {
+      toast({ title: "Failed to submit rating.", variant: "destructive" });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal onClose={onClose}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px", borderBottom: "1px solid var(--dash-border)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <Star size={16} color="var(--dash-ink-2)" />
+          <span style={{ fontWeight: 700, fontSize: "14px", color: "var(--dash-ink)" }}>Rate this work</span>
+        </div>
+        <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--dash-ink-3)", display: "flex" }}>
+          <X size={18} />
+        </button>
+      </div>
+
+      <div style={{ padding: "28px 24px", textAlign: "center" }}>
+        <p style={{ fontSize: "13px", color: "var(--dash-ink-3)", marginBottom: "24px" }}>
+          {existing ? `Your current rating: ${existing}/5 — you can update it.` : "Select a rating from 1 to 5 stars."}
+        </p>
+        <div style={{ display: "flex", justifyContent: "center", gap: "10px", marginBottom: "28px" }}>
+          {[1,2,3,4,5].map(n => (
+            <button
+              key={n}
+              onClick={() => setSelected(n)}
+              style={{ background: "none", border: "none", cursor: "pointer", padding: 0, transition: "transform 0.15s ease" }}
+              onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.25)")}
+              onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+            >
+              <Star
+                size={32}
+                style={{
+                  fill: n <= selected ? "#f59e0b" : "transparent",
+                  color: n <= selected ? "#f59e0b" : "#d1d5db",
+                  transition: "fill 0.12s ease, color 0.12s ease",
+                }}
+              />
+            </button>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: "10px" }}>
+          <button
+            onClick={onClose}
+            style={{ flex: 1, height: "38px", background: "none", border: "1px solid var(--dash-border)", borderRadius: "8px", fontSize: "13.5px", cursor: "pointer", color: "var(--dash-ink-2)", fontFamily: "inherit" }}
           >
-            <option value="الكل">الكل</option>
-            <option value="في انتظار التنفيذ">في انتظار التنفيذ</option>
-            <option value="قيد التنفيذ">قيد التنفيذ</option>
-            <option value="تم التنفيذ">تم التنفيذ</option>
-            <option value="تم التسليم">تم التسليم</option>
-          </select>
+            Cancel
+          </button>
+          <button
+            onClick={submit}
+            disabled={submitting || !selected}
+            style={{ flex: 1, height: "38px", background: "var(--dash-ink)", color: "#fff", border: "none", borderRadius: "8px", fontSize: "13.5px", fontWeight: 600, cursor: "pointer", opacity: (submitting || !selected) ? 0.4 : 1, fontFamily: "inherit" }}
+          >
+            {submitting ? "Saving…" : "Confirm rating"}
+          </button>
         </div>
       </div>
+    </Modal>
+  );
+}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filtered.map((thumb, i) => (
-          <motion.div
-            key={thumb.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
-            className="bg-card rounded-3xl overflow-hidden border border-white/5 group"
-          >
-            <div className="aspect-video bg-black/40 relative overflow-hidden">
-              <img 
-                src={thumb.image} 
-                alt={thumb.title}
-                loading="lazy"
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                <Button 
-                  onClick={() => handleDownload(thumb)}
-                  variant="secondary" 
-                  size="sm" 
-                  className="rounded-xl font-bold bg-white text-black hover:bg-gray-200"
-                >
-                  <Download className="ml-2 w-4 h-4" /> تحميل بأعلى جودة
-                </Button>
-              </div>
-            </div>
-            
-            <div className="p-5">
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <h3 className="font-bold text-lg leading-tight mb-1">{thumb.title}</h3>
-                  <p className="text-xs text-muted-foreground">{new Date(thumb.createdAt).toLocaleDateString('ar-JO')}</p>
-                </div>
-                <span className={`text-xs px-2 py-1 rounded font-bold whitespace-nowrap ${
-                  thumb.status === 'تم التسليم' ? 'bg-green-500/20 text-green-500' :
-                  thumb.status === 'تم التنفيذ' ? 'bg-blue-500/20 text-blue-500' :
-                  thumb.status === 'قيد التنفيذ' ? 'bg-amber-500/20 text-amber-500' :
-                  'bg-gray-500/20 text-gray-400'
-                }`}>
-                  {thumb.status}
-                </span>
-              </div>
-              
-              {thumb.notes && (
-                <div className="bg-white/5 p-3 rounded-xl mb-4">
-                  <p className="text-sm text-gray-300">ملاحظات: {thumb.notes}</p>
-                </div>
-              )}
+/* ─── Component ─────────────────────────────────── */
+export default function Thumbnails() {
+  const { toast } = useToast();
+  const token = typeof window !== "undefined" ? localStorage.getItem("user_token") ?? "" : "";
 
-              <div className="flex gap-2 border-t border-white/5 pt-4">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="flex-1 rounded-xl bg-white/5 hover:bg-white/10"
-                  onClick={() => openComments(thumb.id)}
-                >
-                  <MessageSquare className="w-4 h-4 ml-2" /> تعليق
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="flex-1 rounded-xl bg-white/5 hover:bg-white/10 text-amber-500 hover:text-amber-400"
-                  onClick={() => openRating(thumb.id)}
-                >
-                  <Star className="w-4 h-4 ml-2" /> تقييم
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-        ))}
+  const [thumbnails, setThumbnails] = useState<Thumbnail[]>([]);
+  const [isLoading, setIsLoading]   = useState(true);
+  const [search, setSearch]         = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
 
-        {filtered.length === 0 && (
-          <div className="col-span-full py-20 text-center text-muted-foreground bg-white/5 rounded-3xl border border-white/5">
-            لا توجد ثمنيلات تطابق بحثك.
-          </div>
-        )}
+  const [commentId, setCommentId]   = useState<number | null>(null);
+  const [ratingId, setRatingId]     = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch(API_BASE + "/api/users/dashboard/thumbnails", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.ok ? r.json() : [])
+      .then(setThumbnails)
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
+  }, [token]);
+
+  const filtered = thumbnails.filter(t => {
+    const matchSearch = t.title.toLowerCase().includes(search.toLowerCase());
+    const matchStatus =
+      filterStatus === "all" ||
+      (filterStatus === "delivered"   && t.status.includes("تسليم")) ||
+      (filterStatus === "completed"   && t.status.includes("تنفيذ") && !t.status.includes("قيد")) ||
+      (filterStatus === "in-progress" && (t.status.includes("قيد") || t.status.includes("قيد العمل"))) ||
+      (filterStatus === "pending"     && (t.status.includes("انتظار")));
+    return matchSearch && matchStatus;
+  });
+
+  const handleDownload = (thumb: Thumbnail) => {
+    const url = thumb.downloadUrl || thumb.image;
+    if (!url) { toast({ title: "Download link not available.", variant: "destructive" }); return; }
+    const a = document.createElement("a");
+    a.href = url; a.target = "_blank"; a.rel = "noopener noreferrer";
+    a.download = thumb.title || "thumbnail";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  };
+
+  return (
+    <div>
+      <DashboardPageHeader
+        title="My Thumbnails"
+        description="Browse, comment, rate, and download your thumbnail deliveries."
+      />
+
+      {/* ── Filters ── */}
+      <div style={{ display: "flex", gap: "10px", marginBottom: "20px", flexWrap: "wrap" }}>
+        {/* Search */}
+        <div style={{ position: "relative", flex: "1 1 220px", minWidth: "180px" }}>
+          <Search
+            size={14}
+            color="var(--dash-ink-3)"
+            style={{ position: "absolute", left: "11px", top: "50%", transform: "translateY(-50%)" }}
+          />
+          <input
+            className="dash-input"
+            placeholder="Search thumbnails…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{ paddingLeft: "32px" }}
+          />
+        </div>
+
+        {/* Status filter */}
+        <select
+          value={filterStatus}
+          onChange={e => setFilterStatus(e.target.value)}
+          style={{
+            height: "38px", border: "1px solid var(--dash-border)", borderRadius: "7px",
+            padding: "0 10px", fontSize: "13px", color: "var(--dash-ink)",
+            background: "var(--dash-surface)", fontFamily: "inherit", outline: "none",
+            cursor: "pointer",
+          }}
+        >
+          <option value="all">All statuses</option>
+          <option value="delivered">Delivered</option>
+          <option value="completed">Completed</option>
+          <option value="in-progress">In Progress</option>
+          <option value="pending">Pending</option>
+        </select>
       </div>
 
-      {/* ====== Comment Modal ====== */}
-      <AnimatePresence>
-        {commentThumbId !== null && (
-          <motion.div 
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-            onClick={() => setCommentThumbId(null)}
-          >
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-card border border-white/10 rounded-2xl w-full max-w-lg max-h-[80vh] flex flex-col shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
+      {/* ── Grid ── */}
+      {isLoading ? <ThumbnailsSkeleton /> : (
+        <>
+          {filtered.length === 0 ? (
+            <div
+              style={{
+                padding: "60px 20px", textAlign: "center",
+                border: "1px dashed var(--dash-border)", borderRadius: "12px",
+                color: "var(--dash-ink-3)", fontSize: "14px",
+              }}
             >
-              <div className="flex items-center justify-between p-5 border-b border-white/10">
-                <h3 className="text-lg font-bold flex items-center gap-2">
-                  <MessageSquare className="w-5 h-5 text-primary" /> التعليقات
-                </h3>
-                <button onClick={() => setCommentThumbId(null)} className="text-muted-foreground hover:text-white transition-colors">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-5 space-y-3">
-                {commentsList.length === 0 && (
-                  <p className="text-center text-muted-foreground text-sm py-8">لا توجد تعليقات بعد. كن أول من يعلق!</p>
-                )}
-                {commentsList.map(c => (
-                  <div key={c.id} className={`p-3 rounded-xl ${c.isAdmin ? 'bg-primary/10 border border-primary/20' : 'bg-white/5'}`}>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${c.isAdmin ? 'bg-primary/20 text-primary' : 'bg-white/10 text-white/70'}`}>
-                        {c.isAdmin ? '🛡️ المدير' : c.authorName}
-                      </span>
-                      <span className="text-xs text-muted-foreground">{new Date(c.createdAt).toLocaleDateString('ar-JO')}</span>
-                    </div>
-                    <p className="text-sm">{c.content}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="p-4 border-t border-white/10">
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="اكتب تعليقك هنا..."
-                    value={commentText}
-                    onChange={(e) => setCommentText(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && submitComment()}
-                    className="bg-black/30 border-white/10 rounded-xl flex-1"
-                  />
-                  <Button 
-                    onClick={submitComment} 
-                    disabled={submitting || !commentText.trim()}
-                    className="rounded-xl bg-primary hover:bg-primary/90"
+              {search ? "No thumbnails match your search." : "No thumbnails yet."}
+            </div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px" }}>
+              {filtered.map((thumb, i) => (
+                <motion.div
+                  key={thumb.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05, duration: 0.3 }}
+                  className="dash-card"
+                  style={{ overflow: "hidden", display: "flex", flexDirection: "column" }}
+                >
+                  {/* Image */}
+                  <div
+                    style={{
+                      position: "relative", aspectRatio: "16/9",
+                      background: "var(--dash-border-2)", overflow: "hidden",
+                    }}
+                    className="group"
                   >
-                    <Send className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ====== Rating Modal ====== */}
-      <AnimatePresence>
-        {ratingThumbId !== null && (
-          <motion.div 
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-            onClick={() => setRatingThumbId(null)}
-          >
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-card border border-white/10 rounded-2xl w-full max-w-sm p-6 shadow-2xl text-center"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h3 className="text-lg font-bold mb-2">قيّم هذا العمل</h3>
-              <p className="text-sm text-muted-foreground mb-6">
-                {existingRating ? `تقييمك الحالي: ${existingRating}/5 ⭐ - يمكنك تغييره` : 'اختر تقييمك من 1 إلى 5 نجوم'}
-              </p>
-              
-              <div className="flex justify-center gap-3 mb-6">
-                {[1, 2, 3, 4, 5].map(star => (
-                  <button
-                    key={star}
-                    onClick={() => setSelectedRating(star)}
-                    className="transition-all duration-200 hover:scale-125"
-                  >
-                    <Star 
-                      className={`w-10 h-10 transition-colors ${
-                        star <= selectedRating 
-                          ? 'text-amber-400 fill-amber-400' 
-                          : 'text-white/20 hover:text-amber-400/50'
-                      }`} 
+                    <img
+                      src={thumb.image}
+                      alt={thumb.title}
+                      loading="lazy"
+                      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transition: "transform 0.4s ease" }}
+                      onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.04)")}
+                      onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
                     />
-                  </button>
-                ))}
-              </div>
+                    {/* Download overlay */}
+                    <button
+                      onClick={() => handleDownload(thumb)}
+                      title="Download"
+                      style={{
+                        position: "absolute", bottom: "10px", right: "10px",
+                        background: "rgba(0,0,0,0.7)", color: "#fff",
+                        border: "none", borderRadius: "7px", padding: "6px 10px",
+                        fontSize: "11.5px", fontWeight: 600, cursor: "pointer",
+                        display: "flex", alignItems: "center", gap: "5px",
+                        backdropFilter: "blur(4px)", fontFamily: "inherit",
+                        opacity: 0, transition: "opacity 0.2s ease",
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.opacity = "1")}
+                    >
+                      <Download size={12} /> Download
+                    </button>
+                    {/* Make the overlay appear on card hover via parent onMouseEnter */}
+                  </div>
 
-              <div className="flex gap-3">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setRatingThumbId(null)} 
-                  className="flex-1 rounded-xl border-white/10"
-                >
-                  إلغاء
-                </Button>
-                <Button 
-                  onClick={submitRating} 
-                  disabled={submitting || !selectedRating}
-                  className="flex-1 rounded-xl bg-amber-500 hover:bg-amber-600 text-black font-bold"
-                >
-                  {submitting ? 'جاري الإرسال...' : 'تأكيد التقييم'}
-                </Button>
-              </div>
-            </motion.div>
-          </motion.div>
+                  {/* Body */}
+                  <div style={{ padding: "14px 16px", flex: 1, display: "flex", flexDirection: "column" }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "8px", marginBottom: "6px" }}>
+                      <div style={{ minWidth: 0 }}>
+                        <h3 style={{ fontSize: "13.5px", fontWeight: 700, color: "var(--dash-ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginBottom: "3px" }}>
+                          {thumb.title}
+                        </h3>
+                        <p style={{ fontSize: "11px", color: "var(--dash-ink-3)" }}>
+                          {formatDate(thumb.createdAt)}
+                        </p>
+                      </div>
+                      <span className={statusBadgeClass(thumb.status)} style={{ flexShrink: 0, marginTop: "1px" }}>
+                        {statusLabel(thumb.status)}
+                      </span>
+                    </div>
+
+                    {thumb.notes && (
+                      <p style={{ fontSize: "12px", color: "var(--dash-ink-2)", background: "var(--dash-border-2)", borderRadius: "6px", padding: "8px 10px", marginBottom: "8px", lineHeight: 1.5 }}>
+                        {thumb.notes}
+                      </p>
+                    )}
+
+                    {/* Actions */}
+                    <div style={{ display: "flex", gap: "6px", marginTop: "auto", paddingTop: "10px", borderTop: "1px solid var(--dash-border)" }}>
+                      <button
+                        onClick={() => handleDownload(thumb)}
+                        style={{
+                          flex: 1, height: "32px", display: "flex", alignItems: "center", justifyContent: "center", gap: "5px",
+                          background: "var(--dash-ink)", color: "#fff", border: "none", borderRadius: "6px",
+                          fontSize: "12px", fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+                          transition: "opacity 0.15s ease",
+                        }}
+                        onMouseEnter={e => (e.currentTarget.style.opacity = "0.85")}
+                        onMouseLeave={e => (e.currentTarget.style.opacity = "1")}
+                      >
+                        <Download size={12} /> Download
+                      </button>
+                      <button
+                        onClick={() => setCommentId(thumb.id)}
+                        title="Comments"
+                        style={{
+                          width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center",
+                          background: "var(--dash-border-2)", border: "1px solid var(--dash-border)", borderRadius: "6px",
+                          cursor: "pointer", color: "var(--dash-ink-2)", transition: "background 0.13s ease",
+                        }}
+                        onMouseEnter={e => (e.currentTarget.style.background = "var(--dash-border)")}
+                        onMouseLeave={e => (e.currentTarget.style.background = "var(--dash-border-2)")}
+                      >
+                        <MessageSquare size={13} />
+                      </button>
+                      <button
+                        onClick={() => setRatingId(thumb.id)}
+                        title="Rate"
+                        style={{
+                          width: "32px", height: "32px", display: "flex", alignItems: "center", justifyContent: "center",
+                          background: "var(--dash-border-2)", border: "1px solid var(--dash-border)", borderRadius: "6px",
+                          cursor: "pointer", color: "#d97706", transition: "background 0.13s ease",
+                        }}
+                        onMouseEnter={e => (e.currentTarget.style.background = "#fef9c3")}
+                        onMouseLeave={e => (e.currentTarget.style.background = "var(--dash-border-2)")}
+                      >
+                        <Star size={13} />
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ── Modals ── */}
+      <AnimatePresence>
+        {commentId !== null && (
+          <CommentModal key="comment" thumbId={commentId} token={token} onClose={() => setCommentId(null)} />
+        )}
+        {ratingId !== null && (
+          <RatingModal key="rating" thumbId={ratingId} token={token} onClose={() => setRatingId(null)} />
         )}
       </AnimatePresence>
     </div>

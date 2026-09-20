@@ -2,235 +2,286 @@ import { API_BASE } from "@/lib/api";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useUser } from "@/contexts/UserContext";
+import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
-import { Button } from "@/components/ui/button";
 import { FileText, CheckCircle, Clock } from "lucide-react";
 
+/* ─── Types ─────────────────────────────────────── */
+interface Transaction {
+  id: number;
+  description: string;
+  amount: number;
+  status: "paid" | "pending";
+  date?: string;
+  createdAt: string;
+}
+
+interface ThumbnailRecord {
+  id: number;
+  title: string;
+  status: string;
+  price: number;
+  createdAt: string;
+}
+
+function formatDate(iso?: string) {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+
+/* ─── Skeleton ──────────────────────────────────── */
+function BillingSkeleton() {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "12px" }}>
+        {[0,1,2].map(i => (
+          <div key={i} className="dash-card" style={{ padding: "22px 20px" }}>
+            <div className="dash-skeleton" style={{ height: "10px", width: "60%", marginBottom: "12px" }} />
+            <div className="dash-skeleton" style={{ height: "28px", width: "45%" }} />
+          </div>
+        ))}
+      </div>
+      <div className="dash-card">
+        {[0,1,2,3].map(i => (
+          <div key={i} style={{ padding: "14px 20px", borderBottom: i < 3 ? "1px solid var(--dash-border)" : "none", display: "flex", gap: "12px" }}>
+            <div className="dash-skeleton" style={{ height: "12px", width: "15%", flexShrink: 0 }} />
+            <div className="dash-skeleton" style={{ height: "12px", flex: 1 }} />
+            <div className="dash-skeleton" style={{ height: "12px", width: "10%", flexShrink: 0 }} />
+            <div className="dash-skeleton" style={{ height: "20px", width: "60px", borderRadius: "99px", flexShrink: 0 }} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Component ─────────────────────────────────── */
 export default function Billing() {
   const { user } = useUser();
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [thumbnails, setThumbnails] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [thumbs, setThumbs]             = useState<ThumbnailRecord[]>([]);
+  const [isLoading, setIsLoading]       = useState(true);
+  const [pdfLoading, setPdfLoading]     = useState(false);
 
   useEffect(() => {
-    const fetchBilling = async () => {
-      try {
-        const token = localStorage.getItem("user_token");
-        const res = await fetch(API_BASE + "/api/users/dashboard/billing", {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data)) {
-            setTransactions(data);
-          } else {
-            setTransactions(data.transactions || []);
-            setThumbnails(data.thumbnails || []);
-          }
+    const token = localStorage.getItem("user_token");
+    fetch(API_BASE + "/api/users/dashboard/billing", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then((d: { transactions?: Transaction[]; thumbnails?: ThumbnailRecord[] } | Transaction[] | null) => {
+        if (!d) return;
+        if (Array.isArray(d)) {
+          setTransactions(d);
+        } else {
+          setTransactions(d.transactions ?? []);
+          setThumbs(d.thumbnails ?? []);
         }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchBilling();
+      })
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
   }, []);
 
-  if (isLoading) return <div className="flex items-center justify-center h-full"><div className="loader" /></div>;
-
-  const total = thumbnails.reduce((sum, t) => sum + (t.price || 0), 0) + (thumbnails.length === 0 ? transactions.reduce((sum, t) => sum + t.amount, 0) : 0);
-  const paid = transactions.filter(t => t.status === "paid").reduce((sum, t) => sum + t.amount, 0);
+  const total     = thumbs.reduce((s, t) => s + (t.price ?? 0), 0)
+                  + (thumbs.length === 0 ? transactions.reduce((s, t) => s + t.amount, 0) : 0);
+  const paid      = transactions.filter(t => t.status === "paid").reduce((s, t) => s + t.amount, 0);
   const remaining = total - paid;
 
-  const handleDownloadPDF = async () => {
-    setIsLoading(true);
+  const handlePDF = async () => {
+    setPdfLoading(true);
     try {
-      const element = document.getElementById("invoice-template");
-      if (!element) return;
-      
-      element.style.display = "block";
-      
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        logging: false
-      });
-      
-      element.style.display = "none";
-      
+      const el = document.getElementById("billing-invoice-template");
+      if (!el) return;
+      el.style.display = "block";
+      const canvas = await html2canvas(el, { scale: 2, useCORS: true, logging: false });
+      el.style.display = "none";
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF("p", "mm", "a4");
-      
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      
-      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`Invoice_${user?.fullName || 'Creator'}.pdf`);
+      const w = pdf.internal.pageSize.getWidth();
+      pdf.addImage(imgData, "PNG", 0, 0, w, (canvas.height * w) / canvas.width);
+      pdf.save(`Invoice_${user?.fullName ?? "Client"}.pdf`);
     } catch (err) {
-      console.error("PDF generation error:", err);
+      console.error("PDF error:", err);
     } finally {
-      setIsLoading(false);
+      setPdfLoading(false);
     }
   };
 
   return (
-    <div className="space-y-6 relative">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-        <div>
-          <h2 className="text-2xl font-black">الحسابات والفوترة</h2>
-          <p className="text-muted-foreground mt-1">تابع الدفعات والمبالغ المتبقية</p>
-        </div>
-        <Button onClick={handleDownloadPDF} className="rounded-xl font-bold gap-2">
-          <FileText size={18} /> تحميل كملف PDF
-        </Button>
-      </div>
+    <div>
+      <DashboardPageHeader
+        title="Billing"
+        description="Track payments, outstanding balances, and download invoices."
+        action={
+          <button
+            onClick={handlePDF}
+            disabled={pdfLoading}
+            style={{
+              display: "flex", alignItems: "center", gap: "7px",
+              height: "36px", padding: "0 14px",
+              background: "var(--dash-ink)", color: "#fff",
+              border: "none", borderRadius: "8px",
+              fontSize: "13px", fontWeight: 600, cursor: "pointer",
+              fontFamily: "inherit", opacity: pdfLoading ? 0.5 : 1,
+              transition: "opacity 0.15s ease",
+            }}
+          >
+            <FileText size={14} />
+            {pdfLoading ? "Generating…" : "Download invoice"}
+          </button>
+        }
+      />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div className="bg-card border border-white/5 rounded-xl shadow-sm">
-          <div className="p-6">
-            <p className="text-sm text-muted-foreground mb-1">المبلغ الإجمالي</p>
-            <h3 className="text-3xl font-black">${total}</h3>
+      {isLoading ? <BillingSkeleton /> : (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+          style={{ display: "flex", flexDirection: "column", gap: "20px" }}
+        >
+          {/* ── Summary cards ── */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "1px", background: "var(--dash-border)", borderRadius: "13px", overflow: "hidden", border: "1px solid var(--dash-border)" }}>
+            {[
+              { label: "Total",       value: `$${total}`,     sub: "all projects"  },
+              { label: "Paid",        value: `$${paid}`,      sub: "confirmed"     },
+              { label: "Outstanding", value: `$${remaining}`, sub: "pending"       },
+            ].map((s, i) => (
+              <div key={i} style={{ background: "var(--dash-surface)", padding: "22px 20px" }}>
+                <p style={{ fontSize: "10.5px", fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "var(--dash-ink-3)", marginBottom: "10px" }}>
+                  {s.label}
+                </p>
+                <p style={{ fontSize: "26px", fontWeight: 800, letterSpacing: "-0.03em", color: i === 2 && remaining > 0 ? "var(--dash-red)" : "var(--dash-ink)", lineHeight: 1, marginBottom: "5px" }}>
+                  {s.value}
+                </p>
+                <p style={{ fontSize: "11px", color: "var(--dash-ink-3)" }}>{s.sub}</p>
+              </div>
+            ))}
           </div>
-        </div>
-        <div className="bg-primary/10 border border-primary/20 text-primary rounded-xl shadow-sm">
-          <div className="p-6">
-            <p className="text-sm opacity-80 mb-1">تم دفعه</p>
-            <h3 className="text-3xl font-black">${paid}</h3>
-          </div>
-        </div>
-        <div className="bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl shadow-sm">
-          <div className="p-6">
-            <p className="text-sm opacity-80 mb-1">المبلغ المتبقي</p>
-            <h3 className="text-3xl font-black">${remaining}</h3>
-          </div>
-        </div>
-      </div>
 
-      <div className="bg-card border border-white/5 rounded-3xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-right">
-            <thead>
-              <tr className="border-b border-white/5 bg-white/5">
-                <th className="p-4 font-bold text-muted-foreground">التاريخ</th>
-                <th className="p-4 font-bold text-muted-foreground">الوصف</th>
-                <th className="p-4 font-bold text-muted-foreground">المبلغ</th>
-                <th className="p-4 font-bold text-muted-foreground">الحالة</th>
-              </tr>
-            </thead>
-            <tbody>
-              {transactions.map((t, i) => (
-                <motion.tr 
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  key={t.id} 
-                  className="border-b border-white/5 hover:bg-white/5 transition-colors"
-                >
-                  <td className="p-4">{new Date(t.date || t.createdAt).toLocaleDateString('ar-JO')}</td>
-                  <td className="p-4 font-medium">{t.description}</td>
-                  <td className="p-4 font-bold text-lg">${t.amount}</td>
-                  <td className="p-4">
-                    {t.status === "paid" ? (
-                      <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-green-500/20 text-green-500">
-                        <CheckCircle size={14} /> مدفوع
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-amber-500/20 text-amber-500">
-                        <Clock size={14} /> معلق
-                      </span>
-                    )}
-                  </td>
-                </motion.tr>
-              ))}
-              {transactions.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="p-8 text-center text-muted-foreground">
-                    لا توجد عمليات مسجلة بعد.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+          {/* ── Transactions table ── */}
+          <div className="dash-card" style={{ overflow: "hidden" }}>
+            <div style={{ padding: "14px 20px", borderBottom: "1px solid var(--dash-border)" }}>
+              <p style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--dash-ink-3)" }}>
+                Transaction history
+              </p>
+            </div>
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13.5px" }}>
+                <thead>
+                  <tr style={{ background: "var(--dash-border-2)" }}>
+                    {["Date", "Description", "Amount", "Status"].map(h => (
+                      <th key={h} style={{ padding: "10px 20px", textAlign: "left", fontWeight: 600, fontSize: "11px", letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--dash-ink-3)", whiteSpace: "nowrap" }}>
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {transactions.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} style={{ padding: "32px", textAlign: "center", color: "var(--dash-ink-3)", fontSize: "13px" }}>
+                        No transactions recorded yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    transactions.map((t, i) => (
+                      <motion.tr
+                        key={t.id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: i * 0.04 }}
+                        style={{ borderBottom: "1px solid var(--dash-border)", transition: "background 0.1s ease" }}
+                        onMouseEnter={e => (e.currentTarget.style.background = "var(--dash-border-2)")}
+                        onMouseLeave={e => (e.currentTarget.style.background = "")}
+                      >
+                        <td style={{ padding: "13px 20px", color: "var(--dash-ink-3)", whiteSpace: "nowrap" }}>
+                          {formatDate(t.date ?? t.createdAt)}
+                        </td>
+                        <td style={{ padding: "13px 20px", fontWeight: 500, color: "var(--dash-ink)" }}>
+                          {t.description}
+                        </td>
+                        <td style={{ padding: "13px 20px", fontWeight: 700, color: "var(--dash-ink)", whiteSpace: "nowrap" }}>
+                          ${t.amount}
+                        </td>
+                        <td style={{ padding: "13px 20px" }}>
+                          {t.status === "paid" ? (
+                            <span className="dash-badge dash-badge-green" style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                              <CheckCircle size={10} /> Paid
+                            </span>
+                          ) : (
+                            <span className="dash-badge dash-badge-amber" style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                              <Clock size={10} /> Pending
+                            </span>
+                          )}
+                        </td>
+                      </motion.tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
-      {/* Hidden Invoice Template for PDF */}
-      <div id="invoice-template" style={{ display: 'none', position: 'absolute', top: 0, left: 0, zIndex: -100, width: '800px', padding: '40px', backgroundColor: '#0f0f13', color: '#fff', direction: 'rtl', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #2a2a35', paddingBottom: '20px', marginBottom: '30px' }}>
+      {/* Hidden invoice template for PDF */}
+      <div
+        id="billing-invoice-template"
+        style={{
+          display: "none", position: "absolute", top: 0, left: 0,
+          zIndex: -100, width: "800px", padding: "48px",
+          backgroundColor: "#ffffff", color: "#111",
+          direction: "ltr", fontFamily: "system-ui, -apple-system, sans-serif",
+          border: "1px solid #e8e8e5",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "1.5px solid #111", paddingBottom: "24px", marginBottom: "36px" }}>
           <div>
-            <h1 style={{ fontSize: '32px', margin: 0, color: '#3b82f6' }}>فاتورة حساب</h1>
-            <p style={{ margin: '5px 0 0', color: '#9ca3af' }}>صانع المحتوى: {user?.fullName}</p>
+            <h1 style={{ fontSize: "26px", fontWeight: 900, letterSpacing: "-0.02em", margin: 0 }}>MUHANAD</h1>
+            <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#999", letterSpacing: "0.05em", textTransform: "uppercase" }}>Thumbnail Design</p>
           </div>
-          <div style={{ textAlign: 'left' }}>
-            <p style={{ margin: 0, fontWeight: 'bold' }}>التاريخ: {new Date().toLocaleDateString('ar-JO')}</p>
+          <div style={{ textAlign: "right" }}>
+            <p style={{ fontSize: "18px", fontWeight: 800, margin: "0 0 4px" }}>Invoice</p>
+            <p style={{ fontSize: "12px", color: "#777", margin: 0 }}>{new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}</p>
+            <p style={{ fontSize: "12px", color: "#555", margin: "4px 0 0" }}>Client: {user?.fullName}</p>
           </div>
         </div>
 
-        <div style={{ marginBottom: '40px' }}>
-          <h2 style={{ fontSize: '20px', borderBottom: '1px solid #2a2a35', paddingBottom: '10px', marginBottom: '15px' }}>الأعمال والثمنيلات</h2>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'right' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#1e1e24' }}>
-                <th style={{ padding: '12px', borderBottom: '1px solid #3b82f6' }}>عنوان العمل</th>
-                <th style={{ padding: '12px', borderBottom: '1px solid #3b82f6' }}>التاريخ</th>
-                <th style={{ padding: '12px', borderBottom: '1px solid #3b82f6' }}>الحالة</th>
-                <th style={{ padding: '12px', borderBottom: '1px solid #3b82f6' }}>السعر</th>
-              </tr>
-            </thead>
-            <tbody>
-              {thumbnails.map(t => (
-                <tr key={t.id} style={{ borderBottom: '1px solid #2a2a35' }}>
-                  <td style={{ padding: '12px' }}>{t.title}</td>
-                  <td style={{ padding: '12px' }}>{new Date(t.createdAt).toLocaleDateString('ar-JO')}</td>
-                  <td style={{ padding: '12px' }}>{t.status}</td>
-                  <td style={{ padding: '12px', fontWeight: 'bold' }}>${t.price || 0}</td>
+        {/* Thumbnails */}
+        {thumbs.length > 0 && (
+          <div style={{ marginBottom: "36px" }}>
+            <h2 style={{ fontSize: "13px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#999", marginBottom: "12px" }}>Work delivered</h2>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid #e8e8e5" }}>
+                  {["Title", "Date", "Status", "Price"].map(h => (
+                    <th key={h} style={{ textAlign: "left", padding: "8px 0", fontWeight: 600, color: "#555", fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</th>
+                  ))}
                 </tr>
-              ))}
-              {thumbnails.length === 0 && <tr><td colSpan={4} style={{ padding: '20px', textAlign: 'center', color: '#9ca3af' }}>لا يوجد أعمال مسجلة</td></tr>}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {thumbs.map(t => (
+                  <tr key={t.id} style={{ borderBottom: "1px solid #f0f0ed" }}>
+                    <td style={{ padding: "10px 0" }}>{t.title}</td>
+                    <td style={{ padding: "10px 0", color: "#777" }}>{formatDate(t.createdAt)}</td>
+                    <td style={{ padding: "10px 0", color: "#777" }}>{t.status}</td>
+                    <td style={{ padding: "10px 0", fontWeight: 700 }}>${t.price}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-        <div style={{ marginBottom: '40px' }}>
-          <h2 style={{ fontSize: '20px', borderBottom: '1px solid #2a2a35', paddingBottom: '10px', marginBottom: '15px' }}>سجل الفواتير والمدفوعات</h2>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'right' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#1e1e24' }}>
-                <th style={{ padding: '12px', borderBottom: '1px solid #10b981' }}>الوصف</th>
-                <th style={{ padding: '12px', borderBottom: '1px solid #10b981' }}>التاريخ</th>
-                <th style={{ padding: '12px', borderBottom: '1px solid #10b981' }}>الحالة</th>
-                <th style={{ padding: '12px', borderBottom: '1px solid #10b981' }}>المبلغ</th>
-              </tr>
-            </thead>
-            <tbody>
-              {transactions.map(t => (
-                <tr key={t.id} style={{ borderBottom: '1px solid #2a2a35' }}>
-                  <td style={{ padding: '12px' }}>{t.description}</td>
-                  <td style={{ padding: '12px' }}>{new Date(t.date || t.createdAt).toLocaleDateString('ar-JO')}</td>
-                  <td style={{ padding: '12px' }}>{t.status === 'paid' ? 'مدفوع' : 'غير مدفوع'}</td>
-                  <td style={{ padding: '12px', fontWeight: 'bold' }}>${t.amount}</td>
-                </tr>
-              ))}
-              {transactions.length === 0 && <tr><td colSpan={4} style={{ padding: '20px', textAlign: 'center', color: '#9ca3af' }}>لا يوجد مدفوعات مسجلة</td></tr>}
-            </tbody>
-          </table>
-        </div>
-
-        <div style={{ marginTop: '50px', backgroundColor: '#1e1e24', padding: '25px', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ textAlign: 'center', flex: 1 }}>
-            <p style={{ color: '#9ca3af', margin: '0 0 5px' }}>المبلغ الإجمالي</p>
-            <h3 style={{ fontSize: '24px', margin: 0 }}>${total}</h3>
-          </div>
-          <div style={{ textAlign: 'center', flex: 1 }}>
-            <p style={{ color: '#9ca3af', margin: '0 0 5px' }}>تم سداده</p>
-            <h3 style={{ fontSize: '24px', margin: 0, color: '#10b981' }}>${paid}</h3>
-          </div>
-          <div style={{ textAlign: 'center', padding: '10px 20px', backgroundColor: '#ef444420', borderRadius: '8px', border: '1px solid #ef444450', flex: 1 }}>
-            <p style={{ color: '#ef4444', margin: '0 0 5px', fontSize: '14px' }}>المبلغ المتبقي</p>
-            <h3 style={{ fontSize: '28px', margin: 0, color: '#ef4444' }}>${remaining}</h3>
-          </div>
+        {/* Summary */}
+        <div style={{ background: "#f7f7f5", borderRadius: "8px", padding: "20px 24px" }}>
+          {[["Total", `$${total}`], ["Paid", `$${paid}`], ["Outstanding", `$${remaining}`]].map(([k, v]) => (
+            <div key={k} style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+              <span style={{ fontSize: "13px", color: "#555" }}>{k}</span>
+              <span style={{ fontSize: "14px", fontWeight: 700 }}>{v}</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>

@@ -127,6 +127,158 @@
   min-height: 100dvh;
 }
 
+
+/* ─── Client Dashboard Light Theme ───────────────── */
+/* Scoped to .dash — premium editorial creator portal */
+.dash {
+  --dash-bg:        #f7f7f5;
+  --dash-surface:   #ffffff;
+  --dash-border:    #e8e8e5;
+  --dash-border-2:  #f0f0ed;
+  --dash-ink:       #111110;
+  --dash-ink-2:     #55554e;
+  --dash-ink-3:     #99998f;
+  --dash-accent-fg: #ffffff;
+  --dash-green:     #16a34a;
+  --dash-amber:     #d97706;
+  --dash-red:       #dc2626;
+  --dash-blue:      #2563eb;
+
+  background-color: var(--dash-bg);
+  color: var(--dash-ink);
+  font-family: 'Inter', sans-serif;
+  direction: ltr;
+  text-align: left;
+  min-height: 100dvh;
+}
+
+.dash-sidebar {
+  width: 232px;
+  flex-shrink: 0;
+  background-color: var(--dash-surface);
+  border-right: 1px solid var(--dash-border);
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  position: sticky;
+  top: 0;
+  overflow-y: auto;
+}
+
+.dash-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 12px;
+  border-radius: 7px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--dash-ink-2);
+  cursor: pointer;
+  transition: background 0.13s ease, color 0.13s ease;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.dash-nav-link:hover {
+  background-color: var(--dash-border-2);
+  color: var(--dash-ink);
+}
+
+.dash-nav-link.active {
+  background-color: var(--dash-ink);
+  color: #fff;
+  font-weight: 600;
+}
+
+.dash-card {
+  background-color: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+  border-radius: 12px;
+}
+
+.dash-input {
+  background-color: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+  border-radius: 7px;
+  height: 38px;
+  padding: 0 11px;
+  font-size: 13.5px;
+  color: var(--dash-ink);
+  font-family: 'Inter', sans-serif;
+  outline: none;
+  width: 100%;
+  transition: border-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.dash-input:focus {
+  border-color: var(--dash-ink);
+  box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
+}
+
+.dash-input::placeholder { color: var(--dash-ink-3); }
+
+.dash-textarea {
+  background-color: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+  border-radius: 7px;
+  padding: 10px 11px;
+  font-size: 13.5px;
+  color: var(--dash-ink);
+  font-family: 'Inter', sans-serif;
+  outline: none;
+  width: 100%;
+  resize: vertical;
+  transition: border-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.dash-textarea:focus {
+  border-color: var(--dash-ink);
+  box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
+}
+
+@keyframes dash-shimmer {
+  0%   { background-position: -500px 0; }
+  100% { background-position:  500px 0; }
+}
+
+.dash-skeleton {
+  background: linear-gradient(90deg, #eeecea 25%, #f5f5f2 50%, #eeecea 75%);
+  background-size: 1000px 100%;
+  animation: dash-shimmer 1.5s ease-in-out infinite;
+  border-radius: 6px;
+}
+
+.dash-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.dash-badge-green { background: #dcfce7; color: #15803d; }
+.dash-badge-amber { background: #fef9c3; color: #92400e; }
+.dash-badge-gray  { background: #f3f3f1; color: #6b7280; }
+.dash-badge-blue  { background: #dbeafe; color: #1d4ed8; }
+.dash-badge-red   { background: #fee2e2; color: #b91c1c; }
+
+.dash-divider { height: 1px; background-color: var(--dash-border); }
+
+.dash ::-webkit-scrollbar         { width: 5px; }
+.dash ::-webkit-scrollbar-track   { background: transparent; }
+.dash ::-webkit-scrollbar-thumb   { background: var(--dash-border); border-radius: 3px; }
+.dash ::-webkit-scrollbar-thumb:hover { background: #ccc; }
+
+.dash .loader {
+  border-color: rgba(0,0,0,0.08);
+  border-top-color: var(--dash-ink);
+}
+
 /* Auth input focus — refined dark border ring */
 .auth-input {
   background-color: #ffffff;

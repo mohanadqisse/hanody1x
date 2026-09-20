@@ -1,144 +1,190 @@
-import { useState, useEffect } from "react";
-import { Link, Route, Switch, useLocation } from "wouter";
+/**
+ * UserDashboard — client portal shell.
+ *
+ * Design: light editorial, LTR, English.
+ * Uses a fixed left sidebar (.dash-sidebar) + scrollable main content area.
+ * Mobile: collapsible sidebar triggered by hamburger button.
+ * Auth guard: redirects to /login if not authenticated.
+ * Guest banner: shown for demo accounts.
+ */
+import { useState, useEffect, useCallback } from "react";
+import { Switch, Route, useLocation } from "wouter";
 import { useUser } from "@/contexts/UserContext";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  LayoutDashboard, Image as ImageIcon, CreditCard, 
-  Settings, LogOut, Bell, Menu, X, CheckCircle, Clock, Home 
-} from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
+import { AnimatePresence, motion } from "framer-motion";
+import { Menu, X } from "lucide-react";
+import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 
-// Sub-pages imports
-import Overview from "./Overview";
-import Thumbnails from "./Thumbnails";
-import Billing from "./Billing";
-import UserSettings from "./UserSettings";
+// Sub-pages
+import Overview      from "./Overview";
+import Thumbnails    from "./Thumbnails";
+import Billing       from "./Billing";
+import UserSettings  from "./UserSettings";
 import Notifications from "./Notifications";
 
 export default function UserDashboard() {
-  const { user, logout, isAuthenticated, isLoading } = useUser();
+  const { user, isAuthenticated, isLoading } = useUser();
   const [location, setLocation] = useLocation();
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Auth gate
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       setLocation("/login");
     }
   }, [isLoading, isAuthenticated, setLocation]);
 
+  // Close sidebar on route change (mobile)
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location]);
+
+  // Close sidebar on Escape
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSidebarOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const closeSidebar = useCallback(() => setSidebarOpen(false), []);
+
   if (isLoading || !isAuthenticated || !user) return null;
 
   const isGuest = user.role === "guest";
 
-  const navLinks = [
-    { name: "نظرة عامة", path: "/dashboard", icon: <LayoutDashboard size={20} /> },
-    { name: "الثمنيلات", path: "/dashboard/thumbnails", icon: <ImageIcon size={20} /> },
-    { name: "الفواتير", path: "/dashboard/billing", icon: <CreditCard size={20} /> },
-    { name: "الإشعارات", path: "/dashboard/notifications", icon: <Bell size={20} /> },
-    { name: "الإعدادات", path: "/dashboard/settings", icon: <Settings size={20} /> },
-  ];
-
   return (
-    <div className="min-h-screen bg-background flex flex-col md:flex-row-reverse font-sans" dir="rtl">
-      
-      {/* Mobile Header */}
-      <div className="md:hidden flex items-center justify-between p-4 bg-card border-b border-white/5 relative z-40">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold overflow-hidden">
-            {user.avatar ? <img src={user.avatar} className="w-full h-full object-cover" /> : user.fullName.charAt(0)}
-          </div>
-          <div>
-            <p className="font-bold text-sm leading-tight">{user.fullName}</p>
-            <p className="text-xs text-muted-foreground">{isGuest ? "زائر تجريبي" : "صانع محتوى"}</p>
-          </div>
-        </div>
-        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 text-white">
-          {isMobileMenuOpen ? <X /> : <Menu />}
-        </button>
+    <div className="dash" dir="ltr" style={{ display: "flex" }}>
+
+      {/* ── Desktop sidebar ────────────────────────── */}
+      <div className="hidden md:block">
+        <DashboardSidebar />
       </div>
 
-      {/* Sidebar */}
+      {/* ── Mobile sidebar overlay ─────────────────── */}
       <AnimatePresence>
-        {(isMobileMenuOpen || window.innerWidth >= 768) && (
-          <motion.aside
-            initial={{ x: 300, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 300, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className={`fixed md:sticky top-0 right-0 h-screen w-64 bg-card border-l border-white/5 p-6 flex flex-col z-30
-              ${isMobileMenuOpen ? "translate-x-0" : "translate-x-full md:translate-x-0"}`}
-          >
-            <div className="hidden md:flex items-center gap-4 mb-10">
-              <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-primary text-lg font-bold overflow-hidden shadow-lg border border-primary/30">
-                {user.avatar ? <img src={user.avatar} className="w-full h-full object-cover" /> : user.fullName.charAt(0)}
-              </div>
-              <div>
-                <h3 className="font-black text-lg text-white">{user.fullName}</h3>
-                <p className="text-sm text-primary">{isGuest ? "زائر تجريبي" : "صانع محتوى"}</p>
-              </div>
-            </div>
-
-            <nav className="flex-1 space-y-2">
-              {navLinks.map((link) => {
-                const isActive = location === link.path || (link.path !== "/dashboard" && location.startsWith(link.path));
-                return (
-                  <Link key={link.path} href={link.path}>
-                    <div 
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className={`flex items-center gap-3 px-4 py-3 rounded-2xl cursor-pointer transition-all duration-200
-                      ${isActive 
-                        ? "bg-primary text-white font-bold shadow-lg shadow-primary/20" 
-                        : "text-muted-foreground hover:bg-white/5 hover:text-white"
-                      }`}
-                    >
-                      {link.icon}
-                      <span>{link.name}</span>
-                    </div>
-                  </Link>
-                );
-              })}
-            </nav>
-
-            <div className="mt-auto space-y-2 pt-4 border-t border-white/5">
-              <a
-                href="/"
-                className="flex items-center gap-3 px-4 py-3 rounded-2xl text-blue-400 hover:bg-blue-500/10 transition-colors font-bold"
-              >
-                <Home size={20} />
-                <span>الرجوع إلى الموقع</span>
-              </a>
-              <button
-                onClick={logout}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-red-500 hover:bg-red-500/10 transition-colors font-bold"
-              >
-                <LogOut size={20} />
-                <span>تسجيل الخروج</span>
-              </button>
-            </div>
-          </motion.aside>
+        {sidebarOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              key="overlay"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={closeSidebar}
+              style={{
+                position: "fixed",
+                inset: 0,
+                zIndex: 40,
+                backgroundColor: "rgba(0,0,0,0.25)",
+                backdropFilter: "blur(2px)",
+              }}
+            />
+            {/* Drawer */}
+            <motion.div
+              key="drawer"
+              initial={{ x: -260 }}
+              animate={{ x: 0 }}
+              exit={{ x: -260 }}
+              transition={{ type: "spring", stiffness: 340, damping: 32 }}
+              style={{ position: "fixed", inset: 0, zIndex: 50, width: "fit-content" }}
+            >
+              <DashboardSidebar onNav={closeSidebar} />
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 
-      {/* Main Content Area */}
-      <main className="flex-1 flex flex-col h-screen overflow-y-auto relative">
-        {/* Guest Banner */}
+      {/* ── Main content ───────────────────────────── */}
+      <main
+        style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          minWidth: 0,
+          minHeight: "100dvh",
+        }}
+      >
+        {/* Mobile top bar */}
+        <div
+          className="md:hidden"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "12px 16px",
+            borderBottom: "1px solid var(--dash-border)",
+            backgroundColor: "var(--dash-surface)",
+            position: "sticky",
+            top: 0,
+            zIndex: 30,
+          }}
+        >
+          <span
+            style={{
+              fontSize: "12px",
+              fontWeight: 900,
+              letterSpacing: "0.16em",
+              textTransform: "uppercase",
+              color: "var(--dash-ink)",
+            }}
+          >
+            MUHANAD
+          </span>
+          <button
+            onClick={() => setSidebarOpen((v) => !v)}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "var(--dash-ink)",
+              display: "flex",
+              alignItems: "center",
+              padding: "4px",
+            }}
+            aria-label="Toggle navigation"
+          >
+            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
+
+        {/* Guest banner */}
         {isGuest && (
-          <div className="bg-amber-500/10 border-b border-amber-500/20 px-6 py-3 flex flex-col sm:flex-row items-center justify-center gap-4 sticky top-0 z-20 backdrop-blur-md">
-            <div className="flex items-center gap-2 text-amber-500 font-bold">
-              <span className="text-xl">⚠️</span>
-              <p className="text-sm sm:text-base">أنت حالياً في وضع التجربة (Demo)، هذه البيانات غير حقيقية.</p>
-            </div>
+          <div
+            style={{
+              backgroundColor: "#fffbeb",
+              borderBottom: "1px solid #fde68a",
+              padding: "9px 20px",
+              fontSize: "12.5px",
+              color: "#92400e",
+              fontWeight: 500,
+              textAlign: "center",
+            }}
+          >
+            ⚠ You're in demo mode — this data is not real.{" "}
+            <a href="/register" style={{ fontWeight: 700, textDecoration: "underline", textUnderlineOffset: "2px" }}>
+              Create a real account
+            </a>
           </div>
         )}
 
-        <div className="p-4 md:p-8 flex-1">
+        {/* Page content */}
+        <div
+          style={{
+            flex: 1,
+            padding: "32px 24px",
+            maxWidth: "1100px",
+            width: "100%",
+            margin: "0 auto",
+          }}
+        >
           <Switch>
-            <Route path="/dashboard" component={Overview} />
-            <Route path="/dashboard/thumbnails" component={Thumbnails} />
-            <Route path="/dashboard/billing" component={Billing} />
+            <Route path="/dashboard"               component={Overview}      />
+            <Route path="/dashboard/thumbnails"    component={Thumbnails}    />
+            <Route path="/dashboard/billing"       component={Billing}       />
             <Route path="/dashboard/notifications" component={Notifications} />
-            <Route path="/dashboard/settings" component={UserSettings} />
+            <Route path="/dashboard/settings"      component={UserSettings}  />
           </Switch>
         </div>
       </main>
