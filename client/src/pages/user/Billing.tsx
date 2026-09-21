@@ -4,8 +4,6 @@ import { motion } from "framer-motion";
 import { useUser } from "@/contexts/UserContext";
 import { useToast } from "@/hooks/use-toast";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
 import { FileText, CheckCircle, Clock } from "lucide-react";
 
 /* ─── Types ─────────────────────────────────────── */
@@ -96,6 +94,10 @@ export default function Billing() {
     try {
       if (!el) return;
       el.style.display = "block";
+      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf"),
+      ]);
       const canvas = await html2canvas(el, { scale: 2, useCORS: true, logging: false });
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF("p", "mm", "a4");

@@ -110,6 +110,8 @@ export function AboutMe() {
                 <img
                   src={data.profileImage}
                   alt={`${data.headline1} ${data.headline2}`}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover object-center"
                 />
                 {/* Subtle bottom gradient for depth */}

@@ -713,22 +713,28 @@ router.patch("/users/:id/settings", async (req, res) => {
   }
 });
 
-// --- Admin: View Comments & Ratings for a user ---
+// --- Admin: View Comments & Ratings for a user (Optimized: single JOIN queries, no N+1 loops) ---
 router.get("/users/:id/comments", async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
     if (isNaN(userId)) return res.status(400).json({ error: "Invalid user ID" });
-    const userThumbs = await db.select().from(thumbnails).where(eq(thumbnails.userId, userId));
-    const thumbIds = userThumbs.map(t => t.id);
-    if (thumbIds.length === 0) { res.json([]); return; }
-    
-    const allComments: any[] = [];
-    for (const tid of thumbIds) {
-      const tc = await db.select().from(comments).where(eq(comments.thumbnailId, tid)).orderBy(desc(comments.createdAt));
-      const thumb = userThumbs.find(t => t.id === tid);
-      tc.forEach(c => allComments.push({ ...c, thumbnailTitle: thumb?.title || "" }));
-    }
-    res.json(allComments);
+
+    const userComments = await db
+      .select({
+        id: comments.id,
+        thumbnailId: comments.thumbnailId,
+        authorName: comments.authorName,
+        isAdmin: comments.isAdmin,
+        content: comments.content,
+        createdAt: comments.createdAt,
+        thumbnailTitle: thumbnails.title,
+      })
+      .from(comments)
+      .innerJoin(thumbnails, eq(comments.thumbnailId, thumbnails.id))
+      .where(eq(thumbnails.userId, userId))
+      .orderBy(desc(comments.createdAt));
+
+    res.json(userComments);
   } catch (error) {
     res.status(500).json({ error: "Internal Server Error" });
   }
@@ -738,17 +744,23 @@ router.get("/users/:id/ratings", async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
     if (isNaN(userId)) return res.status(400).json({ error: "Invalid user ID" });
-    const userThumbs = await db.select().from(thumbnails).where(eq(thumbnails.userId, userId));
-    const thumbIds = userThumbs.map(t => t.id);
-    if (thumbIds.length === 0) { res.json([]); return; }
-    
-    const allRatings: any[] = [];
-    for (const tid of thumbIds) {
-      const tr = await db.select().from(ratings).where(eq(ratings.thumbnailId, tid));
-      const thumb = userThumbs.find(t => t.id === tid);
-      tr.forEach(r => allRatings.push({ ...r, thumbnailTitle: thumb?.title || "" }));
-    }
-    res.json(allRatings);
+
+    const userRatings = await db
+      .select({
+        id: ratings.id,
+        thumbnailId: ratings.thumbnailId,
+        userId: ratings.userId,
+        rating: ratings.rating,
+        comment: ratings.comment,
+        createdAt: ratings.createdAt,
+        thumbnailTitle: thumbnails.title,
+      })
+      .from(ratings)
+      .innerJoin(thumbnails, eq(ratings.thumbnailId, thumbnails.id))
+      .where(eq(thumbnails.userId, userId))
+      .orderBy(desc(ratings.createdAt));
+
+    res.json(userRatings);
   } catch (error) {
     res.status(500).json({ error: "Internal Server Error" });
   }

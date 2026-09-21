@@ -1,5 +1,5 @@
 import { API_BASE } from "@/lib/api";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -169,6 +169,9 @@ export default function AdminDashboard() {
     clientId?: number;
   }>({ isOpen: false, type: null, title: "", description: "" });
   const [modalInputValue, setModalInputValue] = useState("");
+
+  const creatorUsers = useMemo(() => usersData.filter(u => u.role === 'user'), [usersData]);
+  const unreadMessagesCount = useMemo(() => messages.filter(m => !m.read).length, [messages]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -980,14 +983,14 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {usersData.filter(u => u.role === 'user').length === 0 ? (
+                {creatorUsers.length === 0 ? (
                   <div className="text-center py-20">
                     <User className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
                     <p className="text-muted-foreground">لا يوجد صناع محتوى مسجلين حالياً.</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {usersData.filter(u => u.role === 'user').map(user => (
+                    {creatorUsers.map(user => (
                       <div key={user.id} className="bg-card p-5 rounded-2xl border border-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all hover:bg-white/5">
                         <div className="flex items-center gap-4">
                           <div className="w-12 h-12 rounded-xl bg-primary/20 text-primary flex items-center justify-center font-bold text-xl">
@@ -1733,9 +1736,9 @@ export default function AdminDashboard() {
                 <div className="flex items-center gap-3">
                   <div className="relative">
                     <Inbox className="w-6 h-6 text-primary" />
-                    {messages.filter(m => !m.read).length > 0 && (
+                    {unreadMessagesCount > 0 && (
                       <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.6)]">
-                        {messages.filter(m => !m.read).length}
+                        {unreadMessagesCount}
                       </span>
                     )}
                   </div>

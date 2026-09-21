@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { Toaster } from "@/components/ui/toaster";
@@ -11,11 +11,12 @@ import Home from "@/pages/Home";
 import Work from "@/pages/Work";
 import CaseStudy from "@/pages/CaseStudy";
 import AdminLogin from "@/pages/admin/AdminLogin";
-import AdminDashboard from "@/pages/admin/AdminDashboard";
 import Login from "@/pages/auth/Login";
 import Register from "@/pages/auth/Register";
-import UserDashboard from "@/pages/user/UserDashboard";
 import NotFound from "@/pages/not-found";
+
+const AdminDashboard = lazy(() => import("@/pages/admin/AdminDashboard"));
+const UserDashboard = lazy(() => import("@/pages/user/UserDashboard"));
 
 /* ─────────────────────────────────────────────
    Per-route page titles
@@ -120,27 +121,29 @@ function AppContent({ isLoading }: { isLoading: boolean }) {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, ease: "easeInOut" }}
           >
-            <Switch>
-              <Route path="/admin" component={AdminLogin} />
-              <Route path="/admin/dashboard" component={AdminDashboard} />
-              <Route path="/login" component={Login} />
-              <Route path="/register" component={Register} />
-              <Route path="/dashboard/*" component={UserDashboard} />
-              <Route path="/dashboard" component={UserDashboard} />
-              <Route>
-                {/* Public pages — wrapped in .pub for light theme scoping */}
-                <div className="pub" dir="ltr">
-                  <Navbar />
-                  <Switch>
-                    <Route path="/" component={Home} />
-                    <Route path="/work" component={Work} />
-                    <Route path="/case-study/:id" component={CaseStudy} />
-                    <Route component={NotFound} />
-                  </Switch>
-                  <Footer />
-                </div>
-              </Route>
-            </Switch>
+            <Suspense fallback={<div className="min-h-screen bg-background" />}>
+              <Switch>
+                <Route path="/admin" component={AdminLogin} />
+                <Route path="/admin/dashboard" component={AdminDashboard} />
+                <Route path="/login" component={Login} />
+                <Route path="/register" component={Register} />
+                <Route path="/dashboard/*" component={UserDashboard} />
+                <Route path="/dashboard" component={UserDashboard} />
+                <Route>
+                  {/* Public pages — wrapped in .pub for light theme scoping */}
+                  <div className="pub" dir="ltr">
+                    <Navbar />
+                    <Switch>
+                      <Route path="/" component={Home} />
+                      <Route path="/work" component={Work} />
+                      <Route path="/case-study/:id" component={CaseStudy} />
+                      <Route component={NotFound} />
+                    </Switch>
+                    <Footer />
+                  </div>
+                </Route>
+              </Switch>
+            </Suspense>
             <Toaster />
           </motion.div>
         )}

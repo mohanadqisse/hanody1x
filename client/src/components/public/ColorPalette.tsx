@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Check, Copy } from "lucide-react";
 
 interface ColorPaletteProps {
@@ -25,6 +25,15 @@ function colorDist(c1: [number, number, number], c2: [number, number, number]): 
 export function ColorPalette({ imageUrl }: ColorPaletteProps) {
   const [colors, setColors] = useState<string[]>([]);
   const [copiedHex, setCopiedHex] = useState<string | null>(null);
+  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     let isCancelled = false;
@@ -119,7 +128,10 @@ export function ColorPalette({ imageUrl }: ColorPaletteProps) {
       navigator.clipboard.writeText(hex).catch(() => {});
     }
     setCopiedHex(hex);
-    setTimeout(() => {
+    if (copyTimeoutRef.current) {
+      clearTimeout(copyTimeoutRef.current);
+    }
+    copyTimeoutRef.current = setTimeout(() => {
       setCopiedHex(null);
     }, 1800);
   }, []);
