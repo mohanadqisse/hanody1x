@@ -12,7 +12,7 @@ const router = Router();
 const publicRatingLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 30,
-  message: { message: "طلبات كثيرة جداً، يرجى المحاولة بعد قليل." },
+  message: { message: "Too many requests. Please try again shortly." },
 });
 
 const ratingSchema = z.object({
@@ -20,7 +20,7 @@ const ratingSchema = z.object({
   rating: z.number().min(1).max(5),
   // H1 FIX: bound visitorId and visitorName to prevent column flooding.
   visitorId: z.string().min(1).max(128),
-  visitorName: z.string().min(1, "يرجى إدخال اسمك").max(100),
+  visitorName: z.string().min(1, "Please enter your name").max(100),
 });
 
 router.post("/", publicRatingLimiter, async (req, res) => {
@@ -49,11 +49,11 @@ router.post("/", publicRatingLimiter, async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     if (err instanceof z.ZodError) {
-      res.status(400).json({ message: "بيانات غير صالحة" });
+      res.status(400).json({ message: "Invalid input data" });
       return;
     }
     console.error("Public rating error:", err);
-    res.status(500).json({ message: "خطأ في الخادم" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -63,7 +63,7 @@ router.get("/", requireAuth, async (_req, res) => {
     res.json(ratings);
   } catch (err) {
     console.error("Fetch public ratings error:", err);
-    res.status(500).json({ message: "خطأ في الخادم" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -72,14 +72,14 @@ router.delete("/:id", requireAuth, async (req, res) => {
   try {
     const id = parseInt(req.params.id as string);
     if (isNaN(id)) {
-      res.status(400).json({ message: "معرف غير صالح" });
+      res.status(400).json({ message: "Invalid ID" });
       return;
     }
     await db.delete(publicRatings).where(eq(publicRatings.id, id));
     res.json({ success: true });
   } catch (err) {
     console.error("Delete public rating error:", err);
-    res.status(500).json({ message: "خطأ في الخادم" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -91,7 +91,7 @@ router.delete("/visitor/:visitorName", requireAuth, async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error("Delete visitor ratings error:", err);
-    res.status(500).json({ message: "خطأ في الخادم" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 

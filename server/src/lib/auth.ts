@@ -26,20 +26,20 @@ export function verifyToken(token: string) {
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith("Bearer ")) {
-    res.status(401).json({ message: "غير مصرح" });
+    res.status(401).json({ message: "Unauthorized" });
     return;
   }
   try {
     const token = authHeader.slice(7);
     const payload = verifyToken(token);
     if (payload.role !== "admin") {
-      res.status(403).json({ message: "غير مصرح — هذا المسار مخصص للمدير فقط" });
+      res.status(403).json({ message: "Unauthorized — this endpoint is reserved for administrators only" });
       return;
     }
     (req as Request & { admin: typeof payload }).admin = payload;
     next();
   } catch {
-    res.status(401).json({ message: "رمز غير صالح" });
+    res.status(401).json({ message: "Invalid or expired token" });
   }
 }
 
@@ -48,7 +48,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
 export async function requireUserAuth(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith("Bearer ")) {
-    res.status(401).json({ message: "غير مصرح" });
+    res.status(401).json({ message: "Unauthorized" });
     return;
   }
   try {
@@ -64,13 +64,13 @@ export async function requireUserAuth(req: Request, res: Response, next: NextFun
         .where(eq(users.id, payload.id));
 
       if (!userRecord) {
-        res.status(401).json({ message: "المستخدم غير موجود أو تم حذفه" });
+        res.status(401).json({ message: "User not found or has been removed" });
         return;
       }
       if (userRecord.isBanned) {
         res.status(403).json({
           type: "banned",
-          message: userRecord.banReason || "عذراً، لقد تم حظر حسابك من قبل الإدارة.",
+          message: userRecord.banReason || "Sorry, your account has been suspended by administration.",
         });
         return;
       }
@@ -79,7 +79,7 @@ export async function requireUserAuth(req: Request, res: Response, next: NextFun
     (req as Request & { user: typeof payload }).user = payload;
     next();
   } catch {
-    res.status(401).json({ message: "رمز غير صالح" });
+    res.status(401).json({ message: "Invalid or expired token" });
   }
 }
 
@@ -88,7 +88,7 @@ export async function requireUserAuth(req: Request, res: Response, next: NextFun
 export async function requireUploadAuth(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith("Bearer ")) {
-    res.status(401).json({ message: "غير مصرح" });
+    res.status(401).json({ message: "Unauthorized" });
     return;
   }
   try {
@@ -101,7 +101,7 @@ export async function requireUploadAuth(req: Request, res: Response, next: NextF
     }
 
     if (payload.role === "guest") {
-      res.status(403).json({ message: "غير مصرح للزوار برفع الملفات" });
+      res.status(403).json({ message: "Guests are not authorized to upload files" });
       return;
     }
 
@@ -112,13 +112,13 @@ export async function requireUploadAuth(req: Request, res: Response, next: NextF
         .where(eq(users.id, payload.id));
 
       if (!userRecord) {
-        res.status(401).json({ message: "المستخدم غير موجود أو تم حذفه" });
+        res.status(401).json({ message: "User not found or has been removed" });
         return;
       }
       if (userRecord.isBanned) {
         res.status(403).json({
           type: "banned",
-          message: userRecord.banReason || "عذراً، لقد تم حظر حسابك من قبل الإدارة.",
+          message: userRecord.banReason || "Sorry, your account has been suspended by administration.",
         });
         return;
       }
@@ -127,8 +127,8 @@ export async function requireUploadAuth(req: Request, res: Response, next: NextF
       return next();
     }
 
-    res.status(403).json({ message: "غير مصرح" });
+    res.status(403).json({ message: "Unauthorized" });
   } catch {
-    res.status(401).json({ message: "رمز غير صالح" });
+    res.status(401).json({ message: "Invalid or expired token" });
   }
 }

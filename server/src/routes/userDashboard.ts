@@ -15,19 +15,19 @@ const guestData = {
     remainingAmount: 50,
   },
   recentWork: [
-    { id: 1, title: "فيديو التجربة الأول", status: "تم التسليم", createdAt: new Date().toISOString() },
-    { id: 2, title: "قصة نجاح وهمية", status: "قيد العمل", createdAt: new Date(Date.now() - 86400000).toISOString() },
-    { id: 3, title: "تحدي 24 ساعة", status: "تم التسليم", createdAt: new Date(Date.now() - 86400000 * 2).toISOString() },
+    { id: 1, title: "First Experiment Video", status: "delivered", createdAt: new Date().toISOString() },
+    { id: 2, title: "Creator Story Concept", status: "in_progress", createdAt: new Date(Date.now() - 86400000).toISOString() },
+    { id: 3, title: "24-Hour Challenge", status: "delivered", createdAt: new Date(Date.now() - 86400000 * 2).toISOString() },
   ],
   transactions: [
-    { id: 1, date: new Date().toISOString(), description: "دفعة أولى", amount: 150, status: "paid" },
-    { id: 2, date: new Date(Date.now() - 86400000 * 5).toISOString(), description: "باقي الحساب", amount: 100, status: "paid" },
-    { id: 3, date: new Date().toISOString(), description: "صورة جديدة", amount: 50, status: "pending" },
+    { id: 1, date: new Date().toISOString(), description: "Initial Deposit", amount: 150, status: "paid" },
+    { id: 2, date: new Date(Date.now() - 86400000 * 5).toISOString(), description: "Balance Payment", amount: 100, status: "paid" },
+    { id: 3, date: new Date().toISOString(), description: "New Thumbnail", amount: 50, status: "pending" },
   ],
   thumbnails: [
-    { id: 1, image: "https://placehold.co/600x400/1a1a1a/FFFFFF?text=Thumbnail+1", title: "فيديو التجربة الأول", status: "تم التسليم", notes: "عمل رائع شكراً", createdAt: new Date().toISOString() },
-    { id: 2, image: "https://placehold.co/600x400/1a1a1a/FFFFFF?text=Thumbnail+2", title: "قصة نجاح وهمية", status: "قيد العمل", notes: "", createdAt: new Date(Date.now() - 86400000).toISOString() },
-    { id: 3, image: "https://placehold.co/600x400/1a1a1a/FFFFFF?text=Thumbnail+3", title: "تحدي 24 ساعة", status: "تم التسليم", notes: "الرجاء تعديل اللون الأحمر", createdAt: new Date(Date.now() - 86400000 * 2).toISOString() },
+    { id: 1, image: "https://placehold.co/600x400/1a1a1a/FFFFFF?text=Thumbnail+1", title: "First Experiment Video", status: "delivered", notes: "Great work, thank you!", createdAt: new Date().toISOString() },
+    { id: 2, image: "https://placehold.co/600x400/1a1a1a/FFFFFF?text=Thumbnail+2", title: "Creator Story Concept", status: "in_progress", notes: "", createdAt: new Date(Date.now() - 86400000).toISOString() },
+    { id: 3, image: "https://placehold.co/600x400/1a1a1a/FFFFFF?text=Thumbnail+3", title: "24-Hour Challenge", status: "delivered", notes: "Please adjust the red contrast", createdAt: new Date(Date.now() - 86400000 * 2).toISOString() },
   ]
 };
 
@@ -64,7 +64,7 @@ router.get("/overview", requireUserAuth, async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "خطأ في الخادم" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -76,7 +76,7 @@ router.get("/thumbnails", requireUserAuth, async (req, res) => {
     const userThumbnails = await db.select().from(thumbnails).where(eq(thumbnails.userId, payload.id)).orderBy(desc(thumbnails.createdAt));
     res.json(userThumbnails);
   } catch (err) {
-    res.status(500).json({ message: "خطأ في الخادم" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -89,7 +89,7 @@ router.get("/billing", requireUserAuth, async (req, res) => {
     const userThumbnails = await db.select().from(thumbnails).where(eq(thumbnails.userId, payload.id)).orderBy(desc(thumbnails.createdAt));
     res.json({ transactions: userTransactions, thumbnails: userThumbnails });
   } catch (err) {
-    res.status(500).json({ message: "خطأ في الخادم" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -101,7 +101,7 @@ router.get("/notifications", requireUserAuth, async (req, res) => {
     const userNotifs = await db.select().from(notifications).where(eq(notifications.userId, payload.id)).orderBy(desc(notifications.createdAt));
     res.json(userNotifs);
   } catch (err) {
-    res.status(500).json({ message: "خطأ في الخادم" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -109,12 +109,12 @@ router.get("/settings-content", async (req, res) => {
   try {
     const [contentRow] = await db.select().from(siteContent).where(eq(siteContent.section, "dashboardSettings"));
     const content = contentRow ? JSON.parse(contentRow.content) : { 
-      updateSuccessMessage: "تم تحديث بياناتك بنجاح ✅",
-      inProgressMessage: "الصورة قيد التنفيذ"
+      updateSuccessMessage: "Your settings were updated successfully ✅",
+      inProgressMessage: "Thumbnail in progress"
     };
     res.json(content);
   } catch (err) {
-    res.status(500).json({ message: "خطأ في الخادم" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -146,13 +146,13 @@ router.get("/thumbnails/:id/comments", requireUserAuth, async (req, res) => {
     const thumbComments = await db.select().from(comments).where(eq(comments.thumbnailId, thumbnailId)).orderBy(desc(comments.createdAt));
     res.json(thumbComments);
   } catch (err) {
-    res.status(500).json({ message: "خطأ في الخادم" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
 router.post("/thumbnails/:id/comments", requireUserAuth, async (req, res) => {
   const payload = (req as typeof req & { user: { id: number; role: string } }).user;
-  if (payload.role === "guest") { res.status(403).json({ message: "غير مسموح للزوار" }); return; }
+  if (payload.role === "guest") { res.status(403).json({ message: "Guests are not authorized" }); return; }
 
   const thumbnailId = parseInt(String(req.params.id));
   if (isNaN(thumbnailId)) {
@@ -162,7 +162,7 @@ router.post("/thumbnails/:id/comments", requireUserAuth, async (req, res) => {
 
   const { content } = req.body;
   if (typeof content !== "string" || content.trim().length === 0) {
-    res.status(400).json({ message: "محتوى التعليق مطلوب" });
+    res.status(400).json({ message: "Comment content is required" });
     return;
   }
   const cleanContent = content.trim().slice(0, 5000);
@@ -179,7 +179,7 @@ router.post("/thumbnails/:id/comments", requireUserAuth, async (req, res) => {
     }
 
     const userRecord = await db.select().from(users).where(eq(users.id, payload.id));
-    const authorName = userRecord[0]?.fullName || "مستخدم";
+    const authorName = userRecord[0]?.fullName || "User";
     const [newComment] = await db.insert(comments).values({
       thumbnailId,
       authorName,
@@ -188,7 +188,7 @@ router.post("/thumbnails/:id/comments", requireUserAuth, async (req, res) => {
     }).returning();
     res.status(201).json(newComment);
   } catch (err) {
-    res.status(500).json({ message: "خطأ في الخادم" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -220,13 +220,13 @@ router.get("/thumbnails/:id/rating", requireUserAuth, async (req, res) => {
     const existing = await db.select().from(ratings).where(and(eq(ratings.thumbnailId, thumbnailId), eq(ratings.userId, payload.id)));
     res.json(existing[0] || null);
   } catch (err) {
-    res.status(500).json({ message: "خطأ في الخادم" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
 router.post("/thumbnails/:id/rating", requireUserAuth, async (req, res) => {
   const payload = (req as typeof req & { user: { id: number; role: string } }).user;
-  if (payload.role === "guest") { res.status(403).json({ message: "غير مسموح للزوار" }); return; }
+  if (payload.role === "guest") { res.status(403).json({ message: "Guests are not authorized" }); return; }
 
   const thumbnailId = parseInt(String(req.params.id));
   if (isNaN(thumbnailId)) {
@@ -236,7 +236,7 @@ router.post("/thumbnails/:id/rating", requireUserAuth, async (req, res) => {
 
   const numRating = parseInt(String(req.body.rating), 10);
   if (isNaN(numRating) || numRating < 1 || numRating > 5) {
-    res.status(400).json({ message: "التقييم يجب أن يكون بين 1 و 5" });
+    res.status(400).json({ message: "Rating must be between 1 and 5" });
     return;
   }
 
@@ -260,7 +260,7 @@ router.post("/thumbnails/:id/rating", requireUserAuth, async (req, res) => {
     }).returning();
     res.status(201).json(newRating);
   } catch (err) {
-    res.status(500).json({ message: "خطأ في الخادم" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -484,9 +484,9 @@ router.get("/thumbnails/:id", requireUserAuth, async (req, res) => {
       userId: 0,
       image: "https://placehold.co/1280x720/1a1a1a/FFFFFF?text=Demo+Thumbnail",
       title: "Demo Thumbnail",
-      status: "تم التسليم",
+      status: "delivered",
       price: 50,
-      notes: "هذا عمل تجريبي للعرض فقط.",
+      notes: "This is a demo thumbnail for display purposes only.",
       downloadUrl: null,
       creatorName: "Demo Creator",
       youtubeUrl: null,

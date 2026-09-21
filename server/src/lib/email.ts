@@ -12,36 +12,36 @@ const transporter = nodemailer.createTransport({
 });
 
 const packageLabels: Record<string, string> = {
-  basic: "الباقة الأساسية",
-  pro: "الباقة الاحترافية",
-  elite: "باقة النخبة",
-  custom: "احتياج مخصص",
+  basic: "Basic Package",
+  pro: "Pro Package",
+  elite: "Elite Package",
+  custom: "Custom Request",
 };
 
 export async function sendAutoReplyEmail(to: string, name: string, packageType: string | null) {
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    console.warn("⚠️ إعدادات البريد (SMTP) غير موجودة، تم تخطي إرسال رسالة الرد التلقائي.");
+    console.warn("⚠️ SMTP credentials missing, skipped sending auto-reply email.");
     return;
   }
 
-  const packageLabel = packageType ? (packageLabels[packageType] || packageType) : "غير محددة";
+  const packageLabel = packageType ? (packageLabels[packageType] || packageType) : "Not specified";
   
   const siteUrl = process.env.FRONTEND_URL || "https://hanody1x.space";
 
   const htmlContent = `
     <!DOCTYPE html>
-    <html dir="rtl" lang="ar">
+    <html dir="ltr" lang="en">
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>تم استلام طلبك بنجاح 🚀</title>
+      <title>Your Order Has Been Received Successfully 🚀</title>
       <style>
         body {
           font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
           background-color: #f4f7f6;
           margin: 0;
           padding: 0;
-          direction: rtl;
+          direction: ltr;
         }
         .container {
           max-width: 600px;
@@ -73,8 +73,8 @@ export async function sendAutoReplyEmail(to: string, name: string, packageType: 
           font-size: 20px;
           margin-top: 30px;
           margin-bottom: 10px;
-          border-right: 4px solid #3b82f6;
-          padding-right: 10px;
+          border-left: 4px solid #3b82f6;
+          padding-left: 10px;
         }
         p {
           margin: 0 0 15px 0;
@@ -103,31 +103,31 @@ export async function sendAutoReplyEmail(to: string, name: string, packageType: 
     <body>
       <div class="container">
         <div class="header">
-          <h1>تم استلام طلبك بنجاح 🚀</h1>
+          <h1>Your Order Has Been Received Successfully 🚀</h1>
         </div>
         <div class="content">
-          <p>مرحباً <strong>${name}</strong>،</p>
-          <p>يسعدني جداً تواصلك واهتمامك بخدماتي 🙏</p>
-          <p>تم استلام طلبك الخاص بباقة <strong style="color:#3b82f6;">${packageLabel}</strong> بنجاح، وأنا ممتن لثقتك باختياري للعمل على مشروعك.</p>
-          <p>حالياً، رح أقوم بمراجعة جميع التفاصيل اللي أرسلتها بعناية، عشان أضمن إني أقدم لك أفضل نتيجة ممكنة وبجودة تليق بتوقعاتك — ويمكن أفضل 😉🔥</p>
-          <p>هدفي دائماً إني أساعدك تطلع بمحتوى مميز، احترافي، ويعكس قوة هويتك أو مشروعك بشكل واضح وجذاب.</p>
-          <p>خلال وقت قصير، رح أتواصل معك للبدء بخطوات التنفيذ وتحديد كل التفاصيل المطلوبة.</p>
+          <p>Hello <strong>${name}</strong>,</p>
+          <p>Thank you for reaching out and for your interest in my services 🙏</p>
+          <p>Your request for the <strong style="color:#3b82f6;">${packageLabel}</strong> has been received successfully, and I appreciate your trust in choosing me for your project.</p>
+          <p>I will carefully review all the details you provided to ensure we deliver the highest quality outcome that exceeds your expectations 🔥</p>
+          <p>My goal is always to help you create distinctive, high-converting content that elevates your channel and brand.</p>
+          <p>I will get in touch with you shortly to confirm the next steps.</p>
           
-          <h2>💬 عندك أي استفسار؟</h2>
-          <p>إذا في أي سؤال، فكرة، أو حتى توضيح بسيط — لا تتردد أبداً تتواصل معي عبر حسابي على الإنستجرام، وبكون سعيد جداً بالرد عليك في أي وقت.</p>
+          <h2>💬 Have questions?</h2>
+          <p>If you have any questions, ideas, or additional notes, feel free to reach out directly on Instagram.</p>
           
-          <h2>🌐 حاب ترجع للموقع؟</h2>
-          <p>تقدر ترجع للموقع بأي وقت لاستكشاف أعمالي أكثر أو متابعة خدماتي والتحديثات الجديدة.</p>
+          <h2>🌐 Visit the Website</h2>
+          <p>You can explore more of my portfolio and services on the website.</p>
           
           <div style="text-align: center;">
-            <a href="${siteUrl}" class="button">زيارة الموقع</a>
+            <a href="${siteUrl}" class="button">Visit Website</a>
           </div>
 
-          <p style="margin-top: 30px;">متحمس جداً نبدأ الشغل مع بعض ونطلع بنتيجة قوية تليق فيك 🚀✨</p>
-          <p>تحياتي،<br><strong style="color: #1e293b; font-size: 18px;">مهند القيسي</strong></p>
+          <p style="margin-top: 30px;">Looking forward to working together 🚀✨</p>
+          <p>Best regards,<br><strong style="color: #1e293b; font-size: 18px;">Muhanad Alqaisi</strong></p>
         </div>
         <div class="footer">
-          هذه رسالة تلقائية، برجاء عدم الرد عليها مباشرة. للتواصل، يرجى مراسلتي على حساباتي الشخصية.
+          This is an automated message, please do not reply directly. To get in touch, reach out through my personal social links.
         </div>
       </div>
     </body>
@@ -135,9 +135,9 @@ export async function sendAutoReplyEmail(to: string, name: string, packageType: 
   `;
 
   const mailOptions = {
-    from: `"مهند القيسي" <${process.env.SMTP_USER}>`,
+    from: `"Muhanad Alqaisi" <${process.env.SMTP_USER}>`,
     to,
-    subject: "تم استلام طلبك بنجاح 🚀",
+    subject: "Your Order Has Been Received Successfully 🚀",
     html: htmlContent,
   };
 

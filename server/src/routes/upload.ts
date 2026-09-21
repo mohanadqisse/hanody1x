@@ -39,7 +39,7 @@ const fileFilter = (
   if (ALLOWED_MIME_TYPES[file.mimetype]) {
     cb(null, true);
   } else {
-    cb(new Error("نوع الملف غير مسموح به. يُقبل فقط: JPEG, PNG, WebP, GIF"));
+    cb(new Error("File type not allowed. Allowed formats: JPEG, PNG, WebP, GIF"));
   }
 };
 
@@ -57,21 +57,21 @@ router.post("/", requireUploadAuth, (req, res, next) => {
       console.error("Upload Error:", err);
       if (err instanceof multer.MulterError) {
         if (err.code === "LIMIT_FILE_SIZE") {
-          res.status(400).json({ message: "حجم الملف كبير جداً. الحد الأقصى 10 ميجابايت" });
+          res.status(400).json({ message: "File size exceeds 10 MB limit" });
           return;
         }
-        res.status(400).json({ message: `خطأ في رفع الملف: ${err.message}` });
+        res.status(400).json({ message: `Upload error: ${err.message}` });
         return;
       }
       if (err instanceof Error) {
-        res.status(400).json({ message: err.message || "خطأ في رفع الملف" });
+        res.status(400).json({ message: err.message || "File upload error" });
         return;
       }
-      res.status(400).json({ message: "خطأ في رفع الملف" });
+      res.status(400).json({ message: "File upload error" });
       return;
     }
     if (!req.file) {
-      res.status(400).json({ message: "لم يتم تحميل أي ملف" });
+      res.status(400).json({ message: "No file was uploaded" });
       return;
     }
     // Cloudinary returns the full URL in req.file.path
@@ -83,7 +83,7 @@ router.delete("/:publicId", requireAuth, async (req, res) => {
   try {
     const publicIdWithExt = req.params.publicId as string;
     if (!publicIdWithExt || !/^[a-zA-Z0-9_\-\.]+$/.test(publicIdWithExt)) {
-      res.status(400).json({ message: "معرف غير صالح" });
+      res.status(400).json({ message: "Invalid ID" });
       return;
     }
     const publicId = publicIdWithExt.split(".")[0];
@@ -91,7 +91,7 @@ router.delete("/:publicId", requireAuth, async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error("Cloudinary delete error:", error);
-    res.status(500).json({ message: "خطأ في حذف الملف" });
+    res.status(500).json({ message: "Failed to delete file" });
   }
 });
 

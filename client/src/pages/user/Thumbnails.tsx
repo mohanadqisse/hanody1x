@@ -299,12 +299,13 @@ export default function Thumbnails() {
 
   const filtered = thumbnails.filter(t => {
     const matchSearch = t.title.toLowerCase().includes(search.toLowerCase());
+    const label = statusLabel(t.status).toLowerCase();
     const matchStatus =
       filterStatus === "all" ||
-      (filterStatus === "delivered"   && t.status.includes("تسليم")) ||
-      (filterStatus === "completed"   && t.status.includes("تنفيذ") && !t.status.includes("قيد")) ||
-      (filterStatus === "in-progress" && (t.status.includes("قيد") || t.status.includes("قيد العمل"))) ||
-      (filterStatus === "pending"     && (t.status.includes("انتظار")));
+      (filterStatus === "delivered"   && (label === "delivered" || t.status.includes("تسليم"))) ||
+      (filterStatus === "completed"   && (label === "completed" || (t.status.includes("تنفيذ") && !t.status.includes("قيد")))) ||
+      (filterStatus === "in-progress" && (label === "in progress" || t.status.includes("قيد") || t.status.includes("قيد العمل"))) ||
+      (filterStatus === "pending"     && (label === "pending" || label === "new" || t.status.includes("انتظار")));
     return matchSearch && matchStatus;
   });
 

@@ -59,6 +59,26 @@ function useDynamicTitle() {
   }, [location]);
 }
 
+function ScrollToTop() {
+  const [location] = useLocation();
+
+  useEffect(() => {
+    // If the URL has a hash anchor like /#about or /#contact, let browser or smooth scroll handle it
+    if (window.location.hash) {
+      const id = window.location.hash.slice(1);
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" });
+        return;
+      }
+    }
+    // Instant scroll to top on page change
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, [location]);
+
+  return null;
+}
+
 function App() {
   const [isLoading, setIsLoading] = useState(true);
 
@@ -86,6 +106,7 @@ function AppContent({ isLoading }: { isLoading: boolean }) {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <ScrollToTop />
       <AnimatePresence mode="wait">
         {isLoading ? (
           <motion.div

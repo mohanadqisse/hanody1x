@@ -30,14 +30,14 @@ router.post("/", async (req, res) => {
       console.error("Auto-reply background task failed:", err);
     });
 
-    res.json({ success: true, message: "تم إرسال الرسالة بنجاح" });
+    res.json({ success: true, message: "Message sent successfully" });
   } catch (err) {
     if (err instanceof z.ZodError) {
-      res.status(400).json({ message: "بيانات غير صالحة" });
+      res.status(400).json({ message: "Invalid input data" });
       return;
     }
     console.error(err);
-    res.status(500).json({ message: "خطأ في الخادم" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -50,7 +50,7 @@ router.get("/", requireAuth, async (_req, res) => {
     res.json(messages);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "خطأ في الخادم" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -64,7 +64,7 @@ router.patch("/:id/read", requireAuth, async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "خطأ في الخادم" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -77,7 +77,7 @@ router.delete("/:id", requireAuth, async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "خطأ في الخادم" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 

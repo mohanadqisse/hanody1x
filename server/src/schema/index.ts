@@ -41,7 +41,7 @@ export const loginLogs = pgTable("login_logs", {
 export const clients = pgTable("clients", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  status: text("status").notNull().default("جديد"), // e.g. "جديد", "حالي", "مكتمل"
+  status: text("status").notNull().default("new"), // e.g. "new", "active", "completed"
   balance: integer("balance").notNull().default(0),
   ordersCompleted: integer("orders_completed").notNull().default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -50,7 +50,7 @@ export const clients = pgTable("clients", {
 
 export const timeSessions = pgTable("time_sessions", {
   id: serial("id").primaryKey(),
-  title: text("title").notNull().default("جلسة عمل بدون اسم"),
+  title: text("title").notNull().default("Untitled Session"),
   durationSeconds: integer("duration_seconds").notNull().default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -87,7 +87,7 @@ export const thumbnails = pgTable("thumbnails", {
   userId: integer("user_id").references(() => users.id).notNull(),
   image: text("image").notNull(),
   title: text("title").notNull(),
-  status: text("status").notNull().default("قيد العمل"), // "قيد العمل", "تم التسليم"
+  status: text("status").notNull().default("in_progress"), // "in_progress", "delivered", "completed"
   price: integer("price").notNull().default(0),
   notes: text("notes"),
   downloadUrl: text("download_url"),
@@ -172,8 +172,36 @@ export const publicRatings = pgTable("public_ratings", {
   portfolioItemId: integer("portfolio_item_id").notNull(),
   rating: integer("rating").notNull(),
   visitorId: text("visitor_id").notNull(),
-  visitorName: text("visitor_name").notNull().default("زائر"),
+  visitorName: text("visitor_name").notNull().default("Visitor"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// ─── Creator-Grouped Public Portfolio ─────────────────
+export const portfolioCreators = pgTable("portfolio_creators", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  avatarUrl: text("avatar_url"),
+  subscriberCount: text("subscriber_count"),
+  youtubeUrl: text("youtube_url"),
+  description: text("description"),
+  displayOrder: integer("display_order").notNull().default(0),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const portfolioItems = pgTable("portfolio_items", {
+  id: serial("id").primaryKey(),
+  creatorId: integer("creator_id").references(() => portfolioCreators.id, { onDelete: "cascade" }).notNull(),
+  imageUrl: text("image_url").notNull(),
+  title: text("title"),
+  youtubeUrl: text("youtube_url"),
+  views: text("views"),
+  category: text("category"),
+  displayOrder: integer("display_order").notNull().default(0),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true });
@@ -186,6 +214,8 @@ export const insertPublicRatingSchema = createInsertSchema(publicRatings).omit({
 export const insertRevisionRequestSchema = createInsertSchema(revisionRequests).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertConversationSchema = createInsertSchema(conversations).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({ id: true, createdAt: true });
+export const insertPortfolioCreatorSchema = createInsertSchema(portfolioCreators).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertPortfolioItemSchema = createInsertSchema(portfolioItems).omit({ id: true, createdAt: true, updatedAt: true });
 
 export type PublicRating = typeof publicRatings.$inferSelect;
 export type AdminUser = typeof adminUsers.$inferSelect;
@@ -205,3 +235,5 @@ export type CreatorCode = typeof creatorCodes.$inferSelect;
 export type RevisionRequest = typeof revisionRequests.$inferSelect;
 export type Conversation = typeof conversations.$inferSelect;
 export type ChatMessage = typeof chatMessages.$inferSelect;
+export type PortfolioCreator = typeof portfolioCreators.$inferSelect;
+export type PortfolioItem = typeof portfolioItems.$inferSelect;

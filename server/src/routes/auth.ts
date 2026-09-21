@@ -17,7 +17,7 @@ const loginSchema = z.object({
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
   max: 5, 
-  message: { message: "محاولات دخول كثيرة جداً، يرجى المحاولة بعد 15 دقيقة." },
+  message: { message: "Too many login attempts. Please try again after 15 minutes." },
 });
 
 router.post("/login", loginLimiter, async (req, res) => {
@@ -31,14 +31,14 @@ router.post("/login", loginLimiter, async (req, res) => {
 
     if (!user) {
       await db.insert(loginLogs).values({ username, ipAddress, deviceInfo, success: false, attemptedAt: new Date() });
-      res.status(401).json({ message: "اسم المستخدم أو كلمة المرور غير صحيحة" });
+      res.status(401).json({ message: "Invalid username or password" });
       return;
     }
 
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) {
       await db.insert(loginLogs).values({ username, ipAddress, deviceInfo, success: false, attemptedAt: new Date() });
-      res.status(401).json({ message: "اسم المستخدم أو كلمة المرور غير صحيحة" });
+      res.status(401).json({ message: "Invalid username or password" });
       return;
     }
 
@@ -47,11 +47,11 @@ router.post("/login", loginLimiter, async (req, res) => {
     res.json({ token, username: user.username });
   } catch (err) {
     if (err instanceof z.ZodError) {
-      res.status(400).json({ message: "بيانات غير صالحة" });
+      res.status(400).json({ message: "Invalid input data" });
       return;
     }
     console.error("Login error:", err);
-    res.status(500).json({ message: "خطأ في الخادم" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -66,7 +66,7 @@ router.get("/logs", requireAuth, async (req, res) => {
     res.json(logs);
   } catch (err) {
     console.error("Failed to fetch logs:", err);
-    res.status(500).json({ message: "فشل في جلب سجلات الدخول" });
+    res.status(500).json({ message: "Failed to fetch login logs" });
   }
 });
 
@@ -74,14 +74,14 @@ router.delete("/logs/:id", requireAuth, async (req, res) => {
   try {
     const id = parseInt(req.params.id as string, 10);
     if (isNaN(id)) {
-      res.status(400).json({ message: "معرف غير صالح" });
+      res.status(400).json({ message: "Invalid ID" });
       return;
     }
     await db.delete(loginLogs).where(eq(loginLogs.id, id));
     res.json({ success: true });
   } catch (err) {
     console.error("Failed to delete log:", err);
-    res.status(500).json({ message: "فشل في حذف السجل" });
+    res.status(500).json({ message: "Failed to delete log entry" });
   }
 });
 

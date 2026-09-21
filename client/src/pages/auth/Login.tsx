@@ -55,7 +55,11 @@ export default function Login() {
         if (res.status === 403) {
           const isBanned =
             data.type === "banned" ||
-            (data.message && data.message.includes("حظر"));
+            (data.message && (
+              data.message.toLowerCase().includes("banned") ||
+              data.message.toLowerCase().includes("suspended") ||
+              data.message.includes("حظر")
+            ));
           const defaultBanMsg =
             "Your account has been temporarily or permanently suspended.\nThis may be due to activity that conflicts with our terms of use.\nIf you believe this is an error, you may request a review.";
           setErrorData({

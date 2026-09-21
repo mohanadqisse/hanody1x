@@ -5,6 +5,7 @@ import { useUser } from "@/contexts/UserContext";
 import { useToast } from "@/hooks/use-toast";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 import { FileText, CheckCircle, Clock } from "lucide-react";
+import { statusLabel } from "@/types/dashboard";
 
 /* ─── Types ─────────────────────────────────────── */
 interface Transaction {
@@ -85,7 +86,7 @@ export default function Billing() {
 
   const total     = thumbs.reduce((s, t) => s + (t.price ?? 0), 0)
                   + (thumbs.length === 0 ? transactions.reduce((s, t) => s + t.amount, 0) : 0);
-  const paid      = transactions.filter(t => t.status === "paid").reduce((s, t) => s + t.amount, 0);
+  const paid      = transactions.filter(t => t.status === "paid" || statusLabel(t.status) === "Paid").reduce((s, t) => s + t.amount, 0);
   const remaining = total - paid;
 
   const handlePDF = async () => {
@@ -210,7 +211,7 @@ export default function Billing() {
                           ${t.amount}
                         </td>
                         <td style={{ padding: "13px 20px" }}>
-                          {t.status === "paid" ? (
+                          {statusLabel(t.status) === "Paid" ? (
                             <span className="dash-badge dash-badge-green" style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
                               <CheckCircle size={10} /> Paid
                             </span>
@@ -270,7 +271,7 @@ export default function Billing() {
                   <tr key={t.id} style={{ borderBottom: "1px solid #f0f0ed" }}>
                     <td style={{ padding: "10px 0" }}>{t.title}</td>
                     <td style={{ padding: "10px 0", color: "#777" }}>{formatDate(t.createdAt)}</td>
-                    <td style={{ padding: "10px 0", color: "#777" }}>{t.status}</td>
+                    <td style={{ padding: "10px 0", color: "#777" }}>{statusLabel(t.status)}</td>
                     <td style={{ padding: "10px 0", fontWeight: 700 }}>${t.price}</td>
                   </tr>
                 ))}

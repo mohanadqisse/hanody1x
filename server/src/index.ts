@@ -13,6 +13,7 @@ import dashboardRouter from "./routes/dashboard.js";
 import userAuthRouter from "./routes/userAuth.js";
 import userDashboardRouter from "./routes/userDashboard.js";
 import publicRatingsRouter from "./routes/publicRatings.js";
+import portfolioRouter from "./routes/portfolio.js";
 import rateLimit from "express-rate-limit";
 import { db } from "./lib/db.js";
 import { sql } from "drizzle-orm";
@@ -34,20 +35,22 @@ async function ensureTables() {
   await db.execute(sql`CREATE TABLE IF NOT EXISTS time_sessions (id SERIAL PRIMARY KEY, title TEXT NOT NULL DEFAULT 'session', duration_seconds INTEGER NOT NULL DEFAULT 0, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
   // C3 FIX: username is nullable (TEXT UNIQUE, no NOT NULL) to match the Drizzle schema.
   await db.execute(sql`CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, username TEXT UNIQUE, password_hash TEXT NOT NULL, full_name TEXT NOT NULL, email TEXT UNIQUE, avatar TEXT, role TEXT NOT NULL DEFAULT 'user', is_banned BOOLEAN NOT NULL DEFAULT FALSE, ban_reason TEXT, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
-  await db.execute(sql`CREATE TABLE IF NOT EXISTS thumbnails (id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id), title TEXT NOT NULL, image TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'قيد العمل', download_url TEXT, notes TEXT, price INTEGER NOT NULL DEFAULT 0, creator_name TEXT, youtube_url TEXT, views TEXT, video_title TEXT, category TEXT, created_at TIMESTAMP DEFAULT NOW() NOT NULL, updated_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
+  await db.execute(sql`CREATE TABLE IF NOT EXISTS thumbnails (id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id), title TEXT NOT NULL, image TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'in_progress', download_url TEXT, notes TEXT, price INTEGER NOT NULL DEFAULT 0, creator_name TEXT, youtube_url TEXT, views TEXT, video_title TEXT, category TEXT, created_at TIMESTAMP DEFAULT NOW() NOT NULL, updated_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
   // NOTE: 'date' phantom column removed — it was never in the Drizzle schema.
   await db.execute(sql`CREATE TABLE IF NOT EXISTS transactions (id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id) NOT NULL, description TEXT NOT NULL, amount INTEGER NOT NULL, status TEXT NOT NULL DEFAULT 'pending', created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
   await db.execute(sql`CREATE TABLE IF NOT EXISTS creator_codes (id SERIAL PRIMARY KEY, code TEXT NOT NULL UNIQUE, is_active BOOLEAN NOT NULL DEFAULT TRUE, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
   await db.execute(sql`CREATE TABLE IF NOT EXISTS comments (id SERIAL PRIMARY KEY, thumbnail_id INTEGER REFERENCES thumbnails(id) NOT NULL, author_name TEXT NOT NULL, is_admin BOOLEAN NOT NULL DEFAULT FALSE, content TEXT NOT NULL, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
   await db.execute(sql`CREATE TABLE IF NOT EXISTS ratings (id SERIAL PRIMARY KEY, thumbnail_id INTEGER REFERENCES thumbnails(id) NOT NULL, user_id INTEGER REFERENCES users(id) NOT NULL, rating INTEGER NOT NULL, comment TEXT, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
   await db.execute(sql`CREATE TABLE IF NOT EXISTS notifications (id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id) NOT NULL, message TEXT NOT NULL, type TEXT NOT NULL DEFAULT 'system', read BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
-  await db.execute(sql`CREATE TABLE IF NOT EXISTS public_ratings (id SERIAL PRIMARY KEY, portfolio_item_id INTEGER NOT NULL, rating INTEGER NOT NULL, visitor_id TEXT NOT NULL, visitor_name TEXT NOT NULL DEFAULT 'زائر', created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
+  await db.execute(sql`CREATE TABLE IF NOT EXISTS public_ratings (id SERIAL PRIMARY KEY, portfolio_item_id INTEGER NOT NULL, rating INTEGER NOT NULL, visitor_id TEXT NOT NULL, visitor_name TEXT NOT NULL DEFAULT 'Visitor', created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
   await db.execute(sql`CREATE TABLE IF NOT EXISTS revision_requests (id SERIAL PRIMARY KEY, thumbnail_id INTEGER REFERENCES thumbnails(id) NOT NULL, user_id INTEGER REFERENCES users(id) NOT NULL, message TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', created_at TIMESTAMP DEFAULT NOW() NOT NULL, updated_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
   await db.execute(sql`CREATE TABLE IF NOT EXISTS conversations (id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id) NOT NULL, subject TEXT NOT NULL DEFAULT 'General', created_at TIMESTAMP DEFAULT NOW() NOT NULL, updated_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
   await db.execute(sql`CREATE TABLE IF NOT EXISTS chat_messages (id SERIAL PRIMARY KEY, conversation_id INTEGER REFERENCES conversations(id) NOT NULL, sender_type TEXT NOT NULL DEFAULT 'user', body TEXT NOT NULL, is_read BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
+  await db.execute(sql`CREATE TABLE IF NOT EXISTS portfolio_creators (id SERIAL PRIMARY KEY, name TEXT NOT NULL, avatar_url TEXT, subscriber_count TEXT, youtube_url TEXT, description TEXT, display_order INTEGER NOT NULL DEFAULT 0, is_active BOOLEAN NOT NULL DEFAULT TRUE, created_at TIMESTAMP DEFAULT NOW() NOT NULL, updated_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
+  await db.execute(sql`CREATE TABLE IF NOT EXISTS portfolio_items (id SERIAL PRIMARY KEY, creator_id INTEGER REFERENCES portfolio_creators(id) ON DELETE CASCADE NOT NULL, image_url TEXT NOT NULL, title TEXT, youtube_url TEXT, views TEXT, category TEXT, display_order INTEGER NOT NULL DEFAULT 0, is_active BOOLEAN NOT NULL DEFAULT TRUE, created_at TIMESTAMP DEFAULT NOW() NOT NULL, updated_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
 
   // Safe additive column additions for existing databases
-  try { await db.execute(sql`ALTER TABLE public_ratings ADD COLUMN IF NOT EXISTS visitor_name TEXT NOT NULL DEFAULT 'زائر'`); } catch(_e) { /* already exists */ }
+  try { await db.execute(sql`ALTER TABLE public_ratings ADD COLUMN IF NOT EXISTS visitor_name TEXT NOT NULL DEFAULT 'Visitor'`); } catch(_e) { /* already exists */ }
   try { await db.execute(sql`ALTER TABLE thumbnails ADD COLUMN IF NOT EXISTS creator_name TEXT`); } catch(_e) {}
   try { await db.execute(sql`ALTER TABLE thumbnails ADD COLUMN IF NOT EXISTS youtube_url TEXT`); } catch(_e) {}
   try { await db.execute(sql`ALTER TABLE thumbnails ADD COLUMN IF NOT EXISTS views TEXT`); } catch(_e) {}
@@ -57,6 +60,26 @@ async function ensureTables() {
   try { await db.execute(sql`ALTER TABLE creator_codes ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE`); } catch(_e) {}
   try { await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_banned BOOLEAN NOT NULL DEFAULT FALSE`); } catch(_e) {}
   try { await db.execute(sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS ban_reason TEXT`); } catch(_e) {}
+
+  // Safe normalization of legacy Arabic system-generated notifications (user content is unaffected)
+  try {
+    await db.execute(sql`UPDATE notifications SET message = 'A new thumbnail has been added.' WHERE message = 'تمت إضافة ثمنيل جديد'`);
+    await db.execute(sql`UPDATE notifications SET message = REGEXP_REPLACE(message, '^تمت إضافة ثمنيل جديد[:\\s]*', 'A new thumbnail was added: ') WHERE message LIKE 'تمت إضافة ثمنيل جديد%'`);
+    await db.execute(sql`UPDATE notifications SET message = 'A new message has been received.' WHERE message LIKE '%رسالة جديدة%'`);
+    await db.execute(sql`UPDATE notifications SET message = 'Your revision request status has been updated.' WHERE message LIKE '%طلب التعديل%'`);
+    await db.execute(sql`UPDATE notifications SET message = 'A payment has been received.' WHERE message LIKE '%استلام دفعة%' OR message LIKE '%تم تسجيل دفعة%'`);
+  } catch(_e) {}
+
+  // Safe normalization of legacy Arabic status values in thumbnails & transactions
+  try {
+    await db.execute(sql`UPDATE thumbnails SET status = 'Delivered' WHERE status IN ('تم التسليم', 'تسليم')`);
+    await db.execute(sql`UPDATE thumbnails SET status = 'Completed' WHERE status IN ('تم التنفيذ')`);
+    await db.execute(sql`UPDATE thumbnails SET status = 'In Progress' WHERE status IN ('قيد التنفيذ', 'قيد العمل')`);
+    await db.execute(sql`UPDATE thumbnails SET status = 'Pending' WHERE status IN ('في انتظار', 'قيد الانتظار', 'انتظار')`);
+    await db.execute(sql`UPDATE thumbnails SET status = 'Rejected' WHERE status IN ('مرفوض')`);
+    await db.execute(sql`UPDATE transactions SET status = 'paid' WHERE status IN ('مدفوع')`);
+    await db.execute(sql`UPDATE transactions SET status = 'pending' WHERE status IN ('غير مدفوع', 'قيد الانتظار')`);
+  } catch(_e) {}
 
   console.log("Database tables verified (safe migration - no data loss)");
 
@@ -134,11 +157,12 @@ app.use("/api/dashboard", dashboardRouter);
 app.use("/api/users/auth", userAuthRouter);
 app.use("/api/users/dashboard", userDashboardRouter);
 app.use("/api/public-ratings", publicRatingsRouter);
+app.use("/api/portfolio", portfolioRouter);
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // Limit each IP to 100 requests per `window`
-  message: { message: "عدد طلبات كبير جداً، يرجى المحاولة لاحقاً." },
+  message: { message: "Too many requests. Please try again later." },
 });
 app.use("/api/messages", apiLimiter, messagesRouter);
 

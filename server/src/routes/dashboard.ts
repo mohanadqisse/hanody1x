@@ -12,12 +12,12 @@ import { createNotification } from "./userDashboard.js";
 // =======================
 
 const createCodeSchema = z.object({
-  code: z.string().trim().min(1, "الكود مطلوب").max(50, "الكود طويل جداً"),
+  code: z.string().trim().min(1, "Invite code is required").max(50, "Invite code is too long"),
 });
 
 const createClientSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(100),
-  status: z.string().trim().max(50).optional().default("جديد"),
+  status: z.string().trim().max(50).optional().default("new"),
 });
 
 const clientWorkSchema = z.object({
@@ -41,10 +41,10 @@ const userSettingsSchema = z.object({
 });
 
 const createThumbnailSchema = z.object({
-  userId: z.coerce.number().int().positive("معرف المستخدم مطلوب"),
+  userId: z.coerce.number().int().positive("User ID is required"),
   title: z.string().trim().max(200).optional().default("Untitled"),
-  image: z.string().trim().min(1, "رابط الصورة مطلوب").max(2000),
-  status: z.string().trim().max(50).optional().default("قيد العمل"),
+  image: z.string().trim().min(1, "Image URL is required").max(2000),
+  status: z.string().trim().max(50).optional().default("in_progress"),
   notes: z.string().trim().max(2000).optional().nullable(),
   downloadUrl: z.string().trim().max(2000).optional().nullable(),
   price: z.coerce.number().int().min(0).max(10000000).optional().default(0),
@@ -70,8 +70,8 @@ const updateThumbnailSchema = z.object({
 });
 
 const createTransactionSchema = z.object({
-  userId: z.coerce.number().int().positive("معرف المستخدم مطلوب"),
-  description: z.string().trim().min(1, "الوصف مطلوب").max(500),
+  userId: z.coerce.number().int().positive("User ID is required"),
+  description: z.string().trim().min(1, "Description is required").max(500),
   amount: z.coerce.number().int().min(-10000000).max(10000000),
   status: z.string().trim().max(50).optional().default("pending"),
 });
@@ -83,18 +83,18 @@ const updateTransactionSchema = z.object({
 });
 
 const createSessionSchema = z.object({
-  title: z.string().trim().max(200).optional().default("جلسة عمل بدون اسم"),
+  title: z.string().trim().max(200).optional().default("Untitled Session"),
   durationSeconds: z.coerce.number().int().min(0).max(86400 * 365),
 });
 
 const createNotificationAdminSchema = z.object({
-  userId: z.coerce.number().int().positive("معرف المستخدم مطلوب"),
-  message: z.string().trim().min(1, "نص الإشعار مطلوب").max(1000),
+  userId: z.coerce.number().int().positive("User ID is required"),
+  message: z.string().trim().min(1, "Notification message is required").max(1000),
   type: z.enum(["system", "thumbnail", "comment", "revision", "message", "billing"]).optional().default("system"),
 });
 
 const adminCommentSchema = z.object({
-  content: z.string().trim().min(1, "محتوى التعليق مطلوب").max(5000),
+  content: z.string().trim().min(1, "Comment content is required").max(5000),
 });
 
 const router = Router();
@@ -525,7 +525,7 @@ router.post("/thumbnails", async (req, res) => {
 
     // Verify referenced user exists
     const [userExists] = await db.select({ id: users.id }).from(users).where(eq(users.id, parsed.userId));
-    if (!userExists) return res.status(404).json({ error: "المستخدم غير موجود" });
+    if (!userExists) return res.status(404).json({ error: "User not found" });
 
     const [newThumb] = await db.insert(thumbnails).values({
       userId: parsed.userId,
@@ -545,7 +545,7 @@ router.post("/thumbnails", async (req, res) => {
     await createNotification({
       userId: parsed.userId,
       type: "thumbnail",
-      message: `تمت إضافة ثمنيل جديد: "${parsed.title || "بدون عنوان"}"`,
+      message: `A new thumbnail was added: "${parsed.title || "Untitled"}"`,
     });
 
     res.status(201).json(newThumb);
@@ -563,7 +563,7 @@ router.post("/transactions", async (req, res) => {
 
     // Verify referenced user exists
     const [userExists] = await db.select({ id: users.id }).from(users).where(eq(users.id, parsed.userId));
-    if (!userExists) return res.status(404).json({ error: "المستخدم غير موجود" });
+    if (!userExists) return res.status(404).json({ error: "User not found" });
 
     const [newTrans] = await db.insert(transactions).values({
       userId: parsed.userId,
@@ -653,7 +653,7 @@ router.post("/notifications", async (req, res) => {
 
     // Verify referenced user exists
     const [userExists] = await db.select({ id: users.id }).from(users).where(eq(users.id, parsed.userId));
-    if (!userExists) return res.status(404).json({ error: "المستخدم غير موجود" });
+    if (!userExists) return res.status(404).json({ error: "User not found" });
 
     const [newNotif] = await db.insert(notifications).values({
       userId: parsed.userId,
@@ -778,7 +778,7 @@ router.post("/thumbnails/:id/comments", async (req, res) => {
 
     const [newComment] = await db.insert(comments).values({
       thumbnailId,
-      authorName: "المدير",
+      authorName: "Admin",
       isAdmin: true,
       content,
     }).returning();

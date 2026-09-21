@@ -19,6 +19,7 @@ import { CheckCheck } from "lucide-react";
 import {
   Notification, formatDate,
   notificationTypeIcon, notificationDestination,
+  formatNotificationMessage,
 } from "@/types/dashboard";
 
 const token = () => localStorage.getItem("user_token") ?? "";
@@ -88,7 +89,7 @@ function NotifRow({
           fontWeight: notif.read ? 400 : 600,
           wordBreak: "break-word",
         }}>
-          {notif.message}
+          {formatNotificationMessage(notif.message)}
         </p>
         <p style={{ fontSize: "11px", color: "var(--dash-ink-3)", marginTop: "3px" }}>
           {formatDate(notif.createdAt)}

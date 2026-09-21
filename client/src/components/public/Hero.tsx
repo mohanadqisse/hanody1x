@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "wouter";
+import { useSection } from "@/hooks/useContent";
 
 const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
 
@@ -18,9 +19,33 @@ const heroVariants = {
   },
 };
 
+interface HeroData {
+  badge?: string;
+  headline?: string;
+  subheadline?: string;
+  ctaPrimary?: string;
+  trustText?: string;
+}
+
+const defaultHero: HeroData = {
+  badge: "MADE TO STOP THE SCROLL",
+  headline: "THUMBNAILS\nPEOPLE CAN'T\nIGNORE.",
+  subheadline: "I create high-impact thumbnails for creators who want to stand out, get clicked, and be remembered.",
+  ctaPrimary: "VIEW MY WORK",
+  trustText: "LET'S WORK TOGETHER",
+};
+
 export function Hero() {
-  const supportingCopy =
-    "I create high-impact thumbnails for creators who want to stand out, get clicked, and be remembered.";
+  const data = useSection<HeroData>("hero", defaultHero);
+
+  const badge = data.badge || defaultHero.badge;
+  const headline = data.headline || defaultHero.headline || "";
+  const subheadline = data.subheadline || defaultHero.subheadline;
+  const ctaPrimary = data.ctaPrimary || defaultHero.ctaPrimary;
+  const trustText = data.trustText || defaultHero.trustText;
+
+  // Split headline lines for editorial typography
+  const headlineLines = headline.split("\n").filter(Boolean);
 
   return (
     <section className="relative pt-36 pb-20 sm:pt-44 sm:pb-24 md:pt-52 md:pb-32 overflow-hidden flex flex-col items-center justify-center">
@@ -32,32 +57,50 @@ export function Hero() {
           animate="show"
         >
           {/* Eyebrow */}
-          <motion.p
-            variants={heroVariants.itemFast}
-            className="text-xs font-semibold uppercase tracking-[0.24em] text-black/40 mb-6 sm:mb-8"
-          >
-            MADE TO STOP THE SCROLL
-          </motion.p>
+          {badge && (
+            <motion.p
+              variants={heroVariants.itemFast}
+              className="text-xs font-semibold uppercase tracking-[0.24em] text-black/40 mb-6 sm:mb-8"
+            >
+              {badge}
+            </motion.p>
+          )}
 
           {/* Editorial Headline */}
           <motion.h1
             variants={heroVariants.item}
-            className="text-[clamp(2.15rem,8.2vw,2.4rem)] sm:text-6xl md:text-7xl lg:text-[5.5rem] xl:text-[6rem] font-black text-black leading-[0.98] tracking-[-0.035em] mb-7 sm:mb-9"
+            className="text-[clamp(2.15rem,8.2vw,2.4rem)] sm:text-6xl md:text-7xl lg:text-[5.5rem] xl:text-[6rem] font-black text-black leading-[0.98] tracking-[-0.035em] mb-7 sm:mb-9 uppercase"
           >
-            THUMBNAILS
-            <br />
-            PEOPLE CAN'T
-            <br />
-            <span className="text-black/30 font-black">IGNORE.</span>
+            {headlineLines.length > 0 ? (
+              headlineLines.map((line, idx) => (
+                <span key={idx} className="block">
+                  {idx === headlineLines.length - 1 ? (
+                    <span className="text-black/30 font-black">{line}</span>
+                  ) : (
+                    line
+                  )}
+                </span>
+              ))
+            ) : (
+              <>
+                THUMBNAILS
+                <br />
+                PEOPLE CAN'T
+                <br />
+                <span className="text-black/30 font-black">IGNORE.</span>
+              </>
+            )}
           </motion.h1>
 
           {/* Supporting Text */}
-          <motion.p
-            variants={heroVariants.item}
-            className="text-base sm:text-lg md:text-xl text-black/55 mb-10 max-w-[640px] leading-relaxed font-normal"
-          >
-            {supportingCopy}
-          </motion.p>
+          {subheadline && (
+            <motion.p
+              variants={heroVariants.item}
+              className="text-base sm:text-lg md:text-xl text-black/55 mb-10 max-w-[640px] leading-relaxed font-normal"
+            >
+              {subheadline}
+            </motion.p>
+          )}
 
           {/* CTA Buttons */}
           <motion.div
@@ -72,7 +115,7 @@ export function Hero() {
                 className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-black text-white text-sm font-semibold cursor-pointer group shadow-sm w-full sm:w-auto text-center"
                 style={{ display: "inline-flex" }}
               >
-                <span>VIEW MY WORK</span>
+                <span>{ctaPrimary}</span>
                 <span className="inline-block transition-transform duration-200 group-hover:translate-x-1 font-sans">
                   →
                 </span>
@@ -89,7 +132,7 @@ export function Hero() {
               }}
               className="inline-flex items-center justify-center px-8 py-3.5 rounded-full border border-black/15 text-black text-sm font-semibold hover:border-black/30 hover:bg-black/5 transition-colors cursor-pointer w-full sm:w-auto text-center"
             >
-              LET'S WORK TOGETHER
+              {trustText}
             </motion.button>
           </motion.div>
 

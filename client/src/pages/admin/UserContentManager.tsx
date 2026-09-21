@@ -1,9 +1,8 @@
 import { API_BASE } from "@/lib/api";
 import React, { useState, useEffect, useRef } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowRight, Plus, Trash2, Image as ImageIcon, CreditCard, Bell, Settings, Upload, Camera } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Image as ImageIcon, CreditCard, Bell, Settings, Upload, Camera } from "lucide-react";
+import { formatNotificationMessage } from "@/types/dashboard";
 
 export default function UserContentManager({ user, onBack, token }: { user: any, onBack: () => void, token: string }) {
   const { toast } = useToast();
@@ -18,7 +17,7 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
   const [newThumb, setNewThumb] = useState({
     title: "",
     image: "",
-    status: "قيد التنفيذ",
+    status: "In Progress",
     downloadUrl: "",
     notes: "",
     price: "",
@@ -33,7 +32,6 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
 
   // States for settings
   const [settings, setSettings] = useState({ fullName: user.fullName || "", avatar: user.avatar || "", password: "" });
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const settingsFileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -55,7 +53,7 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
         if (res.ok) setNotifications(await res.json());
       }
     } catch (e) {
-      toast({ title: "حدث خطأ في تحميل بيانات المستخدم", variant: "destructive" });
+      toast({ title: "Failed to load user data", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -74,30 +72,30 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
       if (res.ok) {
         const data = await res.json();
         setter(data.url);
-        toast({ title: "تم رفع الصورة بنجاح!" });
+        toast({ title: "Image uploaded successfully!" });
       } else {
-        toast({ title: "حدث خطأ أثناء رفع الصورة", variant: "destructive" });
+        toast({ title: "Error uploading image", variant: "destructive" });
       }
     } catch (err) {
-      toast({ title: "حدث خطأ أثناء رفع الصورة", variant: "destructive" });
+      toast({ title: "Error uploading image", variant: "destructive" });
     }
     setIsUploading(false);
   };
 
   // --- Thumbnails ---
   const addThumbnail = async () => {
-    if (!newThumb.title || !newThumb.image) return toast({ title: "يرجى تعبئة العنوان والصورة", variant: "destructive" });
+    if (!newThumb.title || !newThumb.image) return toast({ title: "Please provide a title and image", variant: "destructive" });
     try {
       const res = await fetch(API_BASE + "/api/dashboard/thumbnails", {
         method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ userId: user.id, ...newThumb })
       });
       if (res.ok) {
-        toast({ title: "تم إضافة الثمنيل" });
+        toast({ title: "Thumbnail added successfully" });
         setNewThumb({
           title: "",
           image: "",
-          status: "قيد التنفيذ",
+          status: "In Progress",
           downloadUrl: "",
           notes: "",
           price: "",
@@ -109,7 +107,7 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
         });
         fetchUserData();
       }
-    } catch (e) { toast({ title: "حدث خطأ", variant: "destructive" }); }
+    } catch (e) { toast({ title: "An error occurred", variant: "destructive" }); }
   };
 
   const updateThumbnail = async (id: number, field: string, value: any) => {
@@ -123,36 +121,36 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
         method: "PUT", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(updated)
       });
-    } catch (e) { toast({ title: "فشل تحديث الثمنيل", variant: "destructive" }); }
+    } catch (e) { toast({ title: "Failed to update thumbnail", variant: "destructive" }); }
   };
 
   const deleteThumbnail = async (id: number) => {
-    if (!confirm("هل أنت متأكد من حذف هذا الثمنيل؟")) return;
+    if (!confirm("Are you sure you want to delete this thumbnail?")) return;
     try {
       const res = await fetch(API_BASE + `/api/dashboard/thumbnails/${id}`, {
         method: "DELETE", headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
-        toast({ title: "تم حذف الثمنيل" });
+        toast({ title: "Thumbnail deleted successfully" });
         setThumbnails(thumbnails.filter(t => t.id !== id));
       }
-    } catch (e) { toast({ title: "حدث خطأ", variant: "destructive" }); }
+    } catch (e) { toast({ title: "An error occurred", variant: "destructive" }); }
   };
 
   // --- Transactions ---
   const addTransaction = async () => {
-    if (!newTrans.description || !newTrans.amount) return toast({ title: "يرجى ملء الحقول", variant: "destructive" });
+    if (!newTrans.description || !newTrans.amount) return toast({ title: "Please fill in all fields", variant: "destructive" });
     try {
       const res = await fetch(API_BASE + "/api/dashboard/transactions", {
         method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ userId: user.id, ...newTrans, amount: parseInt(newTrans.amount) })
       });
       if (res.ok) {
-        toast({ title: "تم إضافة الفاتورة" });
+        toast({ title: "Invoice added successfully" });
         setNewTrans({ description: "", amount: "", status: "pending" });
         fetchUserData();
       }
-    } catch (e) { toast({ title: "حدث خطأ", variant: "destructive" }); }
+    } catch (e) { toast({ title: "An error occurred", variant: "destructive" }); }
   };
 
   const updateTransaction = async (id: number, field: string, value: any) => {
@@ -166,36 +164,36 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
         method: "PUT", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(updated)
       });
-    } catch (e) { toast({ title: "فشل تحديث الفاتورة", variant: "destructive" }); }
+    } catch (e) { toast({ title: "Failed to update invoice", variant: "destructive" }); }
   };
 
   const deleteTransaction = async (id: number) => {
-    if (!confirm("هل أنت متأكد من حذف هذه الفاتورة؟")) return;
+    if (!confirm("Are you sure you want to delete this invoice?")) return;
     try {
       const res = await fetch(API_BASE + `/api/dashboard/transactions/${id}`, {
         method: "DELETE", headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
-        toast({ title: "تم حذف الفاتورة" });
+        toast({ title: "Invoice deleted successfully" });
         setTransactions(transactions.filter(t => t.id !== id));
       }
-    } catch (e) { toast({ title: "حدث خطأ", variant: "destructive" }); }
+    } catch (e) { toast({ title: "An error occurred", variant: "destructive" }); }
   };
 
   // --- Notifications ---
   const addNotification = async () => {
-    if (!newNotif.message) return toast({ title: "يرجى كتابة الرسالة", variant: "destructive" });
+    if (!newNotif.message) return toast({ title: "Please enter a notification message", variant: "destructive" });
     try {
       const res = await fetch(API_BASE + "/api/dashboard/notifications", {
         method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ userId: user.id, ...newNotif })
       });
       if (res.ok) {
-        toast({ title: "تم إرسال الإشعار" });
+        toast({ title: "Notification sent successfully" });
         setNewNotif({ message: "" });
         fetchUserData();
       }
-    } catch (e) { toast({ title: "حدث خطأ", variant: "destructive" }); }
+    } catch (e) { toast({ title: "An error occurred", variant: "destructive" }); }
   };
 
   const deleteNotification = async (id: number) => {
@@ -204,10 +202,10 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
         method: "DELETE", headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
-        toast({ title: "تم حذف الإشعار" });
+        toast({ title: "Notification deleted" });
         setNotifications(notifications.filter(n => n.id !== id));
       }
-    } catch (e) { toast({ title: "حدث خطأ", variant: "destructive" }); }
+    } catch (e) { toast({ title: "An error occurred", variant: "destructive" }); }
   };
 
   // --- Settings ---
@@ -221,21 +219,21 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
         body: JSON.stringify(body)
       });
       if (res.ok) {
-        toast({ title: "تم تحديث الإعدادات بنجاح" });
+        toast({ title: "Settings updated successfully" });
         setSettings({ ...settings, password: "" });
       }
-    } catch (e) { toast({ title: "حدث خطأ", variant: "destructive" }); }
+    } catch (e) { toast({ title: "An error occurred", variant: "destructive" }); }
   };
 
   const statusOptions = [
-    "في انتظار التنفيذ",
-    "قيد التنفيذ",
-    "تم التنفيذ",
-    "تم التسليم"
+    "Pending",
+    "In Progress",
+    "Completed",
+    "Delivered"
   ];
 
   return (
-    <div className="dash-card bg-white p-6 sm:p-8 space-y-6 shadow-xs border border-[#e8e8e5] rounded-2xl" dir="rtl">
+    <div className="dash-card bg-white p-6 sm:p-8 space-y-6 shadow-xs border border-[#e8e8e5] rounded-2xl" dir="ltr">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-[#e8e8e5] pb-6 gap-4">
         <div className="flex items-center gap-4">
@@ -244,17 +242,17 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
           </div>
           <div>
             <h2 className="text-xl font-bold text-[#111110] mb-1">
-              إدارة حساب: <span className="underline decoration-1 underline-offset-4">{user.fullName}</span>
+              Managing Account: <span className="underline decoration-1 underline-offset-4">{user.fullName}</span>
             </h2>
-            <p className="text-xs text-[#55554e]">إدارة الثمنيلات، الفواتير، الإشعارات، وبيانات الحساب الخاصة بصانع المحتوى.</p>
+            <p className="text-xs text-[#55554e]">Manage thumbnails, invoices, notifications, and profile credentials for this creator.</p>
           </div>
         </div>
         <button
           onClick={onBack}
           className="dash-btn-outline shrink-0 text-xs"
         >
-          <ArrowRight className="w-4 h-4 ml-1.5" />
-          الرجوع لقائمة الحسابات
+          <ArrowLeft className="w-4 h-4 mr-1.5" />
+          Back to Accounts
         </button>
       </div>
 
@@ -269,7 +267,7 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
           }`}
         >
           <ImageIcon className="w-3.5 h-3.5" />
-          الثمنيلات
+          Thumbnails
         </button>
         <button
           onClick={() => setActiveTab('transactions')}
@@ -280,7 +278,7 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
           }`}
         >
           <CreditCard className="w-3.5 h-3.5" />
-          الفواتير والمدفوعات
+          Invoices & Payments
         </button>
         <button
           onClick={() => setActiveTab('notifications')}
@@ -291,7 +289,7 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
           }`}
         >
           <Bell className="w-3.5 h-3.5" />
-          الإشعارات
+          Notifications
         </button>
         <button
           onClick={() => setActiveTab('settings')}
@@ -302,12 +300,12 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
           }`}
         >
           <Settings className="w-3.5 h-3.5" />
-          الإعدادات
+          Settings
         </button>
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-sm text-[#99998f]">جاري التحميل...</div>
+        <div className="text-center py-12 text-sm text-[#99998f]">Loading creator data...</div>
       ) : (
         <div className="animate-in fade-in duration-200">
 
@@ -322,12 +320,12 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
                         value={t.title}
                         onChange={e => updateThumbnail(t.id, 'title', e.target.value)}
                         className="dash-input h-9 text-xs font-semibold flex-1"
-                        placeholder="عنوان العمل"
+                        placeholder="Design Title"
                       />
                       <button
                         onClick={() => deleteThumbnail(t.id)}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg border border-red-200 transition-colors"
-                        title="حذف"
+                        title="Delete"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -337,7 +335,7 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
                         <input
                           value={t.image}
                           onChange={e => updateThumbnail(t.id, 'image', e.target.value)}
-                          placeholder="رابط الصورة"
+                          placeholder="Image URL"
                           className="dash-input h-9 text-xs flex-1"
                           dir="ltr"
                         />
@@ -345,7 +343,7 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
                           className="dash-btn-outline h-9 px-3 text-xs cursor-pointer relative overflow-hidden shrink-0"
                         >
                           <Upload className="w-3.5 h-3.5" />
-                          <span>{isUploading ? "..." : "رفع"}</span>
+                          <span>{isUploading ? "..." : "Upload"}</span>
                           <input
                             type="file"
                             accept="image/*"
@@ -367,7 +365,7 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
                     <input
                       value={t.downloadUrl || ""}
                       onChange={e => updateThumbnail(t.id, 'downloadUrl', e.target.value)}
-                      placeholder="رابط التحميل عالي الجودة"
+                      placeholder="High-Res Download URL"
                       className="dash-input h-9 text-xs"
                       dir="ltr"
                     />
@@ -376,14 +374,14 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
                         type="number"
                         value={t.price || 0}
                         onChange={e => updateThumbnail(t.id, 'price', parseInt(e.target.value))}
-                        placeholder="السعر ($)"
+                        placeholder="Price ($)"
                         className="dash-input h-9 text-xs w-28"
                         dir="ltr"
                       />
                       <input
                         value={t.notes || ""}
                         onChange={e => updateThumbnail(t.id, 'notes', e.target.value)}
-                        placeholder="ملاحظات (تظهر للعميل)"
+                        placeholder="Notes (visible to creator)"
                         className="dash-input h-9 text-xs flex-1"
                       />
                     </div>
@@ -414,21 +412,21 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
                     </div>
                   </div>
                 ))}
-                {thumbnails.length === 0 && <p className="text-xs text-[#99998f] text-center py-6">لا توجد ثمنيلات مسجلة لهذا الحساب.</p>}
+                {thumbnails.length === 0 && <p className="text-xs text-[#99998f] text-center py-6">No thumbnails recorded for this account.</p>}
               </div>
 
               {/* Add new thumbnail */}
               <div className="border border-[#e8e8e5] bg-[#fcfcfb] rounded-xl p-5 space-y-3">
-                <h4 className="text-xs font-bold text-[#111110] uppercase tracking-wider">إضافة ثمنيل جديد</h4>
+                <h4 className="text-xs font-bold text-[#111110] uppercase tracking-wider">Add New Thumbnail</h4>
                 <input
-                  placeholder="العنوان"
+                  placeholder="Title"
                   value={newThumb.title}
                   onChange={e => setNewThumb({...newThumb, title: e.target.value})}
                   className="dash-input h-10 text-xs"
                 />
                 <div className="flex gap-2">
                   <input
-                    placeholder="رابط الصورة"
+                    placeholder="Image URL"
                     value={newThumb.image}
                     onChange={e => setNewThumb({...newThumb, image: e.target.value})}
                     className="dash-input h-10 text-xs flex-1"
@@ -437,8 +435,8 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
                   <label
                     className="dash-btn-outline h-10 px-3 text-xs cursor-pointer relative overflow-hidden shrink-0"
                   >
-                    <Upload className="w-3.5 h-3.5" />
-                    <span>{isUploading ? "..." : "رفع من الجهاز"}</span>
+                    <Upload className="w-3.5 h-3.5 mr-1" />
+                    <span>{isUploading ? "..." : "Upload from Device"}</span>
                     <input
                       type="file"
                       accept="image/*"
@@ -459,7 +457,7 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
                   </select>
                   <input
                     type="number"
-                    placeholder="السعر ($)"
+                    placeholder="Price ($)"
                     value={newThumb.price}
                     onChange={e => setNewThumb({...newThumb, price: e.target.value})}
                     className="dash-input h-10 text-xs w-1/2"
@@ -495,8 +493,8 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
                   onClick={addThumbnail}
                   className="dash-btn-primary w-full h-10 mt-2 text-xs"
                 >
-                  <Plus className="w-4 h-4 ml-1.5" />
-                  إضافة ثمنيل
+                  <Plus className="w-4 h-4 mr-1.5" />
+                  Add Thumbnail
                 </button>
               </div>
             </div>
@@ -528,35 +526,35 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
                         onChange={e => updateTransaction(t.id, 'status', e.target.value)}
                         className="dash-input h-9 text-xs w-36"
                       >
-                        <option value="pending">غير مدفوع (Pending)</option>
-                        <option value="paid">مدفوع (Paid)</option>
+                        <option value="pending">Pending</option>
+                        <option value="paid">Paid</option>
                       </select>
                       <button
                         onClick={() => deleteTransaction(t.id)}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg border border-red-200 transition-colors"
-                        title="حذف الفاتورة"
+                        title="Delete Invoice"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
                 ))}
-                {transactions.length === 0 && <p className="text-xs text-[#99998f] text-center py-6">لا توجد فواتير مسجلة.</p>}
+                {transactions.length === 0 && <p className="text-xs text-[#99998f] text-center py-6">No invoices recorded.</p>}
               </div>
 
               {/* Add transaction */}
               <div className="border border-[#e8e8e5] bg-[#fcfcfb] rounded-xl p-5 space-y-3">
-                <h4 className="text-xs font-bold text-[#111110] uppercase tracking-wider">إضافة فاتورة جديدة</h4>
+                <h4 className="text-xs font-bold text-[#111110] uppercase tracking-wider">Add New Invoice</h4>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <input
-                    placeholder="وصف الفاتورة (مثال: تصميم 5 صور مصغرة)"
+                    placeholder="Invoice description (e.g. 5 YouTube Thumbnails Batch)"
                     value={newTrans.description}
                     onChange={e => setNewTrans({...newTrans, description: e.target.value})}
                     className="dash-input h-10 text-xs flex-1"
                   />
                   <input
                     type="number"
-                    placeholder="المبلغ ($)"
+                    placeholder="Amount ($)"
                     value={newTrans.amount}
                     onChange={e => setNewTrans({...newTrans, amount: e.target.value})}
                     className="dash-input h-10 text-xs w-full sm:w-32 font-mono"
@@ -566,8 +564,8 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
                     onClick={addTransaction}
                     className="dash-btn-primary h-10 px-5 text-xs shrink-0"
                   >
-                    <Plus className="w-4 h-4 ml-1.5" />
-                    إضافة
+                    <Plus className="w-4 h-4 mr-1.5" />
+                    Add Invoice
                   </button>
                 </div>
               </div>
@@ -581,27 +579,27 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
                 {notifications.map(n => (
                   <div key={n.id} className="bg-[#fcfcfb] p-4 rounded-xl border border-[#e8e8e5] flex justify-between items-center gap-4 shadow-2xs">
                     <div className="flex-1">
-                      <p className="text-xs font-medium text-[#111110] leading-relaxed">{n.message}</p>
-                      <p className="text-[11px] text-[#99998f] mt-1">{new Date(n.createdAt).toLocaleDateString('ar-JO')}</p>
+                      <p className="text-xs font-medium text-[#111110] leading-relaxed">{formatNotificationMessage(n.message)}</p>
+                      <p className="text-[11px] text-[#99998f] mt-1">{new Date(n.createdAt).toLocaleDateString('en-US')}</p>
                     </div>
                     <button
                       onClick={() => deleteNotification(n.id)}
                       className="p-2 text-red-600 hover:bg-red-50 rounded-lg border border-red-200 transition-colors shrink-0"
-                      title="حذف الإشعار"
+                      title="Delete Notification"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 ))}
-                {notifications.length === 0 && <p className="text-xs text-[#99998f] text-center py-6">لا توجد إشعارات سابقة.</p>}
+                {notifications.length === 0 && <p className="text-xs text-[#99998f] text-center py-6">No previous notifications sent.</p>}
               </div>
 
               {/* Send notification */}
               <div className="border border-[#e8e8e5] bg-[#fcfcfb] rounded-xl p-5 space-y-3">
-                <h4 className="text-xs font-bold text-[#111110] uppercase tracking-wider">إرسال إشعار جديد</h4>
+                <h4 className="text-xs font-bold text-[#111110] uppercase tracking-wider">Send New Notification</h4>
                 <div className="flex gap-2">
                   <input
-                    placeholder="اكتب نص الإشعار هنا..."
+                    placeholder="Type notification message here..."
                     value={newNotif.message}
                     onChange={e => setNewNotif({message: e.target.value})}
                     className="dash-input h-10 text-xs flex-1"
@@ -610,7 +608,7 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
                     onClick={addNotification}
                     className="dash-btn-primary h-10 px-6 text-xs shrink-0"
                   >
-                    إرسال الإشعار
+                    Send Notification
                   </button>
                 </div>
               </div>
@@ -640,14 +638,14 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
                   />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm text-[#111110]">تغيير الصورة الشخصية</h3>
-                  <p className="text-xs text-[#55554e]">انقر على الصورة لرفع صورة شخصية جديدة للحساب.</p>
+                  <h3 className="font-bold text-sm text-[#111110]">Change Profile Photo</h3>
+                  <p className="text-xs text-[#55554e]">Click on the photo to upload a new profile picture for this account.</p>
                 </div>
               </div>
 
               <div className="space-y-4 max-w-md">
                 <div>
-                  <label className="block text-xs font-semibold text-[#111110] mb-1.5">الاسم الكامل</label>
+                  <label className="block text-xs font-semibold text-[#111110] mb-1.5">Full Name</label>
                   <input
                     value={settings.fullName}
                     onChange={(e) => setSettings({...settings, fullName: e.target.value})}
@@ -655,23 +653,23 @@ export default function UserContentManager({ user, onBack, token }: { user: any,
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-[#111110] mb-1.5">كلمة المرور الجديدة</label>
+                  <label className="block text-xs font-semibold text-[#111110] mb-1.5">New Password</label>
                   <input
                     type="password"
                     value={settings.password}
                     onChange={(e) => setSettings({...settings, password: e.target.value})}
-                    placeholder="اتركه فارغاً إذا لم ترد تغييره"
+                    placeholder="Leave blank to keep unchanged"
                     className="dash-input h-10 text-xs"
                     dir="ltr"
                   />
-                  <p className="text-[11px] text-[#99998f] mt-1">سيتم تعيين كلمة المرور الجديدة للمستخدم فور الحفظ.</p>
+                  <p className="text-[11px] text-[#99998f] mt-1">The new password will be applied immediately upon saving.</p>
                 </div>
                 <div className="pt-2">
                   <button
                     onClick={updateSettings}
                     className="dash-btn-primary h-10 px-8 text-xs"
                   >
-                    حفظ التغييرات
+                    Save Changes
                   </button>
                 </div>
               </div>

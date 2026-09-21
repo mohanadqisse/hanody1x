@@ -26,7 +26,7 @@ router.get("/all", requireAuth, async (_req, res) => {
     res.json(result);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "خطأ في الخادم" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -83,7 +83,7 @@ router.get("/:section", async (req, res) => {
     }
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "خطأ في الخادم" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -111,11 +111,11 @@ router.put("/:section", requireAuth, async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     if (err instanceof z.ZodError) {
-      res.status(400).json({ message: "بيانات غير صالحة" });
+      res.status(400).json({ message: "Invalid input data" });
       return;
     }
     console.error(err);
-    res.status(500).json({ message: "خطأ في الخادم" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 

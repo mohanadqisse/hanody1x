@@ -27,22 +27,7 @@ interface OverviewData {
   recentWork: RecentWorkItem[];
 }
 
-/* ─── Status helpers ────────────────────────────── */
-function statusBadgeClass(status: string) {
-  if (status.includes("تم التسليم") || status.includes("Delivered"))  return "dash-badge dash-badge-green";
-  if (status.includes("تم التنفيذ") || status.includes("Completed"))  return "dash-badge dash-badge-blue";
-  if (status.includes("قيد")        || status.includes("In Progress")) return "dash-badge dash-badge-amber";
-  return "dash-badge dash-badge-gray";
-}
-
-function statusLabel(status: string) {
-  if (status.includes("تم التسليم"))        return "Delivered";
-  if (status.includes("تم التنفيذ"))        return "Completed";
-  if (status.includes("قيد التنفيذ"))       return "In Progress";
-  if (status.includes("في انتظار") || status.includes("انتظار")) return "Pending";
-  if (status.includes("قيد العمل"))         return "In Progress";
-  return status;
-}
+import { statusBadgeClass, statusLabel } from "@/types/dashboard";
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });

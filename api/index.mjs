@@ -12,7 +12,7 @@ import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { sql, eq } from "drizzle-orm";
+import { sql, eq, and, asc } from "drizzle-orm";
 import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 import { z } from "zod";
 
@@ -43,7 +43,34 @@ const contactMessages = sqliteTable("contact_messages", {
   createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(unixepoch())`).notNull(),
 });
 
-const schema = { adminUsers, siteContent, contactMessages };
+const portfolioCreators = sqliteTable("portfolio_creators", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  avatarUrl: text("avatar_url"),
+  subscriberCount: text("subscriber_count"),
+  youtubeUrl: text("youtube_url"),
+  description: text("description"),
+  displayOrder: integer("display_order").notNull().default(0),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(unixepoch())`).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(unixepoch())`).notNull(),
+});
+
+const portfolioItems = sqliteTable("portfolio_items", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  creatorId: integer("creator_id").notNull(),
+  imageUrl: text("image_url").notNull(),
+  title: text("title"),
+  youtubeUrl: text("youtube_url"),
+  views: text("views"),
+  category: text("category"),
+  displayOrder: integer("display_order").notNull().default(0),
+  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(unixepoch())`).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).default(sql`(unixepoch())`).notNull(),
+});
+
+const schema = { adminUsers, siteContent, contactMessages, portfolioCreators, portfolioItems };
 
 // ─── Database ────────────────────────────────────────────
 const url = process.env.DATABASE_URL || "file:sqlite.db";
@@ -65,7 +92,7 @@ function verifyToken(token) {
 function requireAuth(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith("Bearer ")) {
-    res.status(401).json({ message: "غير مصرح" });
+    res.status(401).json({ message: "Unauthorized" });
     return;
   }
   try {
@@ -74,7 +101,7 @@ function requireAuth(req, res, next) {
     req.admin = payload;
     next();
   } catch {
-    res.status(401).json({ message: "رمز غير صالح" });
+    res.status(401).json({ message: "Invalid or expired token" });
   }
 }
 
@@ -85,19 +112,16 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-const storage = new CloudinaryStorage({
-  cloudinary,
-  params: async (_req, file) => {
-    const extension = file.originalname.split(".").pop();
-    return {
+const upload = multer({
+  storage: new CloudinaryStorage({
+    cloudinary,
+    params: {
       folder: "portfolio",
-      format: extension,
-      public_id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-    };
-  },
+      allowed_formats: ["jpg", "jpeg", "png", "webp", "gif"],
+    },
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
 });
-
-const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
 
 // ─── Express App ─────────────────────────────────────────
 const app = express();
@@ -109,8 +133,14 @@ app.use(cookieParser());
 
 // ─── Health Route ────────────────────────────────────────
 const healthRouter = Router();
-healthRouter.get("/health", (_req, res) => res.json({ status: "ok" }));
-healthRouter.get("/healthz", (_req, res) => res.json({ status: "ok" }));
+healthRouter.get("/health", async (_req, res) => {
+  try {
+    const [row] = await db.select().from(siteContent).limit(1);
+    res.json({ status: "ok", db: "connected", sample: !!row });
+  } catch (err) {
+    res.status(500).json({ status: "error", db: err.message });
+  }
+});
 
 // ─── Auth Routes ─────────────────────────────────────────
 const authRouter = Router();
@@ -123,7 +153,7 @@ const loginSchema = z.object({
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
-  message: { message: "محاولات دخول كثيرة جداً، يرجى المحاولة بعد 15 دقيقة." },
+  message: { message: "Too many login attempts. Please try again after 15 minutes." },
 });
 
 authRouter.post("/login", loginLimiter, async (req, res) => {
@@ -132,13 +162,13 @@ authRouter.post("/login", loginLimiter, async (req, res) => {
     const [user] = await db.select().from(adminUsers).where(eq(adminUsers.username, username));
 
     if (!user) {
-      res.status(401).json({ message: "اسم المستخدم أو كلمة المرور غير صحيحة" });
+      res.status(401).json({ message: "Invalid username or password" });
       return;
     }
 
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) {
-      res.status(401).json({ message: "اسم المستخدم أو كلمة المرور غير صحيحة" });
+      res.status(401).json({ message: "Invalid username or password" });
       return;
     }
 
@@ -146,11 +176,11 @@ authRouter.post("/login", loginLimiter, async (req, res) => {
     res.json({ token, username: user.username });
   } catch (err) {
     if (err instanceof z.ZodError) {
-      res.status(400).json({ message: "بيانات غير صالحة" });
+      res.status(400).json({ message: "Invalid input data" });
       return;
     }
     console.error("Login error:", err);
-    res.status(500).json({ message: "خطأ في الخادم" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -175,7 +205,7 @@ contentRouter.get("/all", requireAuth, async (_req, res) => {
     res.json(result);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "خطأ في الخادم" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -201,7 +231,7 @@ contentRouter.get("/:section", async (req, res) => {
     }
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "خطأ في الخادم" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -229,11 +259,11 @@ contentRouter.put("/:section", requireAuth, async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     if (err instanceof z.ZodError) {
-      res.status(400).json({ message: "بيانات غير صالحة" });
+      res.status(400).json({ message: "Invalid input data" });
       return;
     }
     console.error(err);
-    res.status(500).json({ message: "خطأ في الخادم" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -245,17 +275,17 @@ uploadRouter.post("/", requireAuth, (req, res, _next) => {
       console.error("Cloudinary Upload Error:", err);
       if (err instanceof multer.MulterError) {
         if (err.code === "LIMIT_FILE_SIZE") {
-          res.status(400).json({ message: "حجم الملف كبير جداً. الحد الأقصى 10 ميجابايت" });
+          res.status(400).json({ message: "File size exceeds 10 MB limit" });
           return;
         }
-        res.status(400).json({ message: `خطأ في رفع الملف: ${err.message}` });
+        res.status(400).json({ message: `Upload error: ${err.message}` });
         return;
       }
-      res.status(400).json({ message: err.message || "خطأ في رفع الملف" });
+      res.status(400).json({ message: err.message || "File upload error" });
       return;
     }
     if (!req.file) {
-      res.status(400).json({ message: "لم يتم تحميل أي ملف" });
+      res.status(400).json({ message: "No file was uploaded" });
       return;
     }
     res.json({ url: req.file.path });
@@ -281,14 +311,14 @@ messagesRouter.post("/", async (req, res) => {
       service: data.packageType || null,
       message: data.details,
     });
-    res.json({ success: true, message: "تم إرسال الرسالة بنجاح" });
+    res.json({ success: true, message: "Message sent successfully" });
   } catch (err) {
     if (err instanceof z.ZodError) {
-      res.status(400).json({ message: "بيانات غير صالحة" });
+      res.status(400).json({ message: "Invalid input data" });
       return;
     }
     console.error(err);
-    res.status(500).json({ message: "خطأ في الخادم" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -301,7 +331,7 @@ messagesRouter.get("/", requireAuth, async (_req, res) => {
     res.json(msgs);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "خطأ في الخادم" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -315,7 +345,7 @@ messagesRouter.patch("/:id/read", requireAuth, async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "خطأ في الخادم" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -328,7 +358,229 @@ messagesRouter.delete("/:id", requireAuth, async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "خطأ في الخادم" });
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// ─── Portfolio Routes ────────────────────────────────────
+const portfolioRouter = Router();
+
+portfolioRouter.get("/creators", async (_req, res) => {
+  try {
+    const creators = await db
+      .select()
+      .from(portfolioCreators)
+      .where(eq(portfolioCreators.isActive, true))
+      .orderBy(asc(portfolioCreators.displayOrder), asc(portfolioCreators.id));
+
+    const items = await db
+      .select()
+      .from(portfolioItems)
+      .where(eq(portfolioItems.isActive, true))
+      .orderBy(asc(portfolioItems.displayOrder), asc(portfolioItems.id));
+
+    const itemsByCreator = new Map();
+    for (const item of items) {
+      if (!itemsByCreator.has(item.creatorId)) {
+        itemsByCreator.set(item.creatorId, []);
+      }
+      itemsByCreator.get(item.creatorId).push(item);
+    }
+
+    const result = creators.map((c) => ({
+      ...c,
+      items: itemsByCreator.get(c.id) || [],
+    }));
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+portfolioRouter.get("/items", async (_req, res) => {
+  try {
+    const items = await db
+      .select()
+      .from(portfolioItems)
+      .where(eq(portfolioItems.isActive, true))
+      .orderBy(asc(portfolioItems.displayOrder), asc(portfolioItems.id));
+    res.json(items);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+portfolioRouter.get("/admin/creators", requireAuth, async (_req, res) => {
+  try {
+    const creators = await db
+      .select()
+      .from(portfolioCreators)
+      .orderBy(asc(portfolioCreators.displayOrder), asc(portfolioCreators.id));
+
+    const items = await db
+      .select()
+      .from(portfolioItems)
+      .orderBy(asc(portfolioItems.displayOrder), asc(portfolioItems.id));
+
+    const itemsByCreator = new Map();
+    for (const item of items) {
+      if (!itemsByCreator.has(item.creatorId)) {
+        itemsByCreator.set(item.creatorId, []);
+      }
+      itemsByCreator.get(item.creatorId).push(item);
+    }
+
+    const result = creators.map((c) => ({
+      ...c,
+      items: itemsByCreator.get(c.id) || [],
+    }));
+    res.json(result);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+portfolioRouter.post("/admin/creators", requireAuth, async (req, res) => {
+  try {
+    const { name, avatarUrl, subscriberCount, youtubeUrl, description, displayOrder, isActive } = req.body;
+    if (!name) return res.status(400).json({ message: "Creator name is required" });
+
+    const [created] = await db
+      .insert(portfolioCreators)
+      .values({
+        name,
+        avatarUrl: avatarUrl || null,
+        subscriberCount: subscriberCount || null,
+        youtubeUrl: youtubeUrl || null,
+        description: description || null,
+        displayOrder: displayOrder || 0,
+        isActive: isActive !== false,
+      })
+      .returning();
+    res.status(201).json({ ...created, items: [] });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+portfolioRouter.patch("/admin/creators/:id", requireAuth, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const updates = { ...req.body, updatedAt: new Date() };
+    const [updated] = await db
+      .update(portfolioCreators)
+      .set(updates)
+      .where(eq(portfolioCreators.id, id))
+      .returning();
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+portfolioRouter.delete("/admin/creators/:id", requireAuth, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    await db.delete(portfolioItems).where(eq(portfolioItems.creatorId, id));
+    await db.delete(portfolioCreators).where(eq(portfolioCreators.id, id));
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+portfolioRouter.post("/admin/creators/:creatorId/items", requireAuth, async (req, res) => {
+  try {
+    const creatorId = parseInt(req.params.creatorId, 10);
+    const { imageUrl, title, youtubeUrl, views, category, displayOrder, isActive } = req.body;
+    if (!imageUrl) return res.status(400).json({ message: "Thumbnail image URL is required" });
+
+    const [created] = await db
+      .insert(portfolioItems)
+      .values({
+        creatorId,
+        imageUrl,
+        title: title || null,
+        youtubeUrl: youtubeUrl || null,
+        views: views || null,
+        category: category || null,
+        displayOrder: displayOrder || 0,
+        isActive: isActive !== false,
+      })
+      .returning();
+    res.status(201).json(created);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+portfolioRouter.patch("/admin/items/:id", requireAuth, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const updates = { ...req.body, updatedAt: new Date() };
+    const [updated] = await db
+      .update(portfolioItems)
+      .set(updates)
+      .where(eq(portfolioItems.id, id))
+      .returning();
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+portfolioRouter.delete("/admin/items/:id", requireAuth, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    await db.delete(portfolioItems).where(eq(portfolioItems.id, id));
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+portfolioRouter.put("/admin/creators/reorder", requireAuth, async (req, res) => {
+  try {
+    const { order } = req.body;
+    if (Array.isArray(order)) {
+      for (const item of order) {
+        await db
+          .update(portfolioCreators)
+          .set({ displayOrder: item.displayOrder, updatedAt: new Date() })
+          .where(eq(portfolioCreators.id, item.id));
+      }
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+portfolioRouter.put("/admin/creators/:creatorId/items/reorder", requireAuth, async (req, res) => {
+  try {
+    const { order } = req.body;
+    if (Array.isArray(order)) {
+      for (const item of order) {
+        await db
+          .update(portfolioItems)
+          .set({ displayOrder: item.displayOrder, updatedAt: new Date() })
+          .where(eq(portfolioItems.id, item.id));
+      }
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -336,7 +588,7 @@ messagesRouter.delete("/:id", requireAuth, async (req, res) => {
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
-  message: { message: "عدد طلبات كبير جداً، يرجى المحاولة لاحقاً." },
+  message: { message: "Too many requests. Please try again later." },
 });
 
 app.use("/api", healthRouter);
@@ -344,5 +596,6 @@ app.use("/api/auth", authRouter);
 app.use("/api/content", contentRouter);
 app.use("/api/upload", uploadRouter);
 app.use("/api/messages", apiLimiter, messagesRouter);
+app.use("/api/portfolio", portfolioRouter);
 
 export default app;

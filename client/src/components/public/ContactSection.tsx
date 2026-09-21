@@ -2,10 +2,35 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Send, Instagram } from "lucide-react";
 import { API_BASE } from "@/lib/api";
+import { useSection } from "@/hooks/useContent";
 
 const ease = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
 
+interface ContactData {
+  eyebrow?: string;
+  heading?: string;
+  description?: string;
+  instagramHandle?: string;
+  instagramUrl?: string;
+}
+
+const defaultContact: ContactData = {
+  eyebrow: "Contact",
+  heading: "Start a Project",
+  description: "Fill in the form and I'll get back to you within 24 hours. You can also reach me directly on Instagram.",
+  instagramHandle: "@hanody1x",
+  instagramUrl: "https://www.instagram.com/hanody1x",
+};
+
 export function ContactSection() {
+  const data = useSection<ContactData>("contact", defaultContact);
+
+  const eyebrow = data.eyebrow || defaultContact.eyebrow;
+  const heading = data.heading || defaultContact.heading;
+  const description = data.description || defaultContact.description;
+  const instagramHandle = data.instagramHandle || defaultContact.instagramHandle;
+  const instagramUrl = data.instagramUrl || defaultContact.instagramUrl;
+
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -52,29 +77,34 @@ export function ContactSection() {
             viewport={{ once: true, margin: "-80px" }}
             transition={{ duration: 0.65, ease }}
           >
-            <p className="text-xs font-semibold uppercase tracking-widest text-black/30 mb-3">
-              Contact
-            </p>
+            {eyebrow && (
+              <p className="text-xs font-semibold uppercase tracking-widest text-black/30 mb-3">
+                {eyebrow}
+              </p>
+            )}
             <h2 className="text-3xl md:text-4xl font-black text-black tracking-tight mb-5">
-              Start a Project
+              {heading}
             </h2>
-            <p className="text-black/50 leading-relaxed mb-8 max-w-sm">
-              Fill in the form and I'll get back to you within 24 hours. You can
-              also reach me directly on Instagram.
-            </p>
+            {description && (
+              <p className="text-black/50 leading-relaxed mb-8 max-w-sm">
+                {description}
+              </p>
+            )}
 
             {/* Instagram link */}
-            <a
-              href="https://www.instagram.com/hanody1x"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-3 px-5 py-3 rounded-full border border-black/12 hover:border-black/25 hover:bg-black/3 transition-all group"
-            >
-              <Instagram size={16} className="text-black/50" />
-              <span className="text-sm font-medium text-black/60 group-hover:text-black transition-colors">
-                @hanody1x
-              </span>
-            </a>
+            {instagramUrl && (
+              <a
+                href={instagramUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-3 px-5 py-3 rounded-full border border-black/12 hover:border-black/25 hover:bg-black/3 transition-all group"
+              >
+                <Instagram size={16} className="text-black/50" />
+                <span className="text-sm font-medium text-black/60 group-hover:text-black transition-colors">
+                  {instagramHandle}
+                </span>
+              </a>
+            )}
           </motion.div>
 
           {/* Right — Form */}
@@ -95,7 +125,7 @@ export function ContactSection() {
                 <p className="text-black/50 text-sm">I'll get back to you within 24 hours.</p>
                 <button
                   onClick={() => setStatus("idle")}
-                  className="mt-5 text-xs text-black/40 hover:text-black underline"
+                  className="mt-5 text-xs text-black/40 hover:text-black underline cursor-pointer"
                 >
                   Send another message
                 </button>
@@ -157,7 +187,7 @@ export function ContactSection() {
                 <button
                   type="submit"
                   disabled={status === "loading"}
-                  className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full bg-black text-white text-sm font-semibold hover:bg-black/80 transition-colors disabled:opacity-50 group w-full sm:w-auto"
+                  className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full bg-black text-white text-sm font-semibold hover:bg-black/80 transition-colors disabled:opacity-50 group w-full sm:w-auto cursor-pointer"
                 >
                   {status === "loading" ? "Sending..." : "Send Message"}
                   <Send size={14} className="transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
