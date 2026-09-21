@@ -87,7 +87,7 @@ export function AboutMe() {
   };
 
   return (
-    <section id="about-me" className="pub-section border-t border-black/8">
+    <section id="about" className="pub-section border-t border-black/8">
       <div className="pub-container">
 
         {/* ── Two-column editorial grid ── */}

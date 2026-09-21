@@ -1,5 +1,6 @@
 import { API_BASE } from "@/lib/api";
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { useUser } from "@/contexts/UserContext";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
@@ -81,6 +82,7 @@ function OverviewSkeleton() {
 /* ─── Component ─────────────────────────────────── */
 export default function Overview() {
   const { user } = useUser();
+  const [, setLocation]       = useLocation();
   const [data, setData]       = useState<OverviewData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -186,9 +188,10 @@ export default function Overview() {
                       alignItems: "center",
                       gap: "14px",
                       padding: "12px 16px",
-                      cursor: "default",
+                      cursor: "pointer",
                       transition: "border-color 0.15s ease",
                     }}
+                    onClick={() => setLocation(`/dashboard/thumbnails/${item.id}`)}
                     onMouseEnter={e => (e.currentTarget.style.borderColor = "#ccc")}
                     onMouseLeave={e => (e.currentTarget.style.borderColor = "var(--dash-border)")}
                   >

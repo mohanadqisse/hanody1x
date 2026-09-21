@@ -1,7 +1,7 @@
 import { Router } from "express";
 import multer from "multer";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
-import { requireAuth } from "../lib/auth.js";
+import { requireAuth, requireUploadAuth } from "../lib/auth.js";
 import { cloudinary } from "../lib/cloudinary.js";
 
 // Fix 7 — Allowed MIME types and corresponding safe Cloudinary format strings.
@@ -51,7 +51,7 @@ const upload = multer({
 
 const router = Router();
 
-router.post("/", requireAuth, (req, res, next) => {
+router.post("/", requireUploadAuth, (req, res, next) => {
   upload.single("image")(req, res, (err: unknown) => {
     if (err) {
       console.error("Upload Error:", err);

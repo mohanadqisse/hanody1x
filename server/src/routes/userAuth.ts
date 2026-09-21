@@ -160,7 +160,7 @@ router.get("/me", requireUserAuth, async (req, res) => {
       res.status(404).json({ message: "المستخدم غير موجود" });
       return;
     }
-    res.json({ id: user.id, fullName: user.fullName, email: user.email, role: user.role, avatar: user.avatar });
+    res.json({ id: user.id, fullName: user.fullName, username: user.username, email: user.email, role: user.role, avatar: user.avatar });
   } catch (err) {
     res.status(500).json({ message: "خطأ في الخادم" });
   }
@@ -177,14 +177,14 @@ router.put("/me", requireUserAuth, async (req, res) => {
   const schema = z.object({
     fullName: z.string().min(2).optional(),
     password: z.string().min(6).optional().or(z.literal("")),
-    avatar: z.string().optional(),
+    avatar: z.string().optional().nullable(),
   });
 
   try {
     const { fullName, password, avatar } = schema.parse(req.body);
     const updates: any = {};
     if (fullName) updates.fullName = fullName;
-    if (avatar) updates.avatar = avatar;
+    if (avatar !== undefined) updates.avatar = avatar || null;
     if (password && password.length >= 6) {
       updates.passwordHash = await bcrypt.hash(password, 10);
     }

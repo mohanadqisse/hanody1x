@@ -1217,6 +1217,14 @@ export default function AdminDashboard() {
                                 if (userConv) {
                                   setActiveConvId(userConv.id);
                                   setAdminMsgMobileView('thread');
+                                  setAdminMsgsLoading(true);
+                                  fetch(API_BASE + `/api/dashboard/conversations/${userConv.id}/messages`, {
+                                    headers: { Authorization: `Bearer ${token}` },
+                                  })
+                                    .then(r => r.ok ? r.json() : [])
+                                    .then((msgs: AdminChatMessage[]) => setAdminMsgs(msgs))
+                                    .catch(() => {})
+                                    .finally(() => setAdminMsgsLoading(false));
                                 }
                               })
                               .catch(() => {})

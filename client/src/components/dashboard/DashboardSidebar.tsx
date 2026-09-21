@@ -40,9 +40,13 @@ function useUnreadCount() {
 
   useEffect(() => {
     fetch_();
+    window.addEventListener("notifications-updated", fetch_);
     // Poll every 60 seconds for new notifications — lightweight, no WebSocket needed
     const interval = setInterval(fetch_, 60_000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("notifications-updated", fetch_);
+    };
   }, [fetch_]);
 
   return count;

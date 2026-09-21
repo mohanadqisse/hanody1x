@@ -331,14 +331,26 @@ router.delete("/users/:id", async (req, res) => {
     const [user] = await db.select().from(users).where(eq(users.id, userId));
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    // Delete related data first
+    // Delete related data first in correct foreign key dependency order
     await db.delete(notifications).where(eq(notifications.userId, userId));
     await db.delete(transactions).where(eq(transactions.userId, userId));
-    
+
+    // Delete chat messages for user's conversations, then delete conversations
+    const userConvs = await db.select({ id: conversations.id }).from(conversations).where(eq(conversations.userId, userId));
+    for (const conv of userConvs) {
+      await db.delete(chatMessages).where(eq(chatMessages.conversationId, conv.id));
+    }
+    await db.delete(conversations).where(eq(conversations.userId, userId));
+
+    // Delete revision requests directly submitted by the user
+    await db.delete(revisionRequests).where(eq(revisionRequests.userId, userId));
+
+    // Delete thumbnails and their dependent child records (comments, ratings, revisions)
     const userThumbs = await db.select({ id: thumbnails.id }).from(thumbnails).where(eq(thumbnails.userId, userId));
     for (const thumb of userThumbs) {
       await db.delete(comments).where(eq(comments.thumbnailId, thumb.id));
       await db.delete(ratings).where(eq(ratings.thumbnailId, thumb.id));
+      await db.delete(revisionRequests).where(eq(revisionRequests.thumbnailId, thumb.id));
     }
     await db.delete(ratings).where(eq(ratings.userId, userId));
     await db.delete(thumbnails).where(eq(thumbnails.userId, userId));
@@ -448,8 +460,10 @@ router.delete("/thumbnails/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).json({ error: "Invalid thumbnail ID" });
-    const [existing] = await db.select({ id: thumbnails.id }).from(thumbnails).where(eq(thumbnails.id, id));
-    if (!existing) return res.status(404).json({ error: "Thumbnail not found" });
+    // Delete dependent child records first to satisfy foreign key constraints
+    await db.delete(comments).where(eq(comments.thumbnailId, id));
+    await db.delete(ratings).where(eq(ratings.thumbnailId, id));
+    await db.delete(revisionRequests).where(eq(revisionRequests.thumbnailId, id));
 
     await db.delete(thumbnails).where(eq(thumbnails.id, id));
     res.json({ message: "Thumbnail deleted" });
@@ -527,6 +541,13 @@ router.post("/thumbnails", async (req, res) => {
       videoTitle: parsed.videoTitle || null,
       category: parsed.category || null,
     }).returning();
+
+    await createNotification({
+      userId: parsed.userId,
+      type: "thumbnail",
+      message: `تمت إضافة ثمنيل جديد: "${parsed.title || "بدون عنوان"}"`,
+    });
+
     res.status(201).json(newThumb);
   } catch (error) {
     if (error instanceof z.ZodError) {

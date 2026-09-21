@@ -2,6 +2,7 @@ import { API_BASE } from "@/lib/api";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useUser } from "@/contexts/UserContext";
+import { useToast } from "@/hooks/use-toast";
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -59,6 +60,7 @@ function BillingSkeleton() {
 /* ─── Component ─────────────────────────────────── */
 export default function Billing() {
   const { user } = useUser();
+  const { toast } = useToast();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [thumbs, setThumbs]             = useState<ThumbnailRecord[]>([]);
   const [isLoading, setIsLoading]       = useState(true);
@@ -90,12 +92,11 @@ export default function Billing() {
 
   const handlePDF = async () => {
     setPdfLoading(true);
+    const el = document.getElementById("billing-invoice-template");
     try {
-      const el = document.getElementById("billing-invoice-template");
       if (!el) return;
       el.style.display = "block";
       const canvas = await html2canvas(el, { scale: 2, useCORS: true, logging: false });
-      el.style.display = "none";
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF("p", "mm", "a4");
       const w = pdf.internal.pageSize.getWidth();
@@ -103,7 +104,9 @@ export default function Billing() {
       pdf.save(`Invoice_${user?.fullName ?? "Client"}.pdf`);
     } catch (err) {
       console.error("PDF error:", err);
+      toast({ title: "Failed to generate PDF invoice.", variant: "destructive" });
     } finally {
+      if (el) el.style.display = "none";
       setPdfLoading(false);
     }
   };

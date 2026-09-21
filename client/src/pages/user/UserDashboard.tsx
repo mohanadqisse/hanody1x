@@ -189,6 +189,7 @@ export default function UserDashboard() {
             <Route path="/dashboard/messages"               component={Messages}        />
             <Route path="/dashboard/notifications"          component={Notifications}   />
             <Route path="/dashboard/settings"               component={UserSettings}    />
+            <Route component={Overview} />
           </Switch>
         </div>
       </main>

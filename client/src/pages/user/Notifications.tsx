@@ -139,6 +139,7 @@ export default function Notifications() {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token()}` },
       });
+      window.dispatchEvent(new Event("notifications-updated"));
     } catch {
       // Silently fail — optimistic UI already applied
     }
@@ -152,6 +153,7 @@ export default function Notifications() {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token()}` },
       });
+      window.dispatchEvent(new Event("notifications-updated"));
       toast({ title: "All notifications marked as read." });
     } catch {
       toast({ title: "Failed to mark all read.", variant: "destructive" });

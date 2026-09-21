@@ -82,3 +82,53 @@ export async function requireUserAuth(req: Request, res: Response, next: NextFun
     res.status(401).json({ message: "رمز غير صالح" });
   }
 }
+
+// Upload middleware: allows admin OR authenticated active non-guest users.
+// Guests are rejected with 403. Unauthenticated requests are rejected with 401.
+export async function requireUploadAuth(req: Request, res: Response, next: NextFunction) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith("Bearer ")) {
+    res.status(401).json({ message: "غير مصرح" });
+    return;
+  }
+  try {
+    const token = authHeader.slice(7);
+    const payload = verifyToken(token);
+
+    if (payload.role === "admin") {
+      (req as Request & { admin: typeof payload }).admin = payload;
+      return next();
+    }
+
+    if (payload.role === "guest") {
+      res.status(403).json({ message: "غير مصرح للزوار برفع الملفات" });
+      return;
+    }
+
+    if (payload.role === "user") {
+      const [userRecord] = await db
+        .select({ isBanned: users.isBanned, banReason: users.banReason })
+        .from(users)
+        .where(eq(users.id, payload.id));
+
+      if (!userRecord) {
+        res.status(401).json({ message: "المستخدم غير موجود أو تم حذفه" });
+        return;
+      }
+      if (userRecord.isBanned) {
+        res.status(403).json({
+          type: "banned",
+          message: userRecord.banReason || "عذراً، لقد تم حظر حسابك من قبل الإدارة.",
+        });
+        return;
+      }
+
+      (req as Request & { user: typeof payload }).user = payload;
+      return next();
+    }
+
+    res.status(403).json({ message: "غير مصرح" });
+  } catch {
+    res.status(401).json({ message: "رمز غير صالح" });
+  }
+}
