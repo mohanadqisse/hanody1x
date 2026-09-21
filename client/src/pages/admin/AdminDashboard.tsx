@@ -11,8 +11,10 @@ import {
   ChevronDown, ChevronUp, Package, User, AtSign, Clock,
   Inbox, Shield, ShieldCheck, ShieldX, Globe, Smartphone,
   Monitor, LayoutDashboard, Users, Database, Play, Square, FileText, CheckCircle, Edit, Star, ArrowRight, ArrowLeft, RefreshCw,
-  MessageSquare, GitPullRequest, Send, Menu, X, ExternalLink, Sparkles, Plus, Eye, EyeOff
+  MessageSquare, GitPullRequest, Send, Menu, X, ExternalLink, Sparkles, Plus, Eye, EyeOff,
+  TrendingUp
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import UserContentManager from "./UserContentManager";
 import { AdminMessagesView, AdminConversation, AdminChatMessage } from "./AdminMessagesView";
 import { motion, AnimatePresence } from "framer-motion";
@@ -69,7 +71,8 @@ export default function AdminDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Tabs
-  const [activeTab, setActiveTab] = useState<'home' | 'clients' | 'users' | 'content' | 'codes' | 'creators' | 'public_ratings' | 'revisions' | 'messages'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'clients' | 'users' | 'content' | 'codes' | 'creators' | 'public_ratings' | 'revisions' | 'messages' | 'stats'>('home');
+  const queryClient = useQueryClient();
 
   // Existing states
   const [sections, setSections] = useState<Record<string, any>>({});
@@ -387,7 +390,14 @@ export default function AdminDashboard() {
   async function saveSection(section: string) {
     setLoading(true);
     try {
-      const contentToSave = sections[section] ?? {};
+      const defaultStatsFallback = [
+        { value: "500+", label: "Thumbnails Delivered" },
+        { value: "50+", label: "YouTube Creators" },
+        { value: "100M+", label: "Combined Views" },
+      ];
+      const contentToSave = (section === "stats" && (!sections.stats || !Array.isArray(sections.stats)))
+        ? defaultStatsFallback
+        : (sections[section] ?? {});
 
       const res = await fetch(API_BASE + `/api/content/${section}`, {
         method: "PUT",
@@ -395,6 +405,7 @@ export default function AdminDashboard() {
         body: JSON.stringify({ content: JSON.stringify(contentToSave) }),
       });
       if (!res.ok) throw new Error("Failed to save");
+      queryClient.invalidateQueries({ queryKey: ["section", section] });
       toast({ title: "Changes saved successfully" });
     } catch (err) {
       toast({ title: "Error", description: "Failed to save", variant: "destructive" });
@@ -1092,7 +1103,7 @@ export default function AdminDashboard() {
   };
 
   interface NavItem {
-    id: 'home' | 'clients' | 'users' | 'content' | 'codes' | 'creators' | 'public_ratings' | 'revisions' | 'messages';
+    id: typeof activeTab;
     label: string;
     icon: React.ComponentType<{ className?: string }>;
     badge?: number;
@@ -1101,6 +1112,7 @@ export default function AdminDashboard() {
 
   const navItems: NavItem[] = [
     { id: 'home', label: 'Overview', icon: LayoutDashboard },
+    { id: 'stats', label: 'Homepage Stats', icon: TrendingUp },
     { id: 'clients', label: 'Classic Clients', icon: Users, badge: clientsData.length },
     { id: 'users', label: 'Platform Accounts', icon: User, badge: usersData.length },
     { id: 'codes', label: 'Invite Codes', icon: ShieldCheck, badge: codesData.filter(c => c.isActive).length },
@@ -2128,6 +2140,72 @@ export default function AdminDashboard() {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════
+            TAB: HOMEPAGE STATS
+            ═══════════════════════════════════════════════════════ */}
+        {activeTab === 'stats' && (
+          <div className="space-y-6 animate-in fade-in duration-200 max-w-4xl mx-auto">
+            <div className="pb-4 border-b border-[#e8e8e5]">
+              <h2 className="text-xl font-bold text-[#111110]">Homepage Stats</h2>
+              <p className="text-xs text-[#55554e]">Edit the 3 performance metrics displayed on the homepage.</p>
+            </div>
+
+            <div className="dash-card bg-white p-6 sm:p-8 border border-[#e8e8e5] rounded-2xl shadow-2xs">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                {[0, 1, 2].map((idx) => {
+                  const currentStats = Array.isArray(sections.stats) && sections.stats.length === 3
+                    ? sections.stats
+                    : [
+                        { value: "500+", label: "Thumbnails Delivered" },
+                        { value: "50+", label: "YouTube Creators" },
+                        { value: "100M+", label: "Combined Views" },
+                      ];
+                  const item = currentStats[idx] || { value: "", label: "" };
+                  return (
+                    <div key={idx} className="border border-[#e8e8e5] rounded-xl p-4 bg-[#fcfcfb] space-y-3">
+                      <span className="text-xs font-bold text-[#111110] block">Metric #{idx + 1}</span>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-[#111110] mb-1">Value</label>
+                        <input
+                          value={item.value || ""}
+                          onChange={(e) => {
+                            const next = [...currentStats];
+                            next[idx] = { ...next[idx], value: e.target.value };
+                            setSections(prev => ({ ...prev, stats: next }));
+                          }}
+                          className="dash-input h-9 text-xs font-bold"
+                          placeholder="e.g. 500+"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-[#111110] mb-1">Label</label>
+                        <input
+                          value={item.label || ""}
+                          onChange={(e) => {
+                            const next = [...currentStats];
+                            next[idx] = { ...next[idx], label: e.target.value };
+                            setSections(prev => ({ ...prev, stats: next }));
+                          }}
+                          className="dash-input h-9 text-xs"
+                          placeholder="e.g. Thumbnails Delivered"
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <button
+                onClick={() => saveSection("stats")}
+                disabled={loading}
+                className="dash-btn-primary text-xs"
+              >
+                <Save className="w-3.5 h-3.5 mr-1.5" />
+                {loading ? "Saving..." : "Save Changes"}
+              </button>
             </div>
           </div>
         )}
