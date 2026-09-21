@@ -1,18 +1,8 @@
 import { Router } from "express";
 import multer from "multer";
-import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 import { requireAuth } from "../lib/auth.js";
-import dotenv from "dotenv";
-
-dotenv.config();
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
-});
+import { cloudinary } from "../lib/cloudinary.js";
 
 // Fix 7 — Allowed MIME types and corresponding safe Cloudinary format strings.
 const ALLOWED_MIME_TYPES: Record<string, string> = {
@@ -92,10 +82,15 @@ router.post("/", requireAuth, (req, res, next) => {
 router.delete("/:publicId", requireAuth, async (req, res) => {
   try {
     const publicIdWithExt = req.params.publicId as string;
+    if (!publicIdWithExt || !/^[a-zA-Z0-9_\-\.]+$/.test(publicIdWithExt)) {
+      res.status(400).json({ message: "معرف غير صالح" });
+      return;
+    }
     const publicId = publicIdWithExt.split(".")[0];
     await cloudinary.uploader.destroy(`portfolio/${publicId}`, { invalidate: true });
     res.json({ success: true });
   } catch (error) {
+    console.error("Cloudinary delete error:", error);
     res.status(500).json({ message: "خطأ في حذف الملف" });
   }
 });

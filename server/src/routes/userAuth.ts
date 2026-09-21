@@ -30,7 +30,19 @@ const loginLimiter = rateLimit({
   message: { message: "محاولات كثيرة جداً، يرجى المحاولة بعد 15 دقيقة." },
 });
 
-router.post("/register", async (req, res) => {
+const registerLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { message: "محاولات تسجيل كثيرة جداً، يرجى المحاولة بعد 15 دقيقة." },
+});
+
+const guestLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: { message: "محاولات دخول زائر كثيرة جداً، يرجى المحاولة بعد 15 دقيقة." },
+});
+
+router.post("/register", registerLimiter, async (req, res) => {
   try {
     const { fullName, username, email, password, role, inviteCode } = registerSchema.parse(req.body);
     
@@ -129,7 +141,7 @@ router.post("/login", loginLimiter, async (req, res) => {
 });
 
 // Guest Login (Creates a temporary token)
-router.post("/guest", async (req, res) => {
+router.post("/guest", guestLimiter, async (req, res) => {
   const token = signToken({ id: 0, role: "guest" });
   res.json({ token, user: { id: 0, fullName: "زائر ديمو", email: "guest@example.com", role: "guest", avatar: null } });
 });

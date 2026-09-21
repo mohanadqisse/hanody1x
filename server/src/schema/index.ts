@@ -131,6 +131,7 @@ export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
   message: text("message").notNull(),
+  type: text("type").notNull().default("system"),
   read: boolean("read").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

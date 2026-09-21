@@ -1,4 +1,5 @@
 import express from "express";
+import helmet from "helmet";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import path from "path";
@@ -31,7 +32,7 @@ async function ensureTables() {
     await db.execute(sql`CREATE TABLE IF NOT EXISTS creator_codes (id SERIAL PRIMARY KEY, code TEXT NOT NULL UNIQUE, is_active BOOLEAN NOT NULL DEFAULT TRUE, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
     await db.execute(sql`CREATE TABLE IF NOT EXISTS comments (id SERIAL PRIMARY KEY, thumbnail_id INTEGER REFERENCES thumbnails(id) NOT NULL, author_name TEXT NOT NULL, is_admin BOOLEAN NOT NULL DEFAULT FALSE, content TEXT NOT NULL, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
     await db.execute(sql`CREATE TABLE IF NOT EXISTS ratings (id SERIAL PRIMARY KEY, thumbnail_id INTEGER REFERENCES thumbnails(id) NOT NULL, user_id INTEGER REFERENCES users(id) NOT NULL, rating INTEGER NOT NULL, comment TEXT, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
-    await db.execute(sql`CREATE TABLE IF NOT EXISTS notifications (id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id) NOT NULL, message TEXT NOT NULL, read BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
+    await db.execute(sql`CREATE TABLE IF NOT EXISTS notifications (id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id) NOT NULL, message TEXT NOT NULL, type TEXT NOT NULL DEFAULT 'system', read BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
     await db.execute(sql`CREATE TABLE IF NOT EXISTS public_ratings (id SERIAL PRIMARY KEY, portfolio_item_id INTEGER NOT NULL, rating INTEGER NOT NULL, visitor_id TEXT NOT NULL, visitor_name TEXT NOT NULL DEFAULT 'زائر', created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
     await db.execute(sql`CREATE TABLE IF NOT EXISTS revision_requests (id SERIAL PRIMARY KEY, thumbnail_id INTEGER REFERENCES thumbnails(id) NOT NULL, user_id INTEGER REFERENCES users(id) NOT NULL, message TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', created_at TIMESTAMP DEFAULT NOW() NOT NULL, updated_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
     await db.execute(sql`CREATE TABLE IF NOT EXISTS conversations (id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id) NOT NULL, subject TEXT NOT NULL DEFAULT 'General', created_at TIMESTAMP DEFAULT NOW() NOT NULL, updated_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
@@ -76,6 +77,17 @@ async function ensureTables() {
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Reverse proxy trust configuration for Render/cloud deployments
+app.set("trust proxy", 1);
+
+// Conservative security headers: allow cross-origin resource fetching (e.g. uploads/Cloudinary)
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    contentSecurityPolicy: false,
+  })
+);
 
 app.use(cors({
   origin: function (origin, callback) {

@@ -4,6 +4,7 @@ import { db } from "../lib/db.js";
 import { siteContent } from "../schema/index.js";
 import { requireAuth } from "../lib/auth.js";
 import { eq } from "drizzle-orm";
+import { cloudinary } from "../lib/cloudinary.js";
 import path from "path";
 import fs from "fs";
 
@@ -27,15 +28,6 @@ router.get("/all", requireAuth, async (_req, res) => {
     console.error(err);
     res.status(500).json({ message: "خطأ في الخادم" });
   }
-});
-
-import { v2 as cloudinary } from "cloudinary";
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 router.get("/images", async (_req, res) => {

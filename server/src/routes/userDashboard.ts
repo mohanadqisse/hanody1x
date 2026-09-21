@@ -120,8 +120,29 @@ router.get("/settings-content", async (req, res) => {
 
 // --- Comments ---
 router.get("/thumbnails/:id/comments", requireUserAuth, async (req, res) => {
+  const payload = (req as typeof req & { user: { id: number; role: string } }).user;
+  const thumbnailId = parseInt(String(req.params.id));
+  if (isNaN(thumbnailId)) {
+    res.status(400).json({ message: "Invalid thumbnail ID." });
+    return;
+  }
+
+  if (payload.role === "guest") {
+    res.json([]);
+    return;
+  }
+
   try {
-    const thumbnailId = parseInt(String(req.params.id));
+    // Ownership check: thumbnail must belong to authenticated user
+    const [thumb] = await db
+      .select({ id: thumbnails.id })
+      .from(thumbnails)
+      .where(and(eq(thumbnails.id, thumbnailId), eq(thumbnails.userId, payload.id)));
+    if (!thumb) {
+      res.status(404).json({ message: "Thumbnail not found." });
+      return;
+    }
+
     const thumbComments = await db.select().from(comments).where(eq(comments.thumbnailId, thumbnailId)).orderBy(desc(comments.createdAt));
     res.json(thumbComments);
   } catch (err) {
@@ -132,16 +153,38 @@ router.get("/thumbnails/:id/comments", requireUserAuth, async (req, res) => {
 router.post("/thumbnails/:id/comments", requireUserAuth, async (req, res) => {
   const payload = (req as typeof req & { user: { id: number; role: string } }).user;
   if (payload.role === "guest") { res.status(403).json({ message: "غير مسموح للزوار" }); return; }
+
+  const thumbnailId = parseInt(String(req.params.id));
+  if (isNaN(thumbnailId)) {
+    res.status(400).json({ message: "Invalid thumbnail ID." });
+    return;
+  }
+
+  const { content } = req.body;
+  if (typeof content !== "string" || content.trim().length === 0) {
+    res.status(400).json({ message: "محتوى التعليق مطلوب" });
+    return;
+  }
+  const cleanContent = content.trim().slice(0, 5000);
+
   try {
-    const thumbnailId = parseInt(String(req.params.id));
-    const { content } = req.body;
+    // Ownership check: thumbnail must belong to authenticated user
+    const [thumb] = await db
+      .select({ id: thumbnails.id })
+      .from(thumbnails)
+      .where(and(eq(thumbnails.id, thumbnailId), eq(thumbnails.userId, payload.id)));
+    if (!thumb) {
+      res.status(404).json({ message: "Thumbnail not found." });
+      return;
+    }
+
     const userRecord = await db.select().from(users).where(eq(users.id, payload.id));
     const authorName = userRecord[0]?.fullName || "مستخدم";
     const [newComment] = await db.insert(comments).values({
       thumbnailId,
       authorName,
       isAdmin: false,
-      content
+      content: cleanContent,
     }).returning();
     res.status(201).json(newComment);
   } catch (err) {
@@ -152,8 +195,28 @@ router.post("/thumbnails/:id/comments", requireUserAuth, async (req, res) => {
 // --- Ratings ---
 router.get("/thumbnails/:id/rating", requireUserAuth, async (req, res) => {
   const payload = (req as typeof req & { user: { id: number; role: string } }).user;
+  const thumbnailId = parseInt(String(req.params.id));
+  if (isNaN(thumbnailId)) {
+    res.status(400).json({ message: "Invalid thumbnail ID." });
+    return;
+  }
+
+  if (payload.role === "guest") {
+    res.json(null);
+    return;
+  }
+
   try {
-    const thumbnailId = parseInt(String(req.params.id));
+    // Ownership check: thumbnail must belong to authenticated user
+    const [thumb] = await db
+      .select({ id: thumbnails.id })
+      .from(thumbnails)
+      .where(and(eq(thumbnails.id, thumbnailId), eq(thumbnails.userId, payload.id)));
+    if (!thumb) {
+      res.status(404).json({ message: "Thumbnail not found." });
+      return;
+    }
+
     const existing = await db.select().from(ratings).where(and(eq(ratings.thumbnailId, thumbnailId), eq(ratings.userId, payload.id)));
     res.json(existing[0] || null);
   } catch (err) {
@@ -164,15 +227,36 @@ router.get("/thumbnails/:id/rating", requireUserAuth, async (req, res) => {
 router.post("/thumbnails/:id/rating", requireUserAuth, async (req, res) => {
   const payload = (req as typeof req & { user: { id: number; role: string } }).user;
   if (payload.role === "guest") { res.status(403).json({ message: "غير مسموح للزوار" }); return; }
+
+  const thumbnailId = parseInt(String(req.params.id));
+  if (isNaN(thumbnailId)) {
+    res.status(400).json({ message: "Invalid thumbnail ID." });
+    return;
+  }
+
+  const numRating = parseInt(String(req.body.rating), 10);
+  if (isNaN(numRating) || numRating < 1 || numRating > 5) {
+    res.status(400).json({ message: "التقييم يجب أن يكون بين 1 و 5" });
+    return;
+  }
+
   try {
-    const thumbnailId = parseInt(String(req.params.id));
-    const { rating } = req.body;
+    // Ownership check: thumbnail must belong to authenticated user
+    const [thumb] = await db
+      .select({ id: thumbnails.id })
+      .from(thumbnails)
+      .where(and(eq(thumbnails.id, thumbnailId), eq(thumbnails.userId, payload.id)));
+    if (!thumb) {
+      res.status(404).json({ message: "Thumbnail not found." });
+      return;
+    }
+
     // Upsert: delete old rating then insert new one
     await db.delete(ratings).where(and(eq(ratings.thumbnailId, thumbnailId), eq(ratings.userId, payload.id)));
     const [newRating] = await db.insert(ratings).values({
       thumbnailId,
       userId: payload.id,
-      rating: parseInt(rating)
+      rating: numRating,
     }).returning();
     res.status(201).json(newRating);
   } catch (err) {
@@ -190,9 +274,12 @@ export async function createNotification(args: {
   message: string;
 }) {
   try {
-    // Insert using the base schema; type column is present in DB via safe migration
-    await (db.insert(notifications) as unknown as { values: (v: Record<string, unknown>) => { returning: () => Promise<unknown[]> } })
-      .values({ user_id: args.userId, message: args.message, read: false, type: args.type });
+    await db.insert(notifications).values({
+      userId: args.userId,
+      message: args.message,
+      read: false,
+      type: args.type,
+    });
   } catch {
     // Non-critical — never crash the main flow because of a notification failure
   }

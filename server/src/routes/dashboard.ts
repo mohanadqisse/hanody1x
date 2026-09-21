@@ -1,10 +1,101 @@
 import { Router } from "express";
+import { z } from "zod";
 import { db } from "../lib/db.js";
 import { clients, timeSessions, users, thumbnails, transactions, comments, ratings, notifications, creatorCodes, revisionRequests, conversations, chatMessages } from "../schema/index.js";
 import { eq, desc, sum, count } from "drizzle-orm";
 import { requireAuth } from "../lib/auth.js";
 import bcrypt from "bcryptjs";
 import { createNotification } from "./userDashboard.js";
+
+// =======================
+// Validation Schemas
+// =======================
+
+const createCodeSchema = z.object({
+  code: z.string().trim().min(1, "الكود مطلوب").max(50, "الكود طويل جداً"),
+});
+
+const createClientSchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(100),
+  status: z.string().trim().max(50).optional().default("جديد"),
+});
+
+const clientWorkSchema = z.object({
+  amount: z.coerce.number().int().min(0).max(1000000).optional().default(10),
+  items: z.coerce.number().int().min(1).max(10000).optional().default(1),
+});
+
+const setOrdersSchema = z.object({
+  ordersCompleted: z.coerce.number().int().min(0).max(1000000),
+});
+
+const banUserSchema = z.object({
+  isBanned: z.boolean(),
+  banReason: z.string().trim().max(500).optional().nullable(),
+});
+
+const userSettingsSchema = z.object({
+  fullName: z.string().trim().min(2).max(100).optional(),
+  avatar: z.string().trim().max(1000).optional().nullable(),
+  password: z.string().min(6).max(128).optional().or(z.literal("")),
+});
+
+const createThumbnailSchema = z.object({
+  userId: z.coerce.number().int().positive("معرف المستخدم مطلوب"),
+  title: z.string().trim().max(200).optional().default("Untitled"),
+  image: z.string().trim().min(1, "رابط الصورة مطلوب").max(2000),
+  status: z.string().trim().max(50).optional().default("قيد العمل"),
+  notes: z.string().trim().max(2000).optional().nullable(),
+  downloadUrl: z.string().trim().max(2000).optional().nullable(),
+  price: z.coerce.number().int().min(0).max(10000000).optional().default(0),
+  creatorName: z.string().trim().max(100).optional().nullable(),
+  youtubeUrl: z.string().trim().max(1000).optional().nullable(),
+  views: z.string().trim().max(50).optional().nullable(),
+  videoTitle: z.string().trim().max(300).optional().nullable(),
+  category: z.string().trim().max(100).optional().nullable(),
+});
+
+const updateThumbnailSchema = z.object({
+  title: z.string().trim().min(1).max(200).optional(),
+  image: z.string().trim().min(1).max(2000).optional(),
+  status: z.string().trim().max(50).optional(),
+  notes: z.string().trim().max(2000).optional().nullable(),
+  downloadUrl: z.string().trim().max(2000).optional().nullable(),
+  price: z.coerce.number().int().min(0).max(10000000).optional(),
+  creatorName: z.string().trim().max(100).optional().nullable(),
+  youtubeUrl: z.string().trim().max(1000).optional().nullable(),
+  views: z.string().trim().max(50).optional().nullable(),
+  videoTitle: z.string().trim().max(300).optional().nullable(),
+  category: z.string().trim().max(100).optional().nullable(),
+});
+
+const createTransactionSchema = z.object({
+  userId: z.coerce.number().int().positive("معرف المستخدم مطلوب"),
+  description: z.string().trim().min(1, "الوصف مطلوب").max(500),
+  amount: z.coerce.number().int().min(-10000000).max(10000000),
+  status: z.string().trim().max(50).optional().default("pending"),
+});
+
+const updateTransactionSchema = z.object({
+  description: z.string().trim().min(1).max(500).optional(),
+  amount: z.coerce.number().int().min(-10000000).max(10000000).optional(),
+  status: z.string().trim().max(50).optional(),
+});
+
+const createSessionSchema = z.object({
+  title: z.string().trim().max(200).optional().default("جلسة عمل بدون اسم"),
+  durationSeconds: z.coerce.number().int().min(0).max(86400 * 365),
+});
+
+const createNotificationAdminSchema = z.object({
+  userId: z.coerce.number().int().positive("معرف المستخدم مطلوب"),
+  message: z.string().trim().min(1, "نص الإشعار مطلوب").max(1000),
+  type: z.enum(["system", "thumbnail", "comment", "revision", "message", "billing"]).optional().default("system"),
+});
+
+const adminCommentSchema = z.object({
+  content: z.string().trim().min(1, "محتوى التعليق مطلوب").max(5000),
+});
 
 const router = Router();
 
@@ -25,8 +116,7 @@ router.get("/codes", async (req, res) => {
 
 router.post("/codes", async (req, res) => {
   try {
-    const { code } = req.body;
-    if (!code) return res.status(400).json({ error: "Code is required" });
+    const { code } = createCodeSchema.parse(req.body);
 
     // Check if code already exists
     const existing = await db.select().from(creatorCodes).where(eq(creatorCodes.code, code));
@@ -35,6 +125,9 @@ router.post("/codes", async (req, res) => {
     const [newCode] = await db.insert(creatorCodes).values({ code, isActive: true }).returning();
     res.status(201).json(newCode);
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors[0]?.message || "Invalid input" });
+    }
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -42,6 +135,7 @@ router.post("/codes", async (req, res) => {
 router.patch("/codes/:id/toggle", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
     const [existingCode] = await db.select().from(creatorCodes).where(eq(creatorCodes.id, id));
     if (!existingCode) return res.status(404).json({ error: "Code not found" });
 
@@ -55,6 +149,7 @@ router.patch("/codes/:id/toggle", async (req, res) => {
 router.delete("/codes/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
     await db.delete(creatorCodes).where(eq(creatorCodes.id, id));
     res.json({ success: true });
   } catch (error) {
@@ -107,8 +202,7 @@ router.get("/clients", async (req, res) => {
 
 router.post("/clients", async (req, res) => {
   try {
-    const { name, status = "جديد" } = req.body;
-    if (!name) return res.status(400).json({ error: "Name is required" });
+    const { name, status } = createClientSchema.parse(req.body);
 
     const [newClient] = await db.insert(clients).values({
       name,
@@ -119,15 +213,18 @@ router.post("/clients", async (req, res) => {
     
     res.status(201).json(newClient);
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors[0]?.message || "Invalid input" });
+    }
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
 router.patch("/clients/:id/work", async (req, res) => {
-  // This endpoint bumps the photo limit and adds to balance ($10 default per picture)
   try {
     const clientId = parseInt(req.params.id);
-    const { amount = 10, items = 1 } = req.body; // e.g. price per pic
+    if (isNaN(clientId)) return res.status(400).json({ error: "Invalid client ID" });
+    const { amount, items } = clientWorkSchema.parse(req.body);
     
     const [client] = await db.select().from(clients).where(eq(clients.id, clientId));
     if (!client) return res.status(404).json({ error: "Client not found" });
@@ -140,14 +237,17 @@ router.patch("/clients/:id/work", async (req, res) => {
 
     res.json(updatedClient);
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors[0]?.message || "Invalid input" });
+    }
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
 router.patch("/clients/:id/clear", async (req, res) => {
-  // Clear the balance to 0
   try {
     const clientId = parseInt(req.params.id);
+    if (isNaN(clientId)) return res.status(400).json({ error: "Invalid client ID" });
     const [client] = await db.select().from(clients).where(eq(clients.id, clientId));
     if (!client) return res.status(404).json({ error: "Client not found" });
 
@@ -163,25 +263,24 @@ router.patch("/clients/:id/clear", async (req, res) => {
 });
 
 router.patch("/clients/:id/set-orders", async (req, res) => {
-  // Manually set the number of completed orders
   try {
     const clientId = parseInt(req.params.id);
-    const { ordersCompleted } = req.body;
-    
-    if (ordersCompleted === undefined || isNaN(parseInt(ordersCompleted))) {
-        return res.status(400).json({ error: "ordersCompleted is required" });
-    }
+    if (isNaN(clientId)) return res.status(400).json({ error: "Invalid client ID" });
+    const { ordersCompleted } = setOrdersSchema.parse(req.body);
 
     const [client] = await db.select().from(clients).where(eq(clients.id, clientId));
     if (!client) return res.status(404).json({ error: "Client not found" });
 
     const [updatedClient] = await db.update(clients).set({
-      ordersCompleted: parseInt(ordersCompleted),
+      ordersCompleted,
       updatedAt: new Date()
     }).where(eq(clients.id, clientId)).returning();
 
     res.json(updatedClient);
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors[0]?.message || "Invalid input" });
+    }
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -189,6 +288,7 @@ router.patch("/clients/:id/set-orders", async (req, res) => {
 router.delete("/clients/:id", async (req, res) => {
   try {
     const clientId = parseInt(req.params.id);
+    if (isNaN(clientId)) return res.status(400).json({ error: "Invalid client ID" });
     const [client] = await db.select().from(clients).where(eq(clients.id, clientId));
     if (!client) return res.status(404).json({ error: "Client not found" });
 
@@ -255,7 +355,8 @@ router.delete("/users/:id", async (req, res) => {
 router.patch("/users/:id/ban", async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
-    const { isBanned, banReason } = req.body;
+    if (isNaN(userId)) return res.status(400).json({ error: "Invalid user ID" });
+    const { isBanned, banReason } = banUserSchema.parse(req.body);
     
     const [user] = await db.select().from(users).where(eq(users.id, userId));
     if (!user) return res.status(404).json({ error: "User not found" });
@@ -269,6 +370,9 @@ router.patch("/users/:id/ban", async (req, res) => {
     const { passwordHash: _omit1, ...safeUpdatedUser } = updatedUser;
     res.json(safeUpdatedUser);
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors[0]?.message || "Invalid input" });
+    }
     console.error("Ban user error:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
@@ -280,6 +384,7 @@ router.patch("/users/:id/ban", async (req, res) => {
 router.get("/users/:id/thumbnails", async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
+    if (isNaN(userId)) return res.status(400).json({ error: "Invalid user ID" });
     const userThumbnails = await db.select().from(thumbnails).where(eq(thumbnails.userId, userId)).orderBy(desc(thumbnails.createdAt));
     res.json(userThumbnails);
   } catch (error) {
@@ -290,6 +395,7 @@ router.get("/users/:id/thumbnails", async (req, res) => {
 router.get("/users/:id/transactions", async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
+    if (isNaN(userId)) return res.status(400).json({ error: "Invalid user ID" });
     const userTransactions = await db.select().from(transactions).where(eq(transactions.userId, userId)).orderBy(desc(transactions.createdAt));
     res.json(userTransactions);
   } catch (error) {
@@ -309,23 +415,31 @@ router.get("/thumbnails", async (_req, res) => {
 router.patch("/thumbnails/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const { title, image, status, notes, downloadUrl, price, creatorName, youtubeUrl, views, videoTitle, category } = req.body;
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid thumbnail ID" });
+    const parsed = updateThumbnailSchema.parse(req.body);
+
+    const [existing] = await db.select({ id: thumbnails.id }).from(thumbnails).where(eq(thumbnails.id, id));
+    if (!existing) return res.status(404).json({ error: "Thumbnail not found" });
+
     const [updated] = await db.update(thumbnails).set({
-      ...(title !== undefined && { title }),
-      ...(image !== undefined && { image }),
-      ...(status !== undefined && { status }),
-      ...(notes !== undefined && { notes }),
-      ...(downloadUrl !== undefined && { downloadUrl }),
-      ...(price !== undefined && { price: parseInt(price) || 0 }),
-      ...(creatorName !== undefined && { creatorName }),
-      ...(youtubeUrl !== undefined && { youtubeUrl }),
-      ...(views !== undefined && { views }),
-      ...(videoTitle !== undefined && { videoTitle }),
-      ...(category !== undefined && { category }),
+      ...(parsed.title !== undefined && { title: parsed.title }),
+      ...(parsed.image !== undefined && { image: parsed.image }),
+      ...(parsed.status !== undefined && { status: parsed.status }),
+      ...(parsed.notes !== undefined && { notes: parsed.notes }),
+      ...(parsed.downloadUrl !== undefined && { downloadUrl: parsed.downloadUrl }),
+      ...(parsed.price !== undefined && { price: parsed.price }),
+      ...(parsed.creatorName !== undefined && { creatorName: parsed.creatorName }),
+      ...(parsed.youtubeUrl !== undefined && { youtubeUrl: parsed.youtubeUrl }),
+      ...(parsed.views !== undefined && { views: parsed.views }),
+      ...(parsed.videoTitle !== undefined && { videoTitle: parsed.videoTitle }),
+      ...(parsed.category !== undefined && { category: parsed.category }),
       updatedAt: new Date(),
     }).where(eq(thumbnails.id, id)).returning();
     res.json(updated);
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors[0]?.message || "Invalid input" });
+    }
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -333,6 +447,10 @@ router.patch("/thumbnails/:id", async (req, res) => {
 router.delete("/thumbnails/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid thumbnail ID" });
+    const [existing] = await db.select({ id: thumbnails.id }).from(thumbnails).where(eq(thumbnails.id, id));
+    if (!existing) return res.status(404).json({ error: "Thumbnail not found" });
+
     await db.delete(thumbnails).where(eq(thumbnails.id, id));
     res.json({ message: "Thumbnail deleted" });
   } catch (error) {
@@ -343,15 +461,20 @@ router.delete("/thumbnails/:id", async (req, res) => {
 router.patch("/transactions/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const { description, amount, status } = req.body;
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid transaction ID" });
+    const parsed = updateTransactionSchema.parse(req.body);
+
+    const [existing] = await db.select({ id: transactions.id, userId: transactions.userId }).from(transactions).where(eq(transactions.id, id));
+    if (!existing) return res.status(404).json({ error: "Transaction not found" });
+
     const [updated] = await db.update(transactions).set({
-      ...(description !== undefined && { description }),
-      ...(amount !== undefined && { amount }),
-      ...(status !== undefined && { status }),
+      ...(parsed.description !== undefined && { description: parsed.description }),
+      ...(parsed.amount !== undefined && { amount: parsed.amount }),
+      ...(parsed.status !== undefined && { status: parsed.status }),
     }).where(eq(transactions.id, id)).returning();
 
     // Notify owner when status is explicitly set to 'paid'
-    if (updated && status === "paid") {
+    if (updated && parsed.status === "paid") {
       await createNotification({
         userId: updated.userId,
         type: "billing",
@@ -361,6 +484,9 @@ router.patch("/transactions/:id", async (req, res) => {
 
     res.json(updated);
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors[0]?.message || "Invalid input" });
+    }
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -368,6 +494,10 @@ router.patch("/transactions/:id", async (req, res) => {
 router.delete("/transactions/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid transaction ID" });
+    const [existing] = await db.select({ id: transactions.id }).from(transactions).where(eq(transactions.id, id));
+    if (!existing) return res.status(404).json({ error: "Transaction not found" });
+
     await db.delete(transactions).where(eq(transactions.id, id));
     res.json({ message: "Transaction deleted" });
   } catch (error) {
@@ -377,38 +507,54 @@ router.delete("/transactions/:id", async (req, res) => {
 
 router.post("/thumbnails", async (req, res) => {
   try {
-    const { userId, title, image, status, notes, downloadUrl, price, creatorName, youtubeUrl, views, videoTitle, category } = req.body;
+    const parsed = createThumbnailSchema.parse(req.body);
+
+    // Verify referenced user exists
+    const [userExists] = await db.select({ id: users.id }).from(users).where(eq(users.id, parsed.userId));
+    if (!userExists) return res.status(404).json({ error: "المستخدم غير موجود" });
+
     const [newThumb] = await db.insert(thumbnails).values({
-      userId: parseInt(userId),
-      title: title || "Untitled",
-      image,
-      status: status || "قيد العمل",
-      notes: notes || null,
-      downloadUrl: downloadUrl || null,
-      price: price ? parseInt(price) : 0,
-      creatorName: creatorName || null,
-      youtubeUrl: youtubeUrl || null,
-      views: views || null,
-      videoTitle: videoTitle || null,
-      category: category || null,
+      userId: parsed.userId,
+      title: parsed.title,
+      image: parsed.image,
+      status: parsed.status,
+      notes: parsed.notes || null,
+      downloadUrl: parsed.downloadUrl || null,
+      price: parsed.price,
+      creatorName: parsed.creatorName || null,
+      youtubeUrl: parsed.youtubeUrl || null,
+      views: parsed.views || null,
+      videoTitle: parsed.videoTitle || null,
+      category: parsed.category || null,
     }).returning();
     res.status(201).json(newThumb);
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors[0]?.message || "Invalid input" });
+    }
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
 router.post("/transactions", async (req, res) => {
   try {
-    const { userId, description, amount, status } = req.body;
+    const parsed = createTransactionSchema.parse(req.body);
+
+    // Verify referenced user exists
+    const [userExists] = await db.select({ id: users.id }).from(users).where(eq(users.id, parsed.userId));
+    if (!userExists) return res.status(404).json({ error: "المستخدم غير موجود" });
+
     const [newTrans] = await db.insert(transactions).values({
-      userId: parseInt(userId),
-      description,
-      amount: parseInt(amount),
-      status: status || "pending"
+      userId: parsed.userId,
+      description: parsed.description,
+      amount: parsed.amount,
+      status: parsed.status,
     }).returning();
     res.status(201).json(newTrans);
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors[0]?.message || "Invalid input" });
+    }
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -416,6 +562,11 @@ router.post("/transactions", async (req, res) => {
 router.patch("/transactions/:id/pay", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid transaction ID" });
+
+    const [existing] = await db.select({ id: transactions.id, userId: transactions.userId, description: transactions.description }).from(transactions).where(eq(transactions.id, id));
+    if (!existing) return res.status(404).json({ error: "Transaction not found" });
+
     const [updated] = await db.update(transactions).set({ status: "paid" }).where(eq(transactions.id, id)).returning();
 
     // Notify the transaction owner
@@ -447,18 +598,18 @@ router.get("/sessions", async (req, res) => {
 
 router.post("/sessions", async (req, res) => {
   try {
-    const { title, durationSeconds } = req.body;
-    if (typeof durationSeconds !== 'number') {
-      return res.status(400).json({ error: "Duration is required" });
-    }
+    const { title, durationSeconds } = createSessionSchema.parse(req.body);
 
     const [newSession] = await db.insert(timeSessions).values({
-      title: title || "جلسة عمل بدون اسم",
-      durationSeconds
+      title,
+      durationSeconds,
     }).returning();
     
     res.status(201).json(newSession);
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors[0]?.message || "Invalid input" });
+    }
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -467,6 +618,7 @@ router.post("/sessions", async (req, res) => {
 router.get("/users/:id/notifications", async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
+    if (isNaN(userId)) return res.status(400).json({ error: "Invalid user ID" });
     const userNotifs = await db.select().from(notifications).where(eq(notifications.userId, userId)).orderBy(desc(notifications.createdAt));
     res.json(userNotifs);
   } catch (error) {
@@ -476,13 +628,23 @@ router.get("/users/:id/notifications", async (req, res) => {
 
 router.post("/notifications", async (req, res) => {
   try {
-    const { userId, message } = req.body;
+    const parsed = createNotificationAdminSchema.parse(req.body);
+
+    // Verify referenced user exists
+    const [userExists] = await db.select({ id: users.id }).from(users).where(eq(users.id, parsed.userId));
+    if (!userExists) return res.status(404).json({ error: "المستخدم غير موجود" });
+
     const [newNotif] = await db.insert(notifications).values({
-      userId: parseInt(userId),
-      message
+      userId: parsed.userId,
+      message: parsed.message,
+      type: parsed.type,
+      read: false,
     }).returning();
     res.status(201).json(newNotif);
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors[0]?.message || "Invalid input" });
+    }
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -490,6 +652,7 @@ router.post("/notifications", async (req, res) => {
 router.delete("/notifications/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid notification ID" });
     await db.delete(notifications).where(eq(notifications.id, id));
     res.json({ success: true });
   } catch (error) {
@@ -501,28 +664,39 @@ router.delete("/notifications/:id", async (req, res) => {
 router.patch("/users/:id/settings", async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
-    const { fullName, avatar, password } = req.body;
+    if (isNaN(userId)) return res.status(400).json({ error: "Invalid user ID" });
+    const { fullName, avatar, password } = userSettingsSchema.parse(req.body);
     
+    const [userRecord] = await db.select({ id: users.id }).from(users).where(eq(users.id, userId));
+    if (!userRecord) return res.status(404).json({ error: "User not found" });
+
     let updateData: any = {};
     if (fullName !== undefined) updateData.fullName = fullName;
-    if (avatar !== undefined) updateData.avatar = avatar;
-    if (password) {
+    if (avatar !== undefined) updateData.avatar = avatar || null;
+    if (password && password.length >= 6) {
       updateData.passwordHash = await bcrypt.hash(password, 10);
     }
     
     const [updated] = await db.update(users).set(updateData).where(eq(users.id, userId)).returning();
+    if (!updated) return res.status(404).json({ error: "User not found" });
+
     // Fix 3 — Strip passwordHash before sending the updated user row.
     const { passwordHash: _omit2, ...safeUpdated } = updated;
     res.json(safeUpdated);
   } catch (error) {
-    console.error(error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors[0]?.message || "Invalid input" });
+    }
+    console.error("Admin user settings update error:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
 // --- Admin: View Comments & Ratings for a user ---
 router.get("/users/:id/comments", async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
+    if (isNaN(userId)) return res.status(400).json({ error: "Invalid user ID" });
     const userThumbs = await db.select().from(thumbnails).where(eq(thumbnails.userId, userId));
     const thumbIds = userThumbs.map(t => t.id);
     if (thumbIds.length === 0) { res.json([]); return; }
@@ -542,6 +716,7 @@ router.get("/users/:id/comments", async (req, res) => {
 router.get("/users/:id/ratings", async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
+    if (isNaN(userId)) return res.status(400).json({ error: "Invalid user ID" });
     const userThumbs = await db.select().from(thumbnails).where(eq(thumbnails.userId, userId));
     const thumbIds = userThumbs.map(t => t.id);
     if (thumbIds.length === 0) { res.json([]); return; }
@@ -562,26 +737,31 @@ router.get("/users/:id/ratings", async (req, res) => {
 router.post("/thumbnails/:id/comments", async (req, res) => {
   try {
     const thumbnailId = parseInt(req.params.id);
-    const { content } = req.body;
+    if (isNaN(thumbnailId)) return res.status(400).json({ error: "Invalid thumbnail ID" });
+    const { content } = adminCommentSchema.parse(req.body);
+
+    const [thumb] = await db.select().from(thumbnails).where(eq(thumbnails.id, thumbnailId));
+    if (!thumb) return res.status(404).json({ error: "Thumbnail not found" });
+
     const [newComment] = await db.insert(comments).values({
       thumbnailId,
       authorName: "المدير",
       isAdmin: true,
-      content
+      content,
     }).returning();
 
     // Notify the thumbnail owner
-    const [thumb] = await db.select().from(thumbnails).where(eq(thumbnails.id, thumbnailId));
-    if (thumb) {
-      await createNotification({
-        userId: thumb.userId,
-        type: "comment",
-        message: `Muhanad left a comment on your thumbnail: "${thumb.title}"`,
-      });
-    }
+    await createNotification({
+      userId: thumb.userId,
+      type: "comment",
+      message: `Muhanad left a comment on your thumbnail: "${thumb.title}"`,
+    });
 
     res.status(201).json(newComment);
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: error.errors[0]?.message || "Invalid input" });
+    }
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -623,6 +803,7 @@ router.get("/revisions", async (_req, res) => {
 router.get("/revisions/thumbnail/:thumbnailId", async (req, res) => {
   try {
     const thumbnailId = parseInt(req.params.thumbnailId);
+    if (isNaN(thumbnailId)) return res.status(400).json({ error: "Invalid thumbnail ID" });
     const revs = await db
       .select()
       .from(revisionRequests)
@@ -640,6 +821,7 @@ const VALID_STATUSES = ["pending", "in_progress", "completed", "rejected"];
 router.patch("/revisions/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid revision ID" });
     const { status } = req.body;
 
     if (!status || !VALID_STATUSES.includes(status)) {
@@ -708,6 +890,7 @@ router.get("/conversations", async (_req, res) => {
 router.get("/conversations/:id/messages", async (req, res) => {
   try {
     const convId = parseInt(req.params.id);
+    if (isNaN(convId)) return res.status(400).json({ error: "Invalid conversation ID" });
     const msgs = await db
       .select()
       .from(chatMessages)
@@ -723,6 +906,7 @@ router.get("/conversations/:id/messages", async (req, res) => {
 router.post("/conversations/:id/messages", async (req, res) => {
   try {
     const convId = parseInt(req.params.id);
+    if (isNaN(convId)) return res.status(400).json({ error: "Invalid conversation ID" });
     const rawBody: unknown = req.body.body;
     if (typeof rawBody !== "string" || rawBody.trim().length === 0) {
       res.status(400).json({ error: "Message body is required." });
@@ -757,6 +941,7 @@ router.post("/conversations/:id/messages", async (req, res) => {
 router.patch("/messages/:id/read", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
+    if (isNaN(id)) return res.status(400).json({ error: "Invalid message ID" });
     const [updated] = await db
       .update(chatMessages)
       .set({ isRead: true })
