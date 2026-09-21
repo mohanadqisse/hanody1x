@@ -105,7 +105,7 @@ export function AboutMe() {
           >
             {data.profileImage ? (
               /* ── Uploaded image ── */
-              <div className="relative w-full overflow-hidden rounded-3xl border border-black/8 shadow-[0_8px_40px_rgba(0,0,0,0.08)]"
+              <div className="relative w-full max-w-sm sm:max-w-md mx-auto md:max-w-none overflow-hidden rounded-3xl border border-black/8 shadow-[0_8px_40px_rgba(0,0,0,0.08)]"
                    style={{ aspectRatio: "3/4" }}>
                 <img
                   src={data.profileImage}
@@ -126,7 +126,7 @@ export function AboutMe() {
             ) : (
               /* ── Empty state — no fake person ── */
               <div
-                className="relative w-full rounded-3xl border border-dashed border-black/12 bg-black/[0.025] flex flex-col items-center justify-center gap-4"
+                className="relative w-full max-w-sm sm:max-w-md mx-auto md:max-w-none rounded-3xl border border-dashed border-black/12 bg-black/[0.025] flex flex-col items-center justify-center gap-4"
                 style={{ aspectRatio: "3/4" }}
               >
                 {/* Subtle monogram / placeholder */}

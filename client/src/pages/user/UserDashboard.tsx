@@ -143,6 +143,9 @@ export default function UserDashboard() {
               color: "var(--dash-ink)",
               display: "flex",
               alignItems: "center",
+              justifyContent: "center",
+              minWidth: "40px",
+              minHeight: "40px",
               padding: "4px",
             }}
             aria-label="Toggle navigation"
@@ -173,9 +176,9 @@ export default function UserDashboard() {
 
         {/* Page content */}
         <div
+          className="p-4 sm:p-6 md:p-8"
           style={{
             flex: 1,
-            padding: "32px 24px",
             maxWidth: "1100px",
             width: "100%",
             margin: "0 auto",

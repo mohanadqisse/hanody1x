@@ -116,17 +116,15 @@ export default function UserSettings() {
               <button
                 type="button"
                 onClick={() => setShowImageOptions(v => !v)}
+                className="opacity-70 sm:opacity-0 hover:opacity-100 transition-opacity"
                 style={{
                   position: "absolute", inset: 0, borderRadius: "50%",
                   background: "rgba(0,0,0,0.5)",
                   display: "flex", alignItems: "center", justifyContent: "center",
                   border: "none", cursor: "pointer", color: "#fff",
-                  opacity: 0, transition: "opacity 0.15s ease",
+                  opacity: showImageOptions ? 1 : undefined,
                 }}
-                onMouseEnter={e => (e.currentTarget.style.opacity = "1")}
-                onMouseLeave={e => {
-                  if (!showImageOptions) e.currentTarget.style.opacity = "0";
-                }}
+                aria-label="Change profile photo"
               >
                 <Camera size={16} />
               </button>
@@ -168,9 +166,23 @@ export default function UserSettings() {
               <p style={{ fontSize: "13.5px", fontWeight: 600, color: "var(--dash-ink)", marginBottom: "4px" }}>
                 {fullName || "Your name"}
               </p>
-              <p style={{ fontSize: "12px", color: "var(--dash-ink-3)" }}>
-                Click the photo to change it
-              </p>
+              <button
+                type="button"
+                onClick={() => setShowImageOptions(v => !v)}
+                style={{
+                  fontSize: "12px",
+                  color: "var(--dash-ink-3)",
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                  textUnderlineOffset: "2px",
+                  fontFamily: "inherit",
+                }}
+              >
+                Click photo to change
+              </button>
             </div>
 
             <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageUpload} className="hidden" />

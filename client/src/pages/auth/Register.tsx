@@ -272,10 +272,10 @@ export default function Register() {
                   onSubmit={handleRegister}
                   style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}
                 >
-                  {/* Two-col: Full Name + Username */}
+                  {/* Two-col: Full Name + Username (stacks on mobile, 2-col on sm+) */}
                   <motion.div
                     variants={stagger.item}
-                    style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.85rem" }}
+                    className="grid grid-cols-1 sm:grid-cols-2 gap-3"
                   >
                     <div>
                       <FieldLabel htmlFor="reg-fullname">Full Name</FieldLabel>

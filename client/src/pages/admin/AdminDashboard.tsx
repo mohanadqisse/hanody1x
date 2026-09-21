@@ -768,7 +768,7 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-background flex flex-col md:flex-row-reverse font-sans" dir="rtl">
 
       {/* SIDEBAR */}
-      <aside className="w-full md:w-64 bg-card/60 border-l border-white/10 flex flex-col p-6 h-auto md:h-screen sticky top-0">
+      <aside className="w-full md:w-64 bg-card/60 border-l border-white/10 flex flex-col p-6 h-auto md:h-screen static md:sticky md:top-0">
         <div className="flex flex-col gap-2 items-center text-center pb-8 border-b border-white/10 mb-8">
           <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-primary to-secondary flex items-center justify-center overflow-hidden mb-2">
             {sections.brand?.logoImage ? (
@@ -1105,8 +1105,8 @@ export default function AdminDashboard() {
 
                           {/* Expanded Ratings Table */}
                           {isExpanded && (
-                            <div className="border-t border-white/5 px-4 sm:px-5 pb-4">
-                              <table className="w-full text-right mt-3" dir="rtl">
+                            <div className="border-t border-white/5 px-4 sm:px-5 pb-4 overflow-x-auto">
+                              <table className="w-full text-right mt-3 min-w-[340px]" dir="rtl">
                                 <thead>
                                   <tr className="text-muted-foreground text-xs border-b border-white/10">
                                     <th className="pb-2 px-3 font-bold">صورة العمل المختارة</th>

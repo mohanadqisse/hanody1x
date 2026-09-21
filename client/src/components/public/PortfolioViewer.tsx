@@ -79,7 +79,7 @@ export function PortfolioViewer({ item, onClose }: PortfolioViewerProps) {
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 sm:top-6 sm:right-6 w-9 h-9 rounded-full bg-black/5 hover:bg-black/10 flex items-center justify-center text-black/60 hover:text-black transition-colors z-20 cursor-pointer"
+            className="absolute top-3 right-3 sm:top-6 sm:right-6 w-10 h-10 rounded-full bg-white/90 sm:bg-black/5 hover:bg-white sm:hover:bg-black/10 shadow-md sm:shadow-none flex items-center justify-center text-black/70 hover:text-black transition-all z-30 cursor-pointer backdrop-blur-sm"
             aria-label="Close viewer"
           >
             <X size={18} />
@@ -122,7 +122,7 @@ export function PortfolioViewer({ item, onClose }: PortfolioViewerProps) {
                     <span className="text-[10px] font-bold uppercase tracking-widest text-black/35 block mb-1">
                       Creator / Channel
                     </span>
-                    <h3 className="text-2xl font-black text-black tracking-tight leading-tight">
+                    <h3 className="text-2xl font-black text-black tracking-tight leading-tight break-words">
                       {item.creatorName}
                     </h3>
                   </div>
@@ -134,7 +134,7 @@ export function PortfolioViewer({ item, onClose }: PortfolioViewerProps) {
                     <span className="text-[10px] font-bold uppercase tracking-widest text-black/35 block mb-1">
                       Video Title
                     </span>
-                    <p className="text-sm font-medium text-black/75 leading-snug">
+                    <p className="text-sm font-medium text-black/75 leading-snug break-words">
                       {item.videoTitle}
                     </p>
                   </div>

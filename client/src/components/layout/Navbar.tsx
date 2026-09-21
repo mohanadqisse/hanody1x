@@ -199,7 +199,7 @@ export function Navbar() {
             </Link>
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-black/5 transition-colors text-black"
+              className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-black/5 transition-colors text-black"
               aria-label="Toggle menu"
             >
               <AnimatePresence mode="wait" initial={false}>

@@ -26,7 +26,7 @@ export function Footer() {
           </Link>
 
           {/* Nav links */}
-          <nav className="flex items-center gap-6">
+          <nav className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
             {footerLinks.map((link) => {
               if (link.href.startsWith("/#")) {
                 const id = link.href.slice(2);
@@ -51,7 +51,7 @@ export function Footer() {
           </nav>
 
           {/* Copyright */}
-          <p className="text-xs text-black/30">
+          <p className="text-xs text-black/30 text-center md:text-right">
             © {new Date().getFullYear()} MUHANAD · hanody1x.com
           </p>
         </div>

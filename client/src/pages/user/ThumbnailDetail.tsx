@@ -437,10 +437,10 @@ function RevisionSection({ thumbnailId }: { thumbnailId: number }) {
 function MetaRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div style={{ display: "flex", gap: "8px", padding: "9px 0", borderBottom: "1px solid var(--dash-border)" }}>
-      <span style={{ fontSize: "11.5px", fontWeight: 600, color: "var(--dash-ink-3)", width: "130px", flexShrink: 0, paddingTop: "1px" }}>
+      <span style={{ fontSize: "11.5px", fontWeight: 600, color: "var(--dash-ink-3)", width: "120px", flexShrink: 0, paddingTop: "1px" }}>
         {label}
       </span>
-      <span style={{ fontSize: "13px", color: "var(--dash-ink)", flex: 1, lineHeight: 1.5 }}>
+      <span style={{ fontSize: "13px", color: "var(--dash-ink)", flex: 1, lineHeight: 1.5, wordBreak: "break-word" }}>
         {value}
       </span>
     </div>
@@ -531,16 +531,7 @@ export default function ThumbnailDetail() {
           />
 
           {/* ── Main layout ── */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "minmax(0, 3fr) minmax(0, 2fr)",
-              gap: "24px",
-              marginBottom: "24px",
-              alignItems: "start",
-            }}
-            className="detail-grid"
-          >
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] gap-6 mb-6 items-start">
             {/* Left — image + actions */}
             <div>
               <div
@@ -620,15 +611,6 @@ export default function ThumbnailDetail() {
           </div>
         </motion.div>
       ) : null}
-
-      {/* Responsive grid: single column on mobile */}
-      <style>{`
-        @media (max-width: 768px) {
-          .detail-grid {
-            grid-template-columns: 1fr !important;
-          }
-        }
-      `}</style>
     </div>
   );
 }

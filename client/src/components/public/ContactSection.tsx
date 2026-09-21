@@ -157,7 +157,7 @@ export function ContactSection() {
                 <button
                   type="submit"
                   disabled={status === "loading"}
-                  className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-black text-white text-sm font-semibold hover:bg-black/80 transition-colors disabled:opacity-50 group"
+                  className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-full bg-black text-white text-sm font-semibold hover:bg-black/80 transition-colors disabled:opacity-50 group w-full sm:w-auto"
                 >
                   {status === "loading" ? "Sending..." : "Send Message"}
                   <Send size={14} className="transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />

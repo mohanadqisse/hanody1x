@@ -42,7 +42,7 @@ export function Hero() {
           {/* Editorial Headline */}
           <motion.h1
             variants={heroVariants.item}
-            className="text-[2.4rem] sm:text-6xl md:text-7xl lg:text-[5.5rem] xl:text-[6rem] font-black text-black leading-[0.98] tracking-[-0.035em] mb-7 sm:mb-9"
+            className="text-[clamp(2.15rem,8.2vw,2.4rem)] sm:text-6xl md:text-7xl lg:text-[5.5rem] xl:text-[6rem] font-black text-black leading-[0.98] tracking-[-0.035em] mb-7 sm:mb-9"
           >
             THUMBNAILS
             <br />

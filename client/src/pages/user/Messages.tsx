@@ -128,9 +128,15 @@ function Thread({ conv, onBack }: ThreadProps) {
         {onBack && (
           <button
             onClick={onBack}
-            style={{ background: "none", border: "none", cursor: "pointer", display: "flex", padding: "2px", color: "var(--dash-ink-2)" }}
+            style={{
+              background: "none", border: "none", cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              minWidth: "36px", minHeight: "36px", padding: "6px",
+              color: "var(--dash-ink-2)", borderRadius: "6px",
+            }}
+            aria-label="Back to conversations"
           >
-            <ArrowLeft size={15} />
+            <ArrowLeft size={16} />
           </button>
         )}
         <div>
@@ -351,7 +357,7 @@ export default function Messages() {
                 </motion.div>
               ) : activeConv ? (
                 <motion.div key="thread" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}>
-                  <div className="dash-card" style={{ padding: 0, height: "520px", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+                  <div className="dash-card" style={{ padding: 0, height: "calc(100dvh - 220px)", minHeight: "420px", maxHeight: "680px", display: "flex", flexDirection: "column", overflow: "hidden" }}>
                     <Thread conv={activeConv} onBack={() => setMobileView("list")} />
                   </div>
                 </motion.div>

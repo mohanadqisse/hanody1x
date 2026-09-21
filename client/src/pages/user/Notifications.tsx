@@ -86,6 +86,7 @@ function NotifRow({
           color: "var(--dash-ink)",
           lineHeight: 1.5,
           fontWeight: notif.read ? 400 : 600,
+          wordBreak: "break-word",
         }}>
           {notif.message}
         </p>
@@ -101,8 +102,10 @@ function NotifRow({
           title="Mark as read"
           style={{
             background: "none", border: "1px solid var(--dash-border)", borderRadius: "6px",
-            padding: "4px 8px", cursor: "pointer", fontSize: "11px",
+            padding: "6px 10px", cursor: "pointer", fontSize: "11px",
+            minHeight: "32px", minWidth: "44px",
             color: "var(--dash-ink-3)", fontFamily: "inherit", flexShrink: 0,
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
             transition: "border-color 0.13s ease",
           }}
           onMouseEnter={e => (e.currentTarget.style.borderColor = "#aaa")}
