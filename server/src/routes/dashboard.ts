@@ -202,9 +202,23 @@ router.delete("/clients/:id", async (req, res) => {
 // =======================
 // Platform Users Management
 // =======================
-router.get("/users", async (req, res) => {
+router.get("/users", async (_req, res) => {
   try {
-    const allUsers = await db.select().from(users).orderBy(desc(users.createdAt));
+    // Fix 3 — Explicit field projection: never return passwordHash to the client.
+    const allUsers = await db
+      .select({
+        id: users.id,
+        fullName: users.fullName,
+        username: users.username,
+        email: users.email,
+        role: users.role,
+        avatar: users.avatar,
+        isBanned: users.isBanned,
+        banReason: users.banReason,
+        createdAt: users.createdAt,
+      })
+      .from(users)
+      .orderBy(desc(users.createdAt));
     res.json(allUsers);
   } catch (error) {
     res.status(500).json({ error: "Internal Server Error" });
@@ -251,7 +265,9 @@ router.patch("/users/:id/ban", async (req, res) => {
       banReason: isBanned ? banReason : null
     }).where(eq(users.id, userId)).returning();
 
-    res.json(updatedUser);
+    // Fix 3 — Strip passwordHash before sending the updated user row.
+    const { passwordHash: _omit1, ...safeUpdatedUser } = updatedUser;
+    res.json(safeUpdatedUser);
   } catch (error) {
     console.error("Ban user error:", error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -495,7 +511,9 @@ router.patch("/users/:id/settings", async (req, res) => {
     }
     
     const [updated] = await db.update(users).set(updateData).where(eq(users.id, userId)).returning();
-    res.json(updated);
+    // Fix 3 — Strip passwordHash before sending the updated user row.
+    const { passwordHash: _omit2, ...safeUpdated } = updated;
+    res.json(safeUpdated);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Internal Server Error" });

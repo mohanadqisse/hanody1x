@@ -3,8 +3,17 @@ import { db } from "./lib/db.js";
 import { adminUsers } from "./schema/index.js";
 import { eq } from "drizzle-orm";
 
-const DEFAULT_USERNAME = process.env.ADMIN_USERNAME || "admin";
-const DEFAULT_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
+// Fix 5 — Require explicit env vars. Never fall back to hardcoded credentials.
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+
+if (!ADMIN_USERNAME || !ADMIN_PASSWORD) {
+  console.error(
+    "Error: ADMIN_USERNAME and ADMIN_PASSWORD must be set in environment " +
+    "before running the seed script."
+  );
+  process.exit(1);
+}
 
 async function seed() {
   console.log("Starting database seed...");
@@ -12,26 +21,26 @@ async function seed() {
   const [existing] = await db
     .select()
     .from(adminUsers)
-    .where(eq(adminUsers.username, DEFAULT_USERNAME));
+    .where(eq(adminUsers.username, ADMIN_USERNAME!));
 
   if (existing) {
-    console.log(`Admin user '${DEFAULT_USERNAME}' already exists.`);
-    const hash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+    console.log(`Admin user '${ADMIN_USERNAME}' already exists.`);
+    const hash = await bcrypt.hash(ADMIN_PASSWORD!, 10);
     await db
       .update(adminUsers)
       .set({ passwordHash: hash })
-      .where(eq(adminUsers.username, DEFAULT_USERNAME));
+      .where(eq(adminUsers.username, ADMIN_USERNAME!));
     console.log("Password updated.");
   } else {
-    const hash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
+    const hash = await bcrypt.hash(ADMIN_PASSWORD!, 10);
     await db.insert(adminUsers).values({
-      username: DEFAULT_USERNAME,
+      username: ADMIN_USERNAME!,
       passwordHash: hash,
     });
-    console.log(`Admin user '${DEFAULT_USERNAME}' created.`);
+    console.log(`Admin user '${ADMIN_USERNAME}' created.`);
   }
 
-  console.log(`\nLogin credentials:\n  Username: ${DEFAULT_USERNAME}\n  Password: ${DEFAULT_PASSWORD}\n`);
+  console.log(`\nAdmin username: ${ADMIN_USERNAME}\n`);
   process.exit(0);
 }
 

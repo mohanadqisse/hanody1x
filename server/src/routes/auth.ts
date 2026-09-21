@@ -43,7 +43,7 @@ router.post("/login", loginLimiter, async (req, res) => {
     }
 
     await db.insert(loginLogs).values({ username, ipAddress, deviceInfo, success: true, attemptedAt: new Date() });
-    const token = signToken({ id: user.id, username: user.username });
+    const token = signToken({ id: user.id, username: user.username, role: "admin" });
     res.json({ token, username: user.username });
   } catch (err) {
     if (err instanceof z.ZodError) {

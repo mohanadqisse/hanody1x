@@ -28,7 +28,7 @@ async function ensureTables() {
     await db.execute(sql`CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, username TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL, full_name TEXT NOT NULL, email TEXT, avatar TEXT, role TEXT NOT NULL DEFAULT 'user', created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
     await db.execute(sql`CREATE TABLE IF NOT EXISTS thumbnails (id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id), title TEXT NOT NULL, image TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', download_url TEXT, notes TEXT, price INTEGER, created_at TIMESTAMP DEFAULT NOW() NOT NULL, updated_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
     await db.execute(sql`CREATE TABLE IF NOT EXISTS transactions (id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id) NOT NULL, description TEXT NOT NULL, amount INTEGER NOT NULL, status TEXT NOT NULL DEFAULT 'pending', date TIMESTAMP DEFAULT NOW(), created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
-    await db.execute(sql`CREATE TABLE IF NOT EXISTS creator_codes (id SERIAL PRIMARY KEY, code TEXT NOT NULL UNIQUE, full_name TEXT NOT NULL, email TEXT, used BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
+    await db.execute(sql`CREATE TABLE IF NOT EXISTS creator_codes (id SERIAL PRIMARY KEY, code TEXT NOT NULL UNIQUE, is_active BOOLEAN NOT NULL DEFAULT TRUE, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
     await db.execute(sql`CREATE TABLE IF NOT EXISTS comments (id SERIAL PRIMARY KEY, thumbnail_id INTEGER REFERENCES thumbnails(id) NOT NULL, author_name TEXT NOT NULL, is_admin BOOLEAN NOT NULL DEFAULT FALSE, content TEXT NOT NULL, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
     await db.execute(sql`CREATE TABLE IF NOT EXISTS ratings (id SERIAL PRIMARY KEY, thumbnail_id INTEGER REFERENCES thumbnails(id) NOT NULL, user_id INTEGER REFERENCES users(id) NOT NULL, rating INTEGER NOT NULL, comment TEXT, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
     await db.execute(sql`CREATE TABLE IF NOT EXISTS notifications (id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id) NOT NULL, message TEXT NOT NULL, read BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
@@ -45,21 +45,29 @@ async function ensureTables() {
     try { await db.execute(sql`ALTER TABLE thumbnails ADD COLUMN IF NOT EXISTS category TEXT`); } catch(e) {}
     // Add type column to notifications (safe, existing rows default to 'system')
     try { await db.execute(sql`ALTER TABLE notifications ADD COLUMN IF NOT EXISTS type TEXT NOT NULL DEFAULT 'system'`); } catch(e) {}
+    // Fix 6 — Ensure is_active column exists on creator_codes for databases created with the old DDL
+    try { await db.execute(sql`ALTER TABLE creator_codes ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE`); } catch(e) {}
     console.log("Database tables verified (safe migration - no data loss)");
 
-    // Auto-seed admin if it doesn't exist
+    // Fix 5 — Safe admin seeding: only runs when no admin account exists.
+    // Requires ADMIN_USERNAME and ADMIN_PASSWORD env vars on a fresh deployment.
+    // Existing production databases with an existing admin are never modified.
     const { adminUsers } = await import("./schema/index.js");
-    const { eq } = await import("drizzle-orm");
     const bcrypt = (await import("bcryptjs")).default;
-    
-    const DEFAULT_USERNAME = process.env.ADMIN_USERNAME || "admin";
-    const DEFAULT_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
-    
-    const [existingAdmin] = await db.select().from(adminUsers).where(eq(adminUsers.username, DEFAULT_USERNAME));
-    if (!existingAdmin) {
-      const hash = await bcrypt.hash(DEFAULT_PASSWORD, 10);
-      await db.insert(adminUsers).values({ username: DEFAULT_USERNAME, passwordHash: hash });
-      console.log(`Auto-seeded admin user: ${DEFAULT_USERNAME}`);
+
+    const [anyAdmin] = await db.select({ id: adminUsers.id }).from(adminUsers);
+    if (!anyAdmin) {
+      const ADMIN_USERNAME = process.env.ADMIN_USERNAME;
+      const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+      if (!ADMIN_USERNAME || !ADMIN_PASSWORD) {
+        throw new Error(
+          "No admin account exists in the database. " +
+          "Set ADMIN_USERNAME and ADMIN_PASSWORD environment variables to seed the initial admin account."
+        );
+      }
+      const hash = await bcrypt.hash(ADMIN_PASSWORD, 10);
+      await db.insert(adminUsers).values({ username: ADMIN_USERNAME, passwordHash: hash });
+      console.log(`Admin account created for: ${ADMIN_USERNAME}`);
     }
   } catch (err) {
     console.error("Database table check error:", err);
