@@ -10,7 +10,8 @@ import {
   LogOut, Save, Upload, Trash2, Settings, Mail, MailOpen,
   ChevronDown, ChevronUp, Package, User, AtSign, Clock,
   Inbox, Shield, ShieldCheck, ShieldX, Globe, Smartphone,
-  Monitor, LayoutDashboard, Users, Database, Play, Square, FileText, CheckCircle, Edit, Star, ArrowRight, ArrowLeft, RefreshCw
+  Monitor, LayoutDashboard, Users, Database, Play, Square, FileText, CheckCircle, Edit, Star, ArrowRight, ArrowLeft, RefreshCw,
+  MessageSquare, GitPullRequest, Send
 } from "lucide-react";
 import { caseStudies as defaultCaseStudies } from "@/lib/data";
 import UserContentManager from "./UserContentManager";
@@ -63,8 +64,8 @@ export default function AdminDashboard() {
   const { isAuthenticated, logout, token } = useAdmin();
   const { toast } = useToast();
 
-  // Tabs: 'home' | 'clients' | 'content' | 'inbox' | 'logs' | 'users' | 'codes' | 'creators' | 'public_ratings'
-  const [activeTab, setActiveTab] = useState<'home' | 'clients' | 'users' | 'content' | 'codes' | 'creators' | 'public_ratings'>('home');
+  // Tabs
+  const [activeTab, setActiveTab] = useState<'home' | 'clients' | 'users' | 'content' | 'codes' | 'creators' | 'public_ratings' | 'revisions' | 'messages'>('home');
 
   // Existing states
   const [sections, setSections] = useState<Record<string, any>>({});
@@ -86,6 +87,52 @@ export default function AdminDashboard() {
   const [managingUser, setManagingUser] = useState<any>(null);
   const [publicRatingsData, setPublicRatingsData] = useState<any[]>([]);
   const [expandedVisitors, setExpandedVisitors] = useState<Set<string>>(new Set());
+
+  // ── Revision Requests state ─────────────────────────
+  interface AdminRevision {
+    id: number;
+    thumbnailId: number;
+    userId: number;
+    message: string;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
+    thumbnailTitle: string | null;
+    thumbnailImage: string | null;
+    userFullName: string | null;
+    userEmail: string | null;
+  }
+  const [revisionsData, setRevisionsData] = useState<AdminRevision[]>([]);
+  const [revisionsLoading, setRevisionsLoading] = useState(false);
+  const [revisionUpdating, setRevisionUpdating] = useState<number | null>(null);
+
+  // ── Admin Messaging state ────────────────────────────
+  interface AdminConversation {
+    id: number;
+    userId: number;
+    subject: string;
+    createdAt: string;
+    updatedAt: string;
+    userFullName: string | null;
+    userEmail: string | null;
+  }
+  interface AdminChatMessage {
+    id: number;
+    conversationId: number;
+    senderType: string;
+    body: string;
+    isRead: boolean;
+    createdAt: string;
+  }
+  const [adminConvs, setAdminConvs] = useState<AdminConversation[]>([]);
+  const [adminConvsLoading, setAdminConvsLoading] = useState(false);
+  const [activeConvId, setActiveConvId] = useState<number | null>(null);
+  const [adminMsgs, setAdminMsgs] = useState<AdminChatMessage[]>([]);
+  const [adminMsgsLoading, setAdminMsgsLoading] = useState(false);
+  const [adminReplyBody, setAdminReplyBody] = useState("");
+  const [adminReplySending, setAdminReplySending] = useState(false);
+  // Mobile: 'list' | 'thread'
+  const [adminMsgMobileView, setAdminMsgMobileView] = useState<'list' | 'thread'>('list');
 
   // Timer State
   const [isTracking, setIsTracking] = useState(false);
@@ -760,6 +807,14 @@ export default function AdminDashboard() {
             <Star className="w-5 h-5 flex-shrink-0" />
             <span>تقييم العملاء للصور</span>
           </button>
+          <button onClick={() => { setActiveTab('revisions'); setRevisionsLoading(true); fetch(API_BASE + "/api/dashboard/revisions", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()).then((d: AdminRevision[]) => setRevisionsData(d)).catch(() => {}).finally(() => setRevisionsLoading(false)); }} className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${activeTab === 'revisions' ? 'bg-primary/20 text-primary font-bold' : 'text-muted-foreground hover:bg-white/5 hover:text-foreground'}`}>
+            <GitPullRequest className="w-5 h-5 flex-shrink-0" />
+            <span>طلبات التعديلات</span>
+          </button>
+          <button onClick={() => { setActiveTab('messages'); setAdminConvsLoading(true); fetch(API_BASE + "/api/dashboard/conversations", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()).then((d: AdminConversation[]) => setAdminConvs(d)).catch(() => {}).finally(() => setAdminConvsLoading(false)); }} className={`flex items-center gap-3 px-4 py-3 rounded-2xl transition-all ${activeTab === 'messages' ? 'bg-primary/20 text-primary font-bold' : 'text-muted-foreground hover:bg-white/5 hover:text-foreground'}`}>
+            <MessageSquare className="w-5 h-5 flex-shrink-0" />
+            <span>الرسائل</span>
+          </button>
         </nav>
 
         <div className="pt-8 border-t border-white/10 mt-auto">
@@ -1147,6 +1202,33 @@ export default function AdminDashboard() {
                         </Button>
                         <Button
                           size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setAdminConvsLoading(true);
+                            setActiveTab('messages');
+                            setActiveConvId(null);
+                            setAdminMsgMobileView('list');
+                            fetch(API_BASE + "/api/dashboard/conversations", { headers: { Authorization: `Bearer ${token}` } })
+                              .then(r => r.json())
+                              .then((d: AdminConversation[]) => {
+                                setAdminConvs(d);
+                                // Auto-select this user's conversation if exists
+                                const userConv = d.find(c => c.userId === user.id);
+                                if (userConv) {
+                                  setActiveConvId(userConv.id);
+                                  setAdminMsgMobileView('thread');
+                                }
+                              })
+                              .catch(() => {})
+                              .finally(() => setAdminConvsLoading(false));
+                          }}
+                          className="rounded-xl w-full sm:w-auto h-10 border-white/10 text-muted-foreground hover:text-foreground"
+                          title="مراسلة المستخدم"
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="sm"
                           variant="destructive"
                           onClick={() => setModalConfig({ isOpen: true, type: 'deletePlatformUser', title: 'حذف المستخدم نهائياً', description: 'هل أنت متأكد من حذف هذا المستخدم وكل بياناته؟', clientId: user.id })}
                           className="rounded-xl w-full sm:w-auto h-10 bg-red-900/50 hover:bg-red-600 text-white"
@@ -1161,7 +1243,352 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
-{activeTab === 'clients' && (
+
+        {/* ═══════════════════════════════════════════════════════
+            TAB: REVISIONS
+            ═══════════════════════════════════════════════════════ */}
+        {activeTab === 'revisions' && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="bg-card/40 border border-white/5 rounded-3xl p-6 sm:p-10">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 border-b border-white/10 pb-6">
+                <div>
+                  <h2 className="text-2xl font-black text-foreground mb-2">طلبات التعديلات</h2>
+                  <p className="text-sm text-muted-foreground">طلبات التعديل المقدمة من صناع المحتوى على الثمنيلات.</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-border text-muted-foreground hover:text-foreground text-xs rounded-xl"
+                  disabled={revisionsLoading}
+                  onClick={() => {
+                    setRevisionsLoading(true);
+                    fetch(API_BASE + "/api/dashboard/revisions", { headers: { Authorization: `Bearer ${token}` } })
+                      .then(r => r.json())
+                      .then((d: AdminRevision[]) => setRevisionsData(d))
+                      .catch(() => {})
+                      .finally(() => setRevisionsLoading(false));
+                  }}
+                >
+                  {revisionsLoading ? 'جارٍ التحميل...' : 'تحديث'}
+                </Button>
+              </div>
+
+              {revisionsLoading ? (
+                <div className="space-y-4">
+                  {[0,1,2].map(i => (
+                    <div key={i} className="animate-pulse bg-white/5 rounded-2xl h-24" />
+                  ))}
+                </div>
+              ) : revisionsData.length === 0 ? (
+                <div className="text-center py-20">
+                  <GitPullRequest className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
+                  <p className="text-muted-foreground">لا توجد طلبات تعديل حالياً.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {revisionsData.map(rev => (
+                    <div key={rev.id} className="bg-black/20 border border-white/5 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row gap-4 hover:border-white/10 transition-colors">
+                      {/* Thumbnail preview */}
+                      <div className="shrink-0">
+                        {rev.thumbnailImage ? (
+                          <img
+                            src={rev.thumbnailImage}
+                            alt={rev.thumbnailTitle ?? ''}
+                            className="w-28 h-16 object-cover rounded-xl border border-white/10"
+                          />
+                        ) : (
+                          <div className="w-28 h-16 bg-white/5 rounded-xl flex items-center justify-center">
+                            <FileText className="w-6 h-6 text-muted-foreground/30" />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                          <span className="font-bold text-sm text-foreground">{rev.thumbnailTitle ?? 'ثمنيل'}</span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                            rev.status === 'completed' ? 'bg-green-500/20 text-green-400'
+                            : rev.status === 'in_progress' ? 'bg-blue-500/20 text-blue-400'
+                            : rev.status === 'rejected' ? 'bg-red-500/20 text-red-400'
+                            : 'bg-yellow-500/20 text-yellow-400'
+                          }`}>{{
+                            pending: 'قيد الانتظار',
+                            in_progress: 'قيد المراجعة',
+                            completed: 'مكتمل',
+                            rejected: 'مرفوض',
+                          }[rev.status] ?? rev.status}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mb-1">
+                          <span className="font-bold text-foreground">{rev.userFullName ?? 'مستخدم'}</span>
+                          {rev.userEmail && <span> · {rev.userEmail}</span>}
+                        </p>
+                        <p className="text-sm text-muted-foreground bg-white/5 rounded-lg px-3 py-2 mt-2 leading-relaxed">{rev.message}</p>
+                        <p className="text-xs text-muted-foreground mt-2">{new Date(rev.createdAt).toLocaleDateString('ar-JO')}</p>
+                      </div>
+
+                      {/* Status update */}
+                      <div className="shrink-0 flex items-center">
+                        <select
+                          value={rev.status}
+                          disabled={revisionUpdating === rev.id}
+                          onChange={async (e) => {
+                            const newStatus = e.target.value;
+                            setRevisionUpdating(rev.id);
+                            try {
+                              const res = await fetch(API_BASE + `/api/dashboard/revisions/${rev.id}`, {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                                body: JSON.stringify({ status: newStatus }),
+                              });
+                              if (res.ok) {
+                                setRevisionsData(prev => prev.map(r => r.id === rev.id ? { ...r, status: newStatus } : r));
+                                toast({ title: 'تم تحديث الحالة' });
+                              } else {
+                                toast({ title: 'فشل التحديث', variant: 'destructive' });
+                              }
+                            } catch {
+                              toast({ title: 'حدث خطأ', variant: 'destructive' });
+                            } finally {
+                              setRevisionUpdating(null);
+                            }
+                          }}
+                          className="bg-black/30 border border-white/10 text-foreground text-xs rounded-xl px-3 py-2 cursor-pointer focus:outline-none focus:border-primary/50 transition-colors disabled:opacity-50"
+                        >
+                          <option value="pending">قيد الانتظار</option>
+                          <option value="in_progress">قيد المراجعة</option>
+                          <option value="completed">مكتمل</option>
+                          <option value="rejected">مرفوض</option>
+                        </select>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════
+            TAB: MESSAGES
+            ═══════════════════════════════════════════════════════ */}
+        {activeTab === 'messages' && (() => {
+          const activeConv = adminConvs.find(c => c.id === activeConvId) ?? null;
+
+          const loadMessages = async (convId: number) => {
+            setAdminMsgsLoading(true);
+            try {
+              const res = await fetch(API_BASE + `/api/dashboard/conversations/${convId}/messages`, {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              if (res.ok) {
+                const msgs: AdminChatMessage[] = await res.json();
+                setAdminMsgs(msgs);
+                // Mark unread admin messages (from user) as read
+                msgs.filter(m => !m.isRead && m.senderType === 'user').forEach(m => {
+                  fetch(API_BASE + `/api/dashboard/messages/${m.id}/read`, {
+                    method: 'PATCH', headers: { Authorization: `Bearer ${token}` },
+                  }).catch(() => {});
+                });
+              }
+            } catch { /* non-critical */ } finally {
+              setAdminMsgsLoading(false);
+            }
+          };
+
+          const selectConv = (conv: AdminConversation) => {
+            setActiveConvId(conv.id);
+            setAdminMsgMobileView('thread');
+            loadMessages(conv.id);
+          };
+
+          const sendReply = async () => {
+            if (!activeConvId || !adminReplyBody.trim() || adminReplySending) return;
+            const body = adminReplyBody.trim();
+            setAdminReplySending(true);
+            try {
+              const res = await fetch(API_BASE + `/api/dashboard/conversations/${activeConvId}/messages`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ body }),
+              });
+              if (res.ok) {
+                const msg: AdminChatMessage = await res.json();
+                setAdminMsgs(prev => [...prev, msg]);
+                setAdminReplyBody('');
+                // Bump conv updatedAt in local state
+                setAdminConvs(prev => prev.map(c =>
+                  c.id === activeConvId ? { ...c, updatedAt: new Date().toISOString() } : c
+                ));
+              } else {
+                toast({ title: 'فشل الإرسال', variant: 'destructive' });
+              }
+            } catch {
+              toast({ title: 'حدث خطأ', variant: 'destructive' });
+            } finally {
+              setAdminReplySending(false);
+            }
+          };
+
+          const ConvList = () => (
+            <div style={{ borderLeft: '1px solid rgba(255,255,255,0.07)', overflowY: 'auto' }}>
+              <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+                <p style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--muted-foreground, #888)' }}>المحادثات</p>
+              </div>
+              {adminConvsLoading ? (
+                <div style={{ padding: '16px' }}>
+                  {[0,1,2].map(i => <div key={i} className="animate-pulse bg-white/5 rounded-xl h-14 mb-2" />)}
+                </div>
+              ) : adminConvs.length === 0 ? (
+                <div style={{ padding: '40px 16px', textAlign: 'center', color: 'rgba(255,255,255,0.3)', fontSize: '13px' }}>
+                  لا توجد محادثات
+                </div>
+              ) : (
+                adminConvs.map(conv => (
+                  <div
+                    key={conv.id}
+                    onClick={() => selectConv(conv)}
+                    style={{
+                      padding: '12px 16px',
+                      cursor: 'pointer',
+                      borderBottom: '1px solid rgba(255,255,255,0.05)',
+                      background: activeConvId === conv.id ? 'rgba(255,255,255,0.05)' : 'transparent',
+                      borderRight: activeConvId === conv.id ? '3px solid hsl(var(--primary))' : '3px solid transparent',
+                      transition: 'background 0.12s ease',
+                    }}
+                    onMouseEnter={e => { if (activeConvId !== conv.id) (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.03)'; }}
+                    onMouseLeave={e => { if (activeConvId !== conv.id) (e.currentTarget as HTMLDivElement).style.background = 'transparent'; }}
+                  >
+                    <p style={{ fontSize: '13px', fontWeight: 600, color: 'var(--foreground, #fff)', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {conv.userFullName ?? 'مستخدم'}
+                    </p>
+                    <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {conv.userEmail ?? ''}
+                    </p>
+                    <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.25)', marginTop: '2px' }}>
+                      {new Date(conv.updatedAt).toLocaleDateString('ar-JO')}
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
+          );
+
+          const ThreadView = () => (
+            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
+              {/* Thread header */}
+              <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(0,0,0,0.15)' }}>
+                <button
+                  onClick={() => { setAdminMsgMobileView('list'); setActiveConvId(null); }}
+                  className="sm:hidden"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.5)', padding: '2px' }}
+                >
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+                <div>
+                  <p style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--foreground, #fff)' }}>{activeConv?.userFullName ?? 'مستخدم'}</p>
+                  <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>{activeConv?.userEmail ?? ''}</p>
+                </div>
+              </div>
+
+              {/* Messages */}
+              <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {adminMsgsLoading ? (
+                  [0,1,2].map(i => (
+                    <div key={i} className="animate-pulse" style={{ alignSelf: i % 2 === 0 ? 'flex-end' : 'flex-start', width: '50%' }}>
+                      <div style={{ height: '44px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)' }} />
+                    </div>
+                  ))
+                ) : adminMsgs.length === 0 ? (
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.25)', fontSize: '13px' }}>
+                    لا توجد رسائل في هذه المحادثة
+                  </div>
+                ) : (
+                  adminMsgs.map(msg => (
+                    <div
+                      key={msg.id}
+                      style={{
+                        alignSelf: msg.senderType === 'admin' ? 'flex-end' : 'flex-start',
+                        maxWidth: '72%',
+                        padding: '10px 14px',
+                        borderRadius: '12px',
+                        fontSize: '13.5px',
+                        lineHeight: 1.55,
+                        background: msg.senderType === 'admin' ? 'hsl(var(--primary))' : 'rgba(255,255,255,0.08)',
+                        color: msg.senderType === 'admin' ? '#fff' : 'var(--foreground, #fff)',
+                        border: msg.senderType === 'admin' ? 'none' : '1px solid rgba(255,255,255,0.08)',
+                        borderBottomRightRadius: msg.senderType === 'admin' ? '4px' : '12px',
+                        borderBottomLeftRadius: msg.senderType === 'admin' ? '12px' : '4px',
+                      }}
+                    >
+                      {msg.senderType === 'user' && (
+                        <span style={{ fontSize: '10.5px', fontWeight: 700, display: 'block', marginBottom: '3px', opacity: 0.6 }}>
+                          {activeConv?.userFullName ?? 'عميل'}
+                        </span>
+                      )}
+                      <span style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{msg.body}</span>
+                      <span style={{ display: 'block', fontSize: '10px', opacity: 0.45, marginTop: '4px' }}>
+                        {new Date(msg.createdAt).toLocaleString('ar-JO', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Compose */}
+              <div style={{ padding: '12px 16px', borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', gap: '8px', background: 'rgba(0,0,0,0.15)' }}>
+                <Textarea
+                  placeholder="اكتب ردك هنا..."
+                  value={adminReplyBody}
+                  onChange={e => setAdminReplyBody(e.target.value)}
+                  rows={2}
+                  className="flex-1 bg-black/30 border-white/10 rounded-xl text-sm resize-none min-h-[unset]"
+                  style={{ minHeight: '48px', maxHeight: '120px' }}
+                />
+                <Button
+                  onClick={sendReply}
+                  disabled={adminReplySending || !adminReplyBody.trim()}
+                  className="bg-primary hover:bg-primary/90 text-white rounded-xl w-10 h-10 p-0 shrink-0 self-end"
+                >
+                  <Send className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          );
+
+          return (
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="bg-card/40 border border-white/5 rounded-3xl overflow-hidden" style={{ height: 'calc(100vh - 160px)', minHeight: '480px', display: 'grid', gridTemplateColumns: '260px 1fr' }}>
+
+                {/* Desktop: always show both panes */}
+                <div className="hidden sm:block h-full overflow-hidden">
+                  <ConvList />
+                </div>
+                <div className="hidden sm:flex flex-col h-full overflow-hidden" style={{ borderRight: '1px solid rgba(255,255,255,0.07)' }}>
+                  {activeConv ? (
+                    <ThreadView />
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'rgba(255,255,255,0.25)', fontSize: '13px', flexDirection: 'column', gap: '10px' }}>
+                      <MessageSquare className="w-10 h-10 opacity-20" />
+                      <span>اختر محادثة من القائمة</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Mobile: single pane with list/thread toggle */}
+                <div className="sm:hidden col-span-2 h-full overflow-hidden flex flex-col">
+                  {adminMsgMobileView === 'list' ? (
+                    <ConvList />
+                  ) : activeConv ? (
+                    <ThreadView />
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {activeTab === 'clients' && (
           <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="bg-card/40 border border-white/5 rounded-3xl p-6 sm:p-10">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 border-b border-white/10 pb-6">

@@ -751,18 +751,4 @@ router.patch("/messages/:id/read", async (req, res) => {
   }
 });
 
-// POST /api/dashboard/notifications — create a notification for a user (admin)
-router.post("/notifications", async (req, res) => {
-  try {
-    const { userId, message } = req.body;
-    const [newNotif] = await db.insert(notifications).values({
-      userId: parseInt(userId),
-      message
-    }).returning();
-    res.status(201).json(newNotif);
-  } catch (error) {
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-});
-
 export default router;
