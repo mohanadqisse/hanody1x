@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { db } from "../lib/db.js";
-import { users, thumbnails, transactions, notifications, siteContent, comments, ratings, revisionRequests } from "../schema/index.js";
+import { users, thumbnails, transactions, notifications, siteContent, comments, ratings, revisionRequests, conversations, chatMessages } from "../schema/index.js";
 import { requireUserAuth } from "../lib/auth.js";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, gt, count } from "drizzle-orm";
 
 const router = Router();
 
@@ -180,14 +180,208 @@ router.post("/thumbnails/:id/rating", requireUserAuth, async (req, res) => {
   }
 });
 
-// Mark notification as read
-router.patch("/notifications/:id/read", requireUserAuth, async (req, res) => {
+// ─── Notification helpers ────────────────────────────────────────
+
+type NotificationType = "system" | "thumbnail" | "comment" | "revision" | "message" | "billing";
+
+export async function createNotification(args: {
+  userId: number;
+  type: NotificationType;
+  message: string;
+}) {
   try {
-    const id = parseInt(String(req.params.id));
+    // Insert using the base schema; type column is present in DB via safe migration
+    await (db.insert(notifications) as unknown as { values: (v: Record<string, unknown>) => { returning: () => Promise<unknown[]> } })
+      .values({ user_id: args.userId, message: args.message, read: false, type: args.type });
+  } catch {
+    // Non-critical — never crash the main flow because of a notification failure
+  }
+}
+
+// ─── Improved Notification Routes ───────────────────────────────
+
+// GET /notifications — list all (existing, kept for compat)
+router.get("/notifications", requireUserAuth, async (req, res) => {
+  const payload = (req as typeof req & { user: { id: number; role: string } }).user;
+  if (payload.role === "guest") { res.json([]); return; }
+
+  try {
+    const userNotifs = await db
+      .select()
+      .from(notifications)
+      .where(eq(notifications.userId, payload.id))
+      .orderBy(desc(notifications.createdAt));
+    res.json(userNotifs);
+  } catch (err) {
+    res.status(500).json({ message: "Server error." });
+  }
+});
+
+// GET /notifications/unread-count
+router.get("/notifications/unread-count", requireUserAuth, async (req, res) => {
+  const payload = (req as typeof req & { user: { id: number; role: string } }).user;
+  if (payload.role === "guest") { res.json({ count: 0 }); return; }
+
+  try {
+    const result = await db
+      .select({ count: count() })
+      .from(notifications)
+      .where(and(eq(notifications.userId, payload.id), eq(notifications.read, false)));
+    res.json({ count: Number(result[0]?.count ?? 0) });
+  } catch (err) {
+    res.status(500).json({ message: "Server error." });
+  }
+});
+
+// PATCH /notifications/:id/read — mark a single notification read (ownership check)
+router.patch("/notifications/:id/read", requireUserAuth, async (req, res) => {
+  const payload = (req as typeof req & { user: { id: number; role: string } }).user;
+  const id = parseInt(String(req.params.id));
+
+  try {
+    // Ownership: only mark if it belongs to this user
+    const [notif] = await db.select().from(notifications).where(
+      and(eq(notifications.id, id), eq(notifications.userId, payload.id))
+    );
+    if (!notif) { res.status(404).json({ message: "Not found." }); return; }
+
     await db.update(notifications).set({ read: true }).where(eq(notifications.id, id));
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ message: "خطأ في الخادم" });
+    res.status(500).json({ message: "Server error." });
+  }
+});
+
+// PATCH /notifications/read-all
+router.patch("/notifications/read-all", requireUserAuth, async (req, res) => {
+  const payload = (req as typeof req & { user: { id: number; role: string } }).user;
+  if (payload.role === "guest") { res.json({ success: true }); return; }
+
+  try {
+    await db.update(notifications).set({ read: true }).where(eq(notifications.userId, payload.id));
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ message: "Server error." });
+  }
+});
+
+// ─── Messaging Routes ────────────────────────────────────────────
+
+type AuthUser = { id: number; role: string };
+const getUser = (req: Express.Request) =>
+  (req as typeof req & { user: AuthUser }).user;
+
+// GET /conversations — list user's conversations
+router.get("/conversations", requireUserAuth, async (req, res) => {
+  const payload = getUser(req);
+  if (payload.role === "guest") { res.json([]); return; }
+
+  try {
+    const convs = await db
+      .select()
+      .from(conversations)
+      .where(eq(conversations.userId, payload.id))
+      .orderBy(desc(conversations.updatedAt));
+    res.json(convs);
+  } catch (err) {
+    res.status(500).json({ message: "Server error." });
+  }
+});
+
+// POST /conversations — create or reuse existing conversation (one per user for simplicity)
+router.post("/conversations", requireUserAuth, async (req, res) => {
+  const payload = getUser(req);
+  if (payload.role === "guest") { res.status(403).json({ message: "Guests cannot start conversations." }); return; }
+
+  const rawSubject: unknown = req.body.subject;
+  const subject = (typeof rawSubject === "string" && rawSubject.trim())
+    ? rawSubject.trim().slice(0, 200)
+    : "General";
+
+  try {
+    // Check if a conversation already exists for this user
+    const [existing] = await db
+      .select()
+      .from(conversations)
+      .where(eq(conversations.userId, payload.id))
+      .orderBy(desc(conversations.createdAt))
+      .limit(1);
+
+    if (existing) {
+      res.json(existing);
+      return;
+    }
+
+    const [conv] = await db
+      .insert(conversations)
+      .values({ userId: payload.id, subject })
+      .returning();
+    res.status(201).json(conv);
+  } catch (err) {
+    res.status(500).json({ message: "Server error." });
+  }
+});
+
+// GET /conversations/:id/messages
+router.get("/conversations/:id/messages", requireUserAuth, async (req, res) => {
+  const payload = getUser(req);
+  const convId = parseInt(String(req.params.id));
+
+  if (payload.role === "guest") { res.json([]); return; }
+
+  try {
+    // Ownership: conversation must belong to this user
+    const [conv] = await db
+      .select()
+      .from(conversations)
+      .where(and(eq(conversations.id, convId), eq(conversations.userId, payload.id)));
+    if (!conv) { res.status(404).json({ message: "Conversation not found." }); return; }
+
+    const msgs = await db
+      .select()
+      .from(chatMessages)
+      .where(eq(chatMessages.conversationId, convId))
+      .orderBy(chatMessages.createdAt);
+
+    res.json(msgs);
+  } catch (err) {
+    res.status(500).json({ message: "Server error." });
+  }
+});
+
+// POST /conversations/:id/messages — user sends a message
+router.post("/conversations/:id/messages", requireUserAuth, async (req, res) => {
+  const payload = getUser(req);
+  const convId = parseInt(String(req.params.id));
+
+  if (payload.role === "guest") { res.status(403).json({ message: "Guests cannot send messages." }); return; }
+
+  const rawBody: unknown = req.body.body;
+  if (typeof rawBody !== "string" || rawBody.trim().length === 0) {
+    res.status(400).json({ message: "Message body is required." });
+    return;
+  }
+  const body = rawBody.trim().slice(0, 4000);
+
+  try {
+    // Ownership
+    const [conv] = await db
+      .select()
+      .from(conversations)
+      .where(and(eq(conversations.id, convId), eq(conversations.userId, payload.id)));
+    if (!conv) { res.status(404).json({ message: "Conversation not found." }); return; }
+
+    const [msg] = await db
+      .insert(chatMessages)
+      .values({ conversationId: convId, senderType: "user", body, isRead: false })
+      .returning();
+
+    // Update conversation updatedAt
+    await db.update(conversations).set({ updatedAt: new Date() }).where(eq(conversations.id, convId));
+
+    res.status(201).json(msg);
+  } catch (err) {
+    res.status(500).json({ message: "Server error." });
   }
 });
 

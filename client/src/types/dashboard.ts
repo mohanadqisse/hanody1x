@@ -67,6 +67,27 @@ export interface Notification {
   createdAt: string;
 }
 
+export type NotificationType = "system" | "thumbnail" | "comment" | "revision" | "message" | "billing";
+
+export interface Conversation {
+  id: number;
+  userId: number;
+  subject: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type MessageSender = "user" | "admin";
+
+export interface ChatMessage {
+  id: number;
+  conversationId: number;
+  senderType: MessageSender;
+  body: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
 /* ─── Status helpers (shared across pages) ───────── */
 
 export function statusLabel(status: string): string {
@@ -90,9 +111,9 @@ export function statusBadgeClass(status: string): string {
 }
 
 export function revisionStatusBadgeClass(status: RevisionStatus): string {
-  if (status === "completed")  return "dash-badge dash-badge-green";
+  if (status === "completed")   return "dash-badge dash-badge-green";
   if (status === "in_progress") return "dash-badge dash-badge-blue";
-  if (status === "rejected")   return "dash-badge dash-badge-red";
+  if (status === "rejected")    return "dash-badge dash-badge-red";
   return "dash-badge dash-badge-amber"; // pending
 }
 
@@ -100,4 +121,34 @@ export function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-GB", {
     day: "numeric", month: "short", year: "numeric",
   });
+}
+
+export function formatDateTime(iso: string): string {
+  return new Date(iso).toLocaleString("en-GB", {
+    day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+  });
+}
+
+/** Returns a single emoji icon for a notification type */
+export function notificationTypeIcon(type?: string): string {
+  switch (type) {
+    case "thumbnail":  return "🖼";
+    case "comment":    return "💬";
+    case "revision":   return "🔄";
+    case "message":    return "✉️";
+    case "billing":    return "💳";
+    default:           return "🔔";
+  }
+}
+
+/** Returns the dashboard path to navigate to for a notification type */
+export function notificationDestination(type?: string): string | null {
+  switch (type) {
+    case "thumbnail":  return "/dashboard/thumbnails";
+    case "comment":    return "/dashboard/thumbnails";
+    case "revision":   return "/dashboard/thumbnails";
+    case "message":    return "/dashboard/messages";
+    case "billing":    return "/dashboard/billing";
+    default:           return null;
+  }
 }

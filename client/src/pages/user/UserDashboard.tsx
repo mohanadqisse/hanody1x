@@ -21,6 +21,7 @@ import ThumbnailDetail  from "./ThumbnailDetail";
 import Billing          from "./Billing";
 import UserSettings     from "./UserSettings";
 import Notifications    from "./Notifications";
+import Messages         from "./Messages";
 
 export default function UserDashboard() {
   const { user, isAuthenticated, isLoading } = useUser();
@@ -185,6 +186,7 @@ export default function UserDashboard() {
             <Route path="/dashboard/thumbnails/:id"         component={ThumbnailDetail} />
             <Route path="/dashboard/thumbnails"             component={Thumbnails}      />
             <Route path="/dashboard/billing"                component={Billing}         />
+            <Route path="/dashboard/messages"               component={Messages}        />
             <Route path="/dashboard/notifications"          component={Notifications}   />
             <Route path="/dashboard/settings"               component={UserSettings}    />
           </Switch>

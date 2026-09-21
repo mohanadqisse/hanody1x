@@ -34,14 +34,17 @@ async function ensureTables() {
     await db.execute(sql`CREATE TABLE IF NOT EXISTS notifications (id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id) NOT NULL, message TEXT NOT NULL, read BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
     await db.execute(sql`CREATE TABLE IF NOT EXISTS public_ratings (id SERIAL PRIMARY KEY, portfolio_item_id INTEGER NOT NULL, rating INTEGER NOT NULL, visitor_id TEXT NOT NULL, visitor_name TEXT NOT NULL DEFAULT 'زائر', created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
     await db.execute(sql`CREATE TABLE IF NOT EXISTS revision_requests (id SERIAL PRIMARY KEY, thumbnail_id INTEGER REFERENCES thumbnails(id) NOT NULL, user_id INTEGER REFERENCES users(id) NOT NULL, message TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'pending', created_at TIMESTAMP DEFAULT NOW() NOT NULL, updated_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
-    // Add visitor_name column if it doesn't exist (safe migration)
+    await db.execute(sql`CREATE TABLE IF NOT EXISTS conversations (id SERIAL PRIMARY KEY, user_id INTEGER REFERENCES users(id) NOT NULL, subject TEXT NOT NULL DEFAULT 'General', created_at TIMESTAMP DEFAULT NOW() NOT NULL, updated_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
+    await db.execute(sql`CREATE TABLE IF NOT EXISTS chat_messages (id SERIAL PRIMARY KEY, conversation_id INTEGER REFERENCES conversations(id) NOT NULL, sender_type TEXT NOT NULL DEFAULT 'user', body TEXT NOT NULL, is_read BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMP DEFAULT NOW() NOT NULL)`);
+    // Safe column additions
     try { await db.execute(sql`ALTER TABLE public_ratings ADD COLUMN IF NOT EXISTS visitor_name TEXT NOT NULL DEFAULT 'زائر'`); } catch(e) { /* column may already exist */ }
-    // Add portfolio metadata columns to thumbnails if they don't exist (safe migration)
     try { await db.execute(sql`ALTER TABLE thumbnails ADD COLUMN IF NOT EXISTS creator_name TEXT`); } catch(e) {}
     try { await db.execute(sql`ALTER TABLE thumbnails ADD COLUMN IF NOT EXISTS youtube_url TEXT`); } catch(e) {}
     try { await db.execute(sql`ALTER TABLE thumbnails ADD COLUMN IF NOT EXISTS views TEXT`); } catch(e) {}
     try { await db.execute(sql`ALTER TABLE thumbnails ADD COLUMN IF NOT EXISTS video_title TEXT`); } catch(e) {}
     try { await db.execute(sql`ALTER TABLE thumbnails ADD COLUMN IF NOT EXISTS category TEXT`); } catch(e) {}
+    // Add type column to notifications (safe, existing rows default to 'system')
+    try { await db.execute(sql`ALTER TABLE notifications ADD COLUMN IF NOT EXISTS type TEXT NOT NULL DEFAULT 'system'`); } catch(e) {}
     console.log("Database tables verified (safe migration - no data loss)");
 
     // Auto-seed admin if it doesn't exist

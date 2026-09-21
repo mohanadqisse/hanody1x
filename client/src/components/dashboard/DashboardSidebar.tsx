@@ -1,10 +1,12 @@
 /**
  * DashboardSidebar — left navigation rail for the client portal.
  * Receives the current location from the parent shell.
- * Handles: nav links, user profile, logout, back-to-site.
+ * Handles: nav links, unread notification badge, user profile, logout, back-to-site.
  */
 import { Link, useLocation } from "wouter";
 import { useUser } from "@/contexts/UserContext";
+import { useEffect, useState, useCallback } from "react";
+import { API_BASE } from "@/lib/api";
 import {
   LayoutDashboard,
   Image as ImageIcon,
@@ -13,19 +15,52 @@ import {
   Settings,
   LogOut,
   ExternalLink,
+  MessageSquare,
 } from "lucide-react";
+
+/* ─── Unread count fetcher ────────────────────────── */
+function useUnreadCount() {
+  const [count, setCount] = useState(0);
+
+  const fetch_ = useCallback(async () => {
+    try {
+      const t = localStorage.getItem("user_token");
+      if (!t) return;
+      const res = await fetch(API_BASE + "/api/users/dashboard/notifications/unread-count", {
+        headers: { Authorization: `Bearer ${t}` },
+      });
+      if (res.ok) {
+        const data = await res.json() as { count: number };
+        setCount(data.count);
+      }
+    } catch {
+      // Non-critical
+    }
+  }, []);
+
+  useEffect(() => {
+    fetch_();
+    // Poll every 60 seconds for new notifications — lightweight, no WebSocket needed
+    const interval = setInterval(fetch_, 60_000);
+    return () => clearInterval(interval);
+  }, [fetch_]);
+
+  return count;
+}
 
 interface NavItem {
   label: string;
   path: string;
   icon: React.ReactNode;
+  badge?: boolean; // if true, show the unread badge on this item
 }
 
 const NAV: NavItem[] = [
   { label: "Overview",       path: "/dashboard",               icon: <LayoutDashboard size={16} /> },
   { label: "My Thumbnails",  path: "/dashboard/thumbnails",    icon: <ImageIcon size={16} />       },
   { label: "Billing",        path: "/dashboard/billing",       icon: <CreditCard size={16} />      },
-  { label: "Notifications",  path: "/dashboard/notifications", icon: <Bell size={16} />            },
+  { label: "Messages",       path: "/dashboard/messages",      icon: <MessageSquare size={16} />   },
+  { label: "Notifications",  path: "/dashboard/notifications", icon: <Bell size={16} />, badge: true },
   { label: "Settings",       path: "/dashboard/settings",      icon: <Settings size={16} />        },
 ];
 
@@ -36,6 +71,7 @@ interface Props {
 export function DashboardSidebar({ onNav }: Props) {
   const { user, logout } = useUser();
   const [location] = useLocation();
+  const unreadCount = useUnreadCount();
 
   const isActive = (path: string) =>
     path === "/dashboard"
@@ -93,11 +129,18 @@ export function DashboardSidebar({ onNav }: Props) {
             <div
               className={`dash-nav-link${isActive(item.path) ? " active" : ""}`}
               onClick={onNav}
+              style={{ display: "flex", alignItems: "center", gap: "8px" }}
             >
               <span style={{ opacity: isActive(item.path) ? 1 : 0.55, display: "flex" }}>
                 {item.icon}
               </span>
-              {item.label}
+              <span style={{ flex: 1 }}>{item.label}</span>
+              {/* Unread badge — only on Notifications item */}
+              {item.badge && unreadCount > 0 && (
+                <span className="dash-nav-badge">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
             </div>
           </Link>
         ))}

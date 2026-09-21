@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { db } from "../lib/db.js";
-import { clients, timeSessions, users, thumbnails, transactions, comments, ratings, notifications, creatorCodes, revisionRequests } from "../schema/index.js";
+import { clients, timeSessions, users, thumbnails, transactions, comments, ratings, notifications, creatorCodes, revisionRequests, conversations, chatMessages } from "../schema/index.js";
 import { eq, desc, sum, count } from "drizzle-orm";
 import { requireAuth } from "../lib/auth.js";
 import bcrypt from "bcryptjs";
+import { createNotification } from "./userDashboard.js";
 
 const router = Router();
 
@@ -332,6 +333,16 @@ router.patch("/transactions/:id", async (req, res) => {
       ...(amount !== undefined && { amount }),
       ...(status !== undefined && { status }),
     }).where(eq(transactions.id, id)).returning();
+
+    // Notify owner when status is explicitly set to 'paid'
+    if (updated && status === "paid") {
+      await createNotification({
+        userId: updated.userId,
+        type: "billing",
+        message: `Your payment for "${updated.description}" has been marked as paid.`,
+      });
+    }
+
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: "Internal Server Error" });
@@ -390,6 +401,16 @@ router.patch("/transactions/:id/pay", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const [updated] = await db.update(transactions).set({ status: "paid" }).where(eq(transactions.id, id)).returning();
+
+    // Notify the transaction owner
+    if (updated) {
+      await createNotification({
+        userId: updated.userId,
+        type: "billing",
+        message: `Your payment for "${updated.description}" has been marked as paid.`,
+      });
+    }
+
     res.json(updated);
   } catch (error) {
     res.status(500).json({ error: "Internal Server Error" });
@@ -530,6 +551,17 @@ router.post("/thumbnails/:id/comments", async (req, res) => {
       isAdmin: true,
       content
     }).returning();
+
+    // Notify the thumbnail owner
+    const [thumb] = await db.select().from(thumbnails).where(eq(thumbnails.id, thumbnailId));
+    if (thumb) {
+      await createNotification({
+        userId: thumb.userId,
+        type: "comment",
+        message: `Muhanad left a comment on your thumbnail: "${thumb.title}"`,
+      });
+    }
+
     res.status(201).json(newComment);
   } catch (error) {
     res.status(500).json({ error: "Internal Server Error" });
@@ -608,9 +640,127 @@ router.patch("/revisions/:id", async (req, res) => {
       return;
     }
 
+    // Notify the revision owner
+    const statusLabels: Record<string, string> = {
+      in_progress: "is now in review",
+      completed: "has been completed",
+      rejected: "has been rejected",
+      pending: "is pending review",
+    };
+    await createNotification({
+      userId: updated.userId,
+      type: "revision",
+      message: `Your revision request ${statusLabels[status] ?? `status changed to "${status}"`}.`,
+    });
+
     res.json(updated);
   } catch (error) {
     console.error("Admin revision update error:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// =======================
+// Admin — Conversations / Messages
+// =======================
+
+// GET /api/dashboard/conversations — list all conversations with user info
+router.get("/conversations", async (_req, res) => {
+  try {
+    const convs = await db
+      .select({
+        id: conversations.id,
+        userId: conversations.userId,
+        subject: conversations.subject,
+        createdAt: conversations.createdAt,
+        updatedAt: conversations.updatedAt,
+        userFullName: users.fullName,
+        userEmail: users.email,
+      })
+      .from(conversations)
+      .leftJoin(users, eq(conversations.userId, users.id))
+      .orderBy(desc(conversations.updatedAt));
+    res.json(convs);
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// GET /api/dashboard/conversations/:id/messages
+router.get("/conversations/:id/messages", async (req, res) => {
+  try {
+    const convId = parseInt(req.params.id);
+    const msgs = await db
+      .select()
+      .from(chatMessages)
+      .where(eq(chatMessages.conversationId, convId))
+      .orderBy(chatMessages.createdAt);
+    res.json(msgs);
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// POST /api/dashboard/conversations/:id/messages — admin sends a reply
+router.post("/conversations/:id/messages", async (req, res) => {
+  try {
+    const convId = parseInt(req.params.id);
+    const rawBody: unknown = req.body.body;
+    if (typeof rawBody !== "string" || rawBody.trim().length === 0) {
+      res.status(400).json({ error: "Message body is required." });
+      return;
+    }
+    const body = rawBody.trim().slice(0, 4000);
+
+    const [conv] = await db.select().from(conversations).where(eq(conversations.id, convId));
+    if (!conv) { res.status(404).json({ error: "Conversation not found." }); return; }
+
+    const [msg] = await db
+      .insert(chatMessages)
+      .values({ conversationId: convId, senderType: "admin", body, isRead: false })
+      .returning();
+
+    await db.update(conversations).set({ updatedAt: new Date() }).where(eq(conversations.id, convId));
+
+    // Notify the conversation owner (userId comes from conv record — not client input)
+    await createNotification({
+      userId: conv.userId,
+      type: "message",
+      message: "Muhanad replied to your message. Tap to view.",
+    });
+
+    res.status(201).json(msg);
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// PATCH /api/dashboard/messages/:id/read — mark a message as read
+router.patch("/messages/:id/read", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const [updated] = await db
+      .update(chatMessages)
+      .set({ isRead: true })
+      .where(eq(chatMessages.id, id))
+      .returning();
+    if (!updated) { res.status(404).json({ error: "Message not found." }); return; }
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// POST /api/dashboard/notifications — create a notification for a user (admin)
+router.post("/notifications", async (req, res) => {
+  try {
+    const { userId, message } = req.body;
+    const [newNotif] = await db.insert(notifications).values({
+      userId: parseInt(userId),
+      message
+    }).returning();
+    res.status(201).json(newNotif);
+  } catch (error) {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });

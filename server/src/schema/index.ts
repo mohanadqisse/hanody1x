@@ -146,6 +146,26 @@ export const revisionRequests = pgTable("revision_requests", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// ─── Messaging ───────────────────────────────────────
+// One conversation per user (can expand to multi-topic later)
+export const conversations = pgTable("conversations", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  subject: text("subject").notNull().default("General"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const chatMessages = pgTable("chat_messages", {
+  id: serial("id").primaryKey(),
+  conversationId: integer("conversation_id").references(() => conversations.id).notNull(),
+  // senderType: "user" | "admin"
+  senderType: text("sender_type").notNull().default("user"),
+  body: text("body").notNull(),
+  isRead: boolean("is_read").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export const publicRatings = pgTable("public_ratings", {
   id: serial("id").primaryKey(),
   portfolioItemId: integer("portfolio_item_id").notNull(),
@@ -163,6 +183,8 @@ export const insertRatingSchema = createInsertSchema(ratings).omit({ id: true, c
 export const insertNotificationSchema = createInsertSchema(notifications).omit({ id: true, createdAt: true });
 export const insertPublicRatingSchema = createInsertSchema(publicRatings).omit({ id: true, createdAt: true });
 export const insertRevisionRequestSchema = createInsertSchema(revisionRequests).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertConversationSchema = createInsertSchema(conversations).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({ id: true, createdAt: true });
 
 export type PublicRating = typeof publicRatings.$inferSelect;
 export type AdminUser = typeof adminUsers.$inferSelect;
@@ -180,3 +202,5 @@ export type Rating = typeof ratings.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
 export type CreatorCode = typeof creatorCodes.$inferSelect;
 export type RevisionRequest = typeof revisionRequests.$inferSelect;
+export type Conversation = typeof conversations.$inferSelect;
+export type ChatMessage = typeof chatMessages.$inferSelect;
