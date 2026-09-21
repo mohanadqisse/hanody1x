@@ -11,5 +11,12 @@ if (!url) {
   throw new Error("DATABASE_URL is missing in .env");
 }
 
-const client = postgres(url);
+// Conservative pool settings for free-tier PostgreSQL providers (Supabase/Neon
+// cap at 5-15 simultaneous connections). idle_timeout and connect_timeout
+// prevent hung connections from exhausting the pool under load.
+const client = postgres(url, {
+  max: 5,
+  idle_timeout: 20,
+  connect_timeout: 10,
+});
 export const db = drizzle(client, { schema });

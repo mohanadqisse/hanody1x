@@ -4,17 +4,26 @@ import { db } from "../lib/db.js";
 import { publicRatings } from "../schema/index.js";
 import { requireAuth } from "../lib/auth.js";
 import { and, desc, eq } from "drizzle-orm";
+import rateLimit from "express-rate-limit";
 
 const router = Router();
+
+// H2 FIX: rate-limit the unauthenticated public ratings POST to prevent vote spam.
+const publicRatingLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: { message: "طلبات كثيرة جداً، يرجى المحاولة بعد قليل." },
+});
 
 const ratingSchema = z.object({
   portfolioItemId: z.number(),
   rating: z.number().min(1).max(5),
-  visitorId: z.string(),
-  visitorName: z.string().min(1, "يرجى إدخال اسمك"),
+  // H1 FIX: bound visitorId and visitorName to prevent column flooding.
+  visitorId: z.string().min(1).max(128),
+  visitorName: z.string().min(1, "يرجى إدخال اسمك").max(100),
 });
 
-router.post("/", async (req, res) => {
+router.post("/", publicRatingLimiter, async (req, res) => {
   try {
     const { portfolioItemId, rating, visitorId, visitorName } = ratingSchema.parse(req.body);
 
