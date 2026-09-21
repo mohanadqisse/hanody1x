@@ -61,7 +61,7 @@ export default function Work() {
             Portfolio
           </p>
           <h1 className="text-4xl md:text-6xl font-black text-black tracking-tight mb-4">
-            All Work
+            Selected Work
           </h1>
           <p className="text-black/50 text-base md:text-lg max-w-xl leading-relaxed">
             A collection of YouTube thumbnail designs across multiple niches and channels.
